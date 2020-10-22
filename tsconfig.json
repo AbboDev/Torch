@@ -4,7 +4,15 @@
     "moduleResolution": "node",
     "module": "CommonJS",
     "strict": true,
-    "sourceMap": true
+    "sourceMap": true,
+
+    "typeRoots": [
+      "./node_modules/@types",
+      "./node_modules/phaser/types"
+    ],
+    "types": [
+      "Phaser"
+    ]
   },
   "include": [
     "./src/**/*"
