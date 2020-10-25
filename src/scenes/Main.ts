@@ -5,20 +5,14 @@ const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {
 };
 
 import { Player } from '../entities/Player';
+import { ControlScene } from './ControlScene';
 
-export class Main extends Phaser.Scene {
+export class Main extends ControlScene {
   private hero!: Player;
   private background!: Phaser.GameObjects.TileSprite;
-  private isJumping = false;
-  private isFacing!: any;
 
   constructor() {
     super(sceneConfig);
-
-    this.isFacing = {
-      x: 'front',
-      y: null,
-    }
   }
 
   preload(): void {
@@ -28,6 +22,8 @@ export class Main extends Phaser.Scene {
   }
 
   create(): void {
+    super.create();
+
     this.background = this.add.tileSprite(
       0,
       0,
@@ -41,34 +37,7 @@ export class Main extends Phaser.Scene {
   }
 
   update(): void {
-    const cursorKeys: Phaser.Types.Input.Keyboard.CursorKeys =
-      this.input.keyboard.createCursorKeys();
-
-    if (this.hero.body.onFloor()) {
-      this.isJumping = false;
-
-      if (cursorKeys.up!.isDown) {
-        this.isJumping = true;
-        this.hero.setVelocityY(-256);
-      }
-    }
-
-    if (cursorKeys.right!.isDown) {
-      this.isFacing.x = 'right';
-
-      this.hero
-        .setVelocityX(128)
-        .play('hero_walk_right_animation', true);
-    } else if (cursorKeys.left!.isDown) {
-      this.isFacing.x = 'left';
-
-      this.hero
-        .setVelocityX(-128)
-        .play('hero_walk_left_animation', true);
-    } else {
-      this.hero
-        .setVelocityX(0)
-        .play(`hero_idle_${this.isFacing.x}_animation`, true);
-    }
+    console.log(this.testKeyboard('up'));
+    this.hero.update();
   }
 }

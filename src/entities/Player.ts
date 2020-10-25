@@ -1,17 +1,31 @@
+import { Facing } from '../miscellaneous/Facing';
+import { DirectionAxisY, DirectionAxisX } from '../miscellaneous/Direction';
+import { ControlScene } from '../scenes/ControlScene';
+
 export class Player extends Phaser.Physics.Arcade.Sprite {
-  body!: Phaser.Physics.Arcade.Body;
+  public body!: Phaser.Physics.Arcade.Body;
+
+  private facing: Facing;
+  private isJumping = false;
 
   constructor(
-    scene: Phaser.Scene,
-    x: number,
-    y: number
+    public scene: ControlScene,
+    public x: number,
+    public y: number
   ) {
-    super(scene, x, y, 'hero_idle_front');
+    super(scene, x, y, 'hero_idle_center');
+
+    this.facing = {
+      y: DirectionAxisY.MIDDLE,
+      x: DirectionAxisX.CENTER,
+    }
+
+    console.log(DirectionAxisY, DirectionAxisX)
 
     this.create();
   }
 
-  static preload(scene: Phaser.Scene) {
+  static preload(scene: Phaser.Scene): void {
     const spriteSize: Phaser.Types.Loader.FileTypes.ImageFrameConfig = {
       frameWidth: 32,
       frameHeight: 48
@@ -19,8 +33,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     scene.load
       .spritesheet(
-        'hero_idle_front',
-        '/assets/sprites/hero_idle_front.png',
+        'hero_idle_center',
+        '/assets/sprites/hero_idle_center.png',
         spriteSize
       )
       .spritesheet(
@@ -45,7 +59,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       );
   }
 
-  private create() {
+  protected create(): void {
     this.scene.physics.world.enableBody(this);
     this.body.setAllowGravity(true);
     this.scene.add.existing(this);
@@ -56,8 +70,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       .setBounce(0);
 
     this.scene.anims.create({
-      key: 'hero_idle_front_animation',
-      frames: this.scene.anims.generateFrameNumbers('hero_idle_front', {}),
+      key: 'hero_idle_center_animation',
+      frames: this.scene.anims.generateFrameNumbers('hero_idle_center', {}),
       frameRate: 5,
       repeat: -1
     });
@@ -89,5 +103,44 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       frameRate: 20,
       repeat: -1
     });
+  }
+
+  public update(): void {
+    this.walk();
+    this.jump();
+  }
+
+  protected walk(): void {
+    const isRightPress = this.scene.testKeyboard('right');
+    const isLeftPress = this.scene.testKeyboard('left');
+
+    if (isRightPress && !isLeftPress) {
+      this.facing.x = 'right';
+
+      this
+        .setVelocityX(128)
+        .play('hero_walk_right_animation', true);
+    } else if (isLeftPress && !isRightPress) {
+      this.facing.x = 'left';
+
+      this
+        .setVelocityX(-128)
+        .play('hero_walk_left_animation', true);
+    } else {
+      this
+        .setVelocityX(0)
+        .play(`hero_idle_${this.facing.x}_animation`, true);
+    }
+  }
+
+  protected jump(): void {
+    if (this.body.onFloor()) {
+      this.isJumping = false;
+
+      if (this.scene.testKeyboard('a')) {
+        this.isJumping = true;
+        this.setVelocityY(-256);
+      }
+    }
   }
 }
