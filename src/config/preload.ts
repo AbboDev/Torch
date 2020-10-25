@@ -22,7 +22,7 @@ export const config = {
   // spritesheets
   ssPath: `${assetDir}/spritesheets/`,
   sheets: [
-    // 'sheet1'
+    'sheet1'
   ],
 
   // audio
