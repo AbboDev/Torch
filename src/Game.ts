@@ -7,18 +7,12 @@ const config: Phaser.Types.Core.GameConfig = {
   title: 'Torch',
   type: Phaser.AUTO,
   parent: 'canvas',
-  backgroundColor: '#AFAFAF',
+  backgroundColor: '#000000',
 
-  width: 960,
-  height: 540,
+  width: 640,
+  height: 360,
 
-  resolution: 1,
-  zoom: 1,
-
-  // scale: {
-  //   width: window.innerWidth,
-  //   height: window.innerHeight,
-  // },
+  zoom: 2,
 
   scene: [
     Preloader,
@@ -30,7 +24,7 @@ const config: Phaser.Types.Core.GameConfig = {
     arcade: {
       debug: true,
       gravity: {
-        y: 64
+        y: 256 + 128
       }
     }
   }
