@@ -27,7 +27,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    * The Player has the ability to do the double jump
    * @type {Boolean}
    */
-  private hasDoubleJump = true;
+  private hasDoubleJumpAbility = true;
 
   /**
    * The Player can now perform the double jump
@@ -46,6 +46,24 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    * @type {Boolean}
    */
   private isPressingJump = false;
+
+  /**
+   * The Player has the ability to perform an high jump
+   * @type {Boolean}
+   */
+  private hasHighJumpAbility = true;
+
+  /**
+   * [JUMP_SPEED_MULTIPLIER description]
+   * @type {Number}
+   */
+  static JUMP_SPEED_MULTIPLIER = 1.25;
+
+  /**
+   * [JUMP_SPEED_MULTIPLIER description]
+   * @type {Number}
+   */
+  static HIGH_JUMP_SPEED_MULTIPLIER = 1.5;
 
   constructor(
     public scene: ControlScene,
@@ -181,10 +199,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         // The Player is actually jumping
         this.isJumping = true;
 
-        this.setVelocityY(-256 * 1.25);
+        this.setVelocityY(this.getJumpSpeed());
       } else if (
         // First check if Player has unlocked double jump
-        this.hasDoubleJump
+        this.hasDoubleJumpAbility
         // Then check if Player had already performed the action
         && !this.hasDoneDoubleJump
         // Finally check if Player can actually perform the action at the moment
@@ -195,7 +213,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         // The Player is actually jumping
         this.isJumping = true;
 
-        this.setVelocityY(-256 * 1.25);
+        this.setVelocityY(this.getJumpSpeed());
       }
     } else if (this.body.onFloor()) {
       // Reset everything if the player is touching the ground
@@ -223,9 +241,21 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         // The Player is able to perform a double jump
         this.canDoubleJump = true;
 
+        const newVelocity = this.body.velocity.y + -(this.body.velocity.y / 2);
+
         // The Player slowly stop to jump and perform a linear fall
-        this.setVelocityY(this.body.velocity.y + 10);
+        this.setVelocityY(Math.max(newVelocity, 0));
       }
     }
+  }
+
+  public getJumpSpeed() {
+    return -this.scene.getWorldGravity().y / 2 * this.getJumpSpeedMultiplier();
+  }
+
+  public getJumpSpeedMultiplier() {
+    return this.hasHighJumpAbility
+      ? Player.HIGH_JUMP_SPEED_MULTIPLIER
+      : Player.JUMP_SPEED_MULTIPLIER;
   }
 }

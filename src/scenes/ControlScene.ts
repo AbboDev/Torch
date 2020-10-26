@@ -38,4 +38,8 @@ export class ControlScene extends Phaser.Scene {
 
     return (input as Phaser.Input.Keyboard.Key).getDuration();
   }
+
+  getWorldGravity() {
+    return this.physics.world.gravity;
+  }
 }
