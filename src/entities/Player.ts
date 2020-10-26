@@ -21,8 +21,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       x: DirectionAxisX.CENTER,
     }
 
-    console.log(DirectionAxisY, DirectionAxisX)
-
     this.create();
   }
 
