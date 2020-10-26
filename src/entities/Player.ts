@@ -72,21 +72,21 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.scene.anims.create({
       key: 'hero_idle_center_animation',
       frames: this.scene.anims.generateFrameNumbers('hero_idle_center', {}),
-      frameRate: 5,
+      frameRate: 4,
       repeat: -1
     });
 
     this.scene.anims.create({
       key: 'hero_idle_left_animation',
       frames: this.scene.anims.generateFrameNumbers('hero_idle_left', {}),
-      frameRate: 5,
+      frameRate: 4,
       repeat: -1
     });
 
     this.scene.anims.create({
       key: 'hero_idle_right_animation',
       frames: this.scene.anims.generateFrameNumbers('hero_idle_right', {}),
-      frameRate: 5,
+      frameRate: 4,
       repeat: -1
     });
 
