@@ -115,13 +115,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const isLeftPress = this.scene.testKeyboard('left');
 
     if (isRightPress && !isLeftPress) {
-      this.facing.x = 'right';
+      this.facing.x = DirectionAxisX.RIGHT;
 
       this
         .setVelocityX(128)
         .play('hero_walk_right_animation', true);
     } else if (isLeftPress && !isRightPress) {
-      this.facing.x = 'left';
+      this.facing.x = DirectionAxisX.LEFT;
 
       this
         .setVelocityX(-128)
