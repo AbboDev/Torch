@@ -28,4 +28,14 @@ export class ControlScene extends Phaser.Scene {
       .keyboard
       .checkDown(input as Phaser.Input.Keyboard.Key, duration);
   }
+
+  getKeyDuration(key: string): number {
+    const input: boolean | Phaser.Input.Keyboard.Key = this.getKey(key);
+
+    if (!input) {
+      return 0;
+    }
+
+    return (input as Phaser.Input.Keyboard.Key).getDuration();
+  }
 }
