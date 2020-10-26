@@ -161,8 +161,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   public update(): void {
+    // Handle all the movement along the x axis
     this.walk();
+
+    // Handle all the movement along the y axis
     this.jump();
+
+    // Change the current animation based on previous operations
+    this.animate();
   }
 
   protected walk(): void {
@@ -172,19 +178,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (isRightPress && !isLeftPress) {
       this.facing.x = DirectionAxisX.RIGHT;
 
-      this
-        .setVelocityX(128)
-        .play('hero_walk_right_animation', true);
+      this.setVelocityX(128);
     } else if (isLeftPress && !isRightPress) {
       this.facing.x = DirectionAxisX.LEFT;
 
-      this
-        .setVelocityX(-128)
-        .play('hero_walk_left_animation', true);
+      this.setVelocityX(-128);
     } else {
-      this
-        .setVelocityX(0)
-        .play(`hero_idle_${this.facing.x}_animation`, true);
+      this.setVelocityX(0);
     }
   }
 
@@ -249,11 +249,18 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
   }
 
-  public getJumpSpeed() {
+  protected animate(): void {
+    const isRunning = this.body.velocity.x != 0;
+    const animation = isRunning ? 'walk' : 'idle';
+
+    this.play(`hero_${animation}_${this.facing.x}_animation`, true);
+  }
+
+  public getJumpSpeed(): number {
     return -this.scene.getWorldGravity().y / 2 * this.getJumpSpeedMultiplier();
   }
 
-  public getJumpSpeedMultiplier() {
+  public getJumpSpeedMultiplier(): number {
     return this.hasHighJumpAbility
       ? Player.HIGH_JUMP_SPEED_MULTIPLIER
       : Player.JUMP_SPEED_MULTIPLIER;
