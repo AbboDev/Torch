@@ -7,6 +7,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   private facing: Facing;
   private isJumping = false;
+  private isFalling = false;
 
   constructor(
     public scene: ControlScene,
@@ -111,8 +112,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   protected walk(): void {
-    const isRightPress = this.scene.testKeyboard('right');
-    const isLeftPress = this.scene.testKeyboard('left');
+    const isRightPress = this.scene.isKeyPress('right');
+    const isLeftPress = this.scene.isKeyPress('left');
 
     if (isRightPress && !isLeftPress) {
       this.facing.x = DirectionAxisX.RIGHT;
@@ -134,13 +135,24 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   protected jump(): void {
-    if (this.body.onFloor()) {
-      this.isJumping = false;
+    const isJumpPress = this.scene.isKeyPress('a');
+    this.isFalling = this.body.velocity.y > 0;
 
-      if (this.scene.testKeyboard('a')) {
-        this.isJumping = true;
-        this.setVelocityY(-256);
-      }
+    if (isJumpPress && this.body.onFloor()) {
+      this.isJumping = true;
+      this.body.velocity.y = -(256 * 1.25);
+    } else if (this.body.onFloor()) {
+      this.isFalling = false;
+      this.isJumping = false;
+    }
+
+    if (this.body.velocity.y > 0) {
+      this.isFalling = true;
+      this.isJumping = false;
+    }
+
+    if (this.body.velocity.y < 0 && !isJumpPress) {
+      this.body.velocity.y = Math.max(this.body.velocity.y, 0);
     }
   }
 }

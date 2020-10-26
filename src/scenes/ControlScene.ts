@@ -7,16 +7,25 @@ export class ControlScene extends Phaser.Scene {
     this.control = new Control(this);
   }
 
-  testKeyboard(key: string): boolean {
+  getKey(key: string): boolean | Phaser.Input.Keyboard.Key {
     key = key.charAt(0).toUpperCase() + key.slice(1);
-    console.log(key);
 
     if (!this.control.hasOwnProperty(`key${key}`)) {
       return false;
     }
 
+    return this.control[`key${key}` as keyof Control];
+  }
+
+  isKeyPress(key: string, duration?: number): boolean  {
+    const input: boolean | Phaser.Input.Keyboard.Key = this.getKey(key);
+
+    if (!input) {
+      return false;
+    }
+
     return this.input
       .keyboard
-      .checkDown(this.control[`key${key}` as keyof Control]);
+      .checkDown(input as Phaser.Input.Keyboard.Key, duration);
   }
 }
