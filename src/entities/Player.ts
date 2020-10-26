@@ -28,16 +28,24 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    * @type {Boolean}
    */
   private hasDoubleJump = true;
+
   /**
    * The Player can now perform the double jump
    * @type {Boolean}
    */
   private canDoubleJump = false;
+
   /**
    * The Player had actually performed the double jump
    * @type {Boolean}
    */
   private hasDoneDoubleJump = false;
+
+  /**
+   * Check if the user had previously performed a jump without release the key
+   * @type {Boolean}
+   */
+  private isPressingJump = false;
 
   constructor(
     public scene: ControlScene,
@@ -168,8 +176,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     // If the user is pressing jump button
     if (isJumpPress) {
-      // If the Player is touching the floor
-      if (this.body.onFloor()) {
+      // If the Player is touching the floor and the key has been release
+      if (this.body.onFloor() && !this.isPressingJump) {
         // The Player is actually jumping
         this.isJumping = true;
 
@@ -197,6 +205,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.canDoubleJump = false;
       this.hasDoneDoubleJump = false;
     }
+
+    // Check if the user is actually holding the key
+    this.isPressingJump = isJumpPress;
 
     // Detect if the Player is falling by checking if his y speed is positive
     if (this.body.velocity.y > 0) {
