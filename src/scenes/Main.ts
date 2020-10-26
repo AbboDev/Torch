@@ -37,7 +37,6 @@ export class Main extends ControlScene {
   }
 
   update(): void {
-    console.log(this.testKeyboard('up'));
     this.hero.update();
   }
 }
