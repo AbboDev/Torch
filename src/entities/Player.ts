@@ -24,12 +24,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private isFalling = false;
 
   /**
-   * The Player has the ability to do the double jump
-   * @type {Boolean}
-   */
-  private hasDoubleJumpAbility = true;
-
-  /**
    * The Player can now perform the double jump
    * @type {Boolean}
    */
@@ -48,22 +42,52 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private isPressingJump = false;
 
   /**
+   * The Player has the ability to do the double jump
+   * @type {Boolean}
+   */
+  private hasDoubleJumpAbility = true;
+
+  /**
    * The Player has the ability to perform an high jump
    * @type {Boolean}
    */
-  private hasHighJumpAbility = true;
+  private hasHighJumpAbility = false;
 
   /**
-   * [JUMP_SPEED_MULTIPLIER description]
+   * The Player has the ability to run quickly
+   * @type {Boolean}
+   */
+  private hasBoostedRunAbility = false;
+
+  /**
+   * Default multiplier of jump speed
    * @type {Number}
    */
   static JUMP_SPEED_MULTIPLIER = 1.25;
 
   /**
-   * [JUMP_SPEED_MULTIPLIER description]
+   * Multiplier of jump speed offers by dedicated powerup
    * @type {Number}
    */
   static HIGH_JUMP_SPEED_MULTIPLIER = 1.5;
+
+  /**
+   * Default multiplier of run speed
+   * @type {Number}
+   */
+  static RUN_SPEED_MULTIPLIER = 0.75;
+
+  /**
+   * Multiplier of run speed offers by dedicated powerup
+   * @type {Number}
+   */
+  static BOOSTED_RUN_SPEED_MULTIPLIER = 1.5;
+
+  /**
+   * The default movement speed based on game gravity
+   * @type {Number}
+   */
+  private baseSpeed: number;
 
   constructor(
     public scene: ControlScene,
@@ -76,6 +100,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       y: DirectionAxisY.MIDDLE,
       x: DirectionAxisX.CENTER,
     }
+
+    this.baseSpeed = this.scene.getWorldGravity().y / 2;
 
     this.create();
   }
@@ -116,13 +142,23 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   protected create(): void {
     this.scene.physics.world.enableBody(this);
-    this.body.setAllowGravity(true);
     this.scene.add.existing(this);
 
     this
       .setOrigin(0, 0)
       .setCollideWorldBounds(true)
-      .setBounce(0);
+      .setBounce(0)
+      .setMaxVelocity(
+        this.getMaxRunSpeed(),
+        this.baseSpeed * Player.HIGH_JUMP_SPEED_MULTIPLIER
+      );
+
+    this.body
+      .setAllowGravity(true)
+      .setAllowDrag(true)
+      .setDragX(0.90);
+
+    this.body.useDamping = true;
 
     this.scene.anims.create({
       key: 'hero_idle_center_animation',
@@ -178,13 +214,19 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (isRightPress && !isLeftPress) {
       this.facing.x = DirectionAxisX.RIGHT;
 
-      this.setVelocityX(128);
+      this.setAccelerationX(this.getRunSpeed());
     } else if (isLeftPress && !isRightPress) {
       this.facing.x = DirectionAxisX.LEFT;
 
-      this.setVelocityX(-128);
+      this.setAccelerationX(-this.getRunSpeed());
     } else {
-      this.setVelocityX(0);
+      this.setAccelerationX(0);
+
+      // Simulate a little slide onto the floor for a bit
+      // and stop it if match certain X speed
+      if (Math.abs(this.body.velocity.x) < (this.baseSpeed / 20)) {
+        this.setVelocityX(0);
+      }
     }
   }
 
@@ -257,12 +299,26 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   public getJumpSpeed(): number {
-    return -this.scene.getWorldGravity().y / 2 * this.getJumpSpeedMultiplier();
+    return -this.baseSpeed * this.getJumpSpeedMultiplier();
   }
 
   public getJumpSpeedMultiplier(): number {
     return this.hasHighJumpAbility
       ? Player.HIGH_JUMP_SPEED_MULTIPLIER
       : Player.JUMP_SPEED_MULTIPLIER;
+  }
+
+  public getRunSpeed(): number {
+    return this.baseSpeed * 2;
+  }
+
+  public getMaxRunSpeed(): number {
+    return this.baseSpeed * this.getRunSpeedMultiplier();
+  }
+
+  public getRunSpeedMultiplier(): number {
+    return this.hasBoostedRunAbility
+      ? Player.BOOSTED_RUN_SPEED_MULTIPLIER
+      : Player.RUN_SPEED_MULTIPLIER;
   }
 }
