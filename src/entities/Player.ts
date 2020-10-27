@@ -207,6 +207,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.animate();
   }
 
+  /**
+   * Handle all the movement along the x axis
+   */
   protected walk(): void {
     const isRightPress = this.scene.isKeyPress('right');
     const isLeftPress = this.scene.isKeyPress('left');
@@ -230,6 +233,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
   }
 
+  /**
+   * Handle all the movement along the y axis
+   */
   protected jump(): void {
     // Test if the user is pressing the button 'A'
     const isJumpPress = this.scene.isKeyPress('a');
@@ -291,6 +297,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
   }
 
+  /**
+   * Change the current animation based on previous operations
+   */
   protected animate(): void {
     const isRunning = this.body.velocity.x != 0;
     const animation = isRunning ? 'walk' : 'idle';
