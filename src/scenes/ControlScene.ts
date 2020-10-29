@@ -1,4 +1,4 @@
-import { Controller } from '../miscellaneous/Controller';
+import { Controller, ControllerKey } from '../miscellaneous/Controller';
 
 export class ControlScene extends Phaser.Scene {
   protected control!: Controller;
@@ -7,17 +7,15 @@ export class ControlScene extends Phaser.Scene {
     this.control = new Controller(this);
   }
 
-  getKey(key: string): boolean | Phaser.Input.Keyboard.Key {
-    key = key.charAt(0).toUpperCase() + key.slice(1);
-
-    if (!this.control.hasOwnProperty(`key${key}`)) {
+  getKey(key: ControllerKey): boolean | Phaser.Input.Keyboard.Key {
+    if (!Object.values(ControllerKey).includes(key)) {
       return false;
     }
 
     return this.control[`key${key}` as keyof Controller];
   }
 
-  isKeyPress(key: string, duration?: number): boolean  {
+  isKeyPress(key: ControllerKey, duration?: number): boolean  {
     const input: boolean | Phaser.Input.Keyboard.Key = this.getKey(key);
 
     if (!input) {
@@ -29,7 +27,7 @@ export class ControlScene extends Phaser.Scene {
       .checkDown(input as Phaser.Input.Keyboard.Key, duration);
   }
 
-  getKeyDuration(key: string): number {
+  getKeyDuration(key: ControllerKey): number {
     const input: boolean | Phaser.Input.Keyboard.Key = this.getKey(key);
 
     if (!input) {

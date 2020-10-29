@@ -1,5 +1,6 @@
 import { Facing } from '../miscellaneous/Facing';
 import { DirectionAxisY, DirectionAxisX } from '../miscellaneous/Direction';
+import { ControllerKey } from '../miscellaneous/Controller';
 import { ControlScene } from '../scenes/ControlScene';
 
 export class Player extends Phaser.Physics.Arcade.Sprite {
@@ -241,8 +242,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    * Handle all the movement along the x axis
    */
   protected walk(): void {
-    const isRightPress = this.scene.isKeyPress('right');
-    const isLeftPress = this.scene.isKeyPress('left');
+    const isRightPress = this.scene.isKeyPress(ControllerKey.RIGHT);
+    const isLeftPress = this.scene.isKeyPress(ControllerKey.LEFT);
 
     if (isRightPress && !isLeftPress) {
       this.facing.x = DirectionAxisX.RIGHT;
@@ -268,7 +269,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    */
   protected jump(): void {
     // Test if the user is pressing the button 'A'
-    const isJumpPress = this.scene.isKeyPress('a');
+    const isJumpPress = this.scene.isKeyPress(ControllerKey.A);
 
     // First check if Player has unlocked wall jump
     if (this.hasWallJumpAbility) {
@@ -291,13 +292,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             // The Player is touching a wall on left
             walls[0].overlapX < 0
             // The user is moving on the opposite side of wall (right)
-            && this.scene.isKeyPress('right')) {
+            && this.scene.isKeyPress(ControllerKey.RIGHT)) {
             sign = 1;
           } else if (
             // The Player is touching a wall on right
             walls[0].overlapX > 0
             // The user is moving on the opposite side of wall (left)
-            && this.scene.isKeyPress('left')) {
+            && this.scene.isKeyPress(ControllerKey.LEFT)) {
             sign = -1;
           }
 

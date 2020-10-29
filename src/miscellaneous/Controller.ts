@@ -37,3 +37,18 @@ export class Controller {
     this.keySelect = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
   }
 }
+
+export enum ControllerKey {
+  UP = 'Up',
+  DOWN = 'Down',
+  LEFT = 'Left',
+  RIGHT = 'Right',
+  A = 'A',
+  B = 'B',
+  X = 'X',
+  Y = 'Y',
+  L = 'L',
+  R = 'R',
+  START = 'Start',
+  SELECT = 'Select',
+}
