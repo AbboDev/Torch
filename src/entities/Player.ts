@@ -142,9 +142,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   protected create(): void {
     this.scene.physics.world.enableBody(this);
-    this.scene.add.existing(this);
 
     this
+      .setDepth(2)
       .setOrigin(0, 0)
       .setCollideWorldBounds(true)
       .setBounce(0)
@@ -159,6 +159,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       .setDragX(0.90);
 
     this.body.useDamping = true;
+
+    this.scene.add.existing(this);
 
     this.scene.anims.create({
       key: 'hero_idle_center_animation',
