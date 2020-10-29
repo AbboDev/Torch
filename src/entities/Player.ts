@@ -3,6 +3,10 @@ import { DirectionAxisY, DirectionAxisX } from '../miscellaneous/Direction';
 import { ControlScene } from '../scenes/ControlScene';
 
 export class Player extends Phaser.Physics.Arcade.Sprite {
+  /**
+   * The Player Phaser body
+   * @type {[type]}
+   */
   public body!: Phaser.Physics.Arcade.Body;
 
   /**
