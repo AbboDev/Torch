@@ -40,6 +40,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private hasDoneDoubleJump = false;
 
   /**
+   * The Player can now perform a wall jump
+   * @type {Boolean}
+   */
+  private canWallJump = false;
+
+  /**
    * Check if the user had previously performed a jump without release the key
    * @type {Boolean}
    */
@@ -55,7 +61,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    * The Player has the ability to perform an high jump
    * @type {Boolean}
    */
-  private hasHighJumpAbility = false;
+  private hasHighJumpAbility = true;
+
+  /**
+   * The Player has the ability to perform a wall jump
+   * @type {Boolean}
+   */
+  private hasWallJumpAbility = true;
 
   /**
    * The Player has the ability to run quickly
@@ -67,7 +79,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    * Default multiplier of jump speed
    * @type {Number}
    */
-  static JUMP_SPEED_MULTIPLIER = 1.25;
+  static JUMP_SPEED_MULTIPLIER = 1.2;
+
+  /**
+   * Multiplier of jump speed offers by dedicated powerup
+   * @type {Number}
+   */
+  static WALL_JUMP_SPEED_MULTIPLIER = 1.3;
 
   /**
    * Multiplier of jump speed offers by dedicated powerup
@@ -86,6 +104,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    * @type {Number}
    */
   static BOOSTED_RUN_SPEED_MULTIPLIER = 1.5;
+
+  /**
+   * Multiplier of run speed offers by dedicated powerup
+   * @type {Number}
+   */
+  static WALL_DETECTION_DISTANCE = 6;
 
   /**
    * The default movement speed based on game gravity
@@ -246,6 +270,49 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // Test if the user is pressing the button 'A'
     const isJumpPress = this.scene.isKeyPress('a');
 
+    // First check if Player has unlocked wall jump
+    if (this.hasWallJumpAbility) {
+      // Test if the Player is near walls
+      const walls = this.isTouchingWalls(
+        Player.WALL_DETECTION_DISTANCE,
+        this.height / 2
+      );
+
+      // Perform wall jump only if the Player,
+      // is not on the ground and is touching at least one wall
+      this.canWallJump = (!this.body.onFloor() && walls.length > 0);
+
+      if (this.canWallJump) {
+        // The user have to press again the jump key to perform the action
+        if (!this.isPressingJump && isJumpPress) {
+          let sign = 0;
+
+          if (
+            // The Player is touching a wall on left
+            walls[0].overlapX < 0
+            // The user is moving on the opposite side of wall (right)
+            && this.scene.isKeyPress('right')) {
+            sign = 1;
+          } else if (
+            // The Player is touching a wall on right
+            walls[0].overlapX > 0
+            // The user is moving on the opposite side of wall (left)
+            && this.scene.isKeyPress('left')) {
+            sign = -1;
+          }
+
+          // Test if both the actions are corrects
+          if (sign !== 0) {
+            // Then push the player on the opposite side of wall and to the ceil
+            this.setVelocity(
+              this.getJumpSpeed(false) * 2 * sign,
+              this.getJumpSpeed()
+            );
+          }
+        }
+      }
+    }
+
     // If the user is pressing jump button
     if (isJumpPress) {
       // If the Player is touching the floor and the key has been release
@@ -313,14 +380,25 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.play(`hero_${animation}_${this.facing.x}_animation`, true);
   }
 
-  public getJumpSpeed(): number {
-    return -this.baseSpeed * this.getJumpSpeedMultiplier();
+  public getJumpSpeed(applyMultlipier = true): number {
+    return -this.baseSpeed
+      * (applyMultlipier ? this.getJumpSpeedMultiplier() : 1);
   }
 
-  public getJumpSpeedMultiplier(): number {
-    return this.hasHighJumpAbility
-      ? Player.HIGH_JUMP_SPEED_MULTIPLIER
-      : Player.JUMP_SPEED_MULTIPLIER;
+  protected getJumpSpeedMultiplier(): number {
+    if (this.hasWallJumpAbility && this.canWallJump) {
+      return Player.WALL_JUMP_SPEED_MULTIPLIER;
+    }
+
+    if (this.hasDoubleJumpAbility && this.canDoubleJump) {
+      return Player.JUMP_SPEED_MULTIPLIER;
+    }
+
+    if (this.hasHighJumpAbility) {
+      return Player.HIGH_JUMP_SPEED_MULTIPLIER;
+    }
+
+    return Player.JUMP_SPEED_MULTIPLIER;
   }
 
   public getRunSpeed(): number {
@@ -335,5 +413,24 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     return this.hasBoostedRunAbility
       ? Player.BOOSTED_RUN_SPEED_MULTIPLIER
       : Player.RUN_SPEED_MULTIPLIER;
+  }
+
+  public isTouchingWalls(
+    distance?: number,
+    height?: number
+  ): Phaser.Physics.Arcade.StaticBody[] {
+    distance = distance || 0;
+    height = height || this.height;
+
+    const walls = this.scene.physics.overlapRect(
+      this.body.position.x - distance,
+      this.body.position.y - this.height / 2,
+      this.width + (distance * 2),
+      height,
+      false,
+      true
+    );
+
+    return walls as Phaser.Physics.Arcade.StaticBody[];
   }
 }
