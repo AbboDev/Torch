@@ -1,10 +1,10 @@
-import { Control } from '../miscellaneous/Control';
+import { Controller } from '../miscellaneous/Controller';
 
 export class ControlScene extends Phaser.Scene {
-  protected control!: Control;
+  protected control!: Controller;
 
   create(): void {
-    this.control = new Control(this);
+    this.control = new Controller(this);
   }
 
   getKey(key: string): boolean | Phaser.Input.Keyboard.Key {
@@ -14,7 +14,7 @@ export class ControlScene extends Phaser.Scene {
       return false;
     }
 
-    return this.control[`key${key}` as keyof Control];
+    return this.control[`key${key}` as keyof Controller];
   }
 
   isKeyPress(key: string, duration?: number): boolean  {

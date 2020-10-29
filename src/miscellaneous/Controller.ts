@@ -1,4 +1,4 @@
-export class Control {
+export class Controller {
   private keyUp: Phaser.Input.Keyboard.Key;
   private keyDown: Phaser.Input.Keyboard.Key;
   private keyLeft: Phaser.Input.Keyboard.Key;
