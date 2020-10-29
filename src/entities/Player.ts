@@ -197,11 +197,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   public update(): void {
-    // Handle all the movement along the x axis
-    this.walk();
-
     // Handle all the movement along the y axis
     this.jump();
+
+    // Handle all the movement along the x axis
+    this.walk();
 
     // Change the current animation based on previous operations
     this.animate();
