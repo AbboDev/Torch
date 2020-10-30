@@ -47,6 +47,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private canWallJump = false;
 
   /**
+   * The Player had actually performed the wall jump
+   * @type {Boolean}
+   */
+  private hasDoneWallJump = false;
+
+  /**
    * Check if the user had previously performed a jump without release the key
    * @type {Boolean}
    */
@@ -56,7 +62,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    * The Player has the ability to do the double jump
    * @type {Boolean}
    */
-  private hasDoubleJumpAbility = true;
+  private hasDoubleJumpAbility = false;
 
   /**
    * The Player has the ability to perform an high jump
@@ -282,6 +288,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       // Perform wall jump only if the Player,
       // is not on the ground and is touching at least one wall
       this.canWallJump = (!this.body.onFloor() && walls.length > 0);
+      this.hasDoneWallJump = false;
 
       if (this.canWallJump) {
         // The user have to press again the jump key to perform the action
@@ -304,9 +311,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
           // Test if both the actions are corrects
           if (sign !== 0) {
+            this.hasDoneWallJump = true;
             // Then push the player on the opposite side of wall and to the ceil
             this.setVelocity(
-              this.getJumpSpeed(false) * 2 * sign,
+              Math.abs(this.getJumpSpeed(false)) * 2 * sign,
               this.getJumpSpeed()
             );
           }
