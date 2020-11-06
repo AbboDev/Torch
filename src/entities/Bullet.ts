@@ -17,7 +17,13 @@ export class Bullet extends Phaser.Physics.Arcade.Sprite {
   ) {
     super(scene, x, y, 'bullet');
 
-    this.create();
+    this.scene.add.existing(this);
+    this.scene.physics.world.enable(this);
+
+    this
+      .setDepth(1)
+      .setOrigin(0, 0)
+      .setBounce(0);
   }
 
   public static preload(scene: Phaser.Scene): void {
@@ -32,16 +38,6 @@ export class Bullet extends Phaser.Physics.Arcade.Sprite {
         '/assets/sprites/bullet.png',
         spriteSize
       );
-  }
-
-  protected create(): void {
-    this.scene.add.existing(this);
-    this.scene.physics.world.enable(this);
-
-    this
-      .setDepth(1)
-      .setOrigin(0, 0)
-      .setBounce(0);
   }
 
   public fire(x: number, y: number): void {

@@ -1,4 +1,6 @@
 import { config } from '../config/preload';
+import { Player } from '../entities/Player';
+import { Bullet } from '../entities/Bullet';
 
 export class Preloader extends Phaser.Scene {
   constructor() {
@@ -32,6 +34,7 @@ export class Preloader extends Phaser.Scene {
       y: bar.y - (bar.height / 2),
       add: false
     });
+
     mask.fillRect(0, 0, 0, bar.height);
 
     bar.mask = new Phaser.Display.Masks.GeometryMask(this, mask);
@@ -42,33 +45,14 @@ export class Preloader extends Phaser.Scene {
     });
 
     // load assets declared in the preload config
-    this.loadAtlas();
-    this.loadAudio();
+
+    Player.preload(this);
+    Bullet.preload(this);
   }
 
   create() {
+    Player.create(this);
+
     this.scene.start('main');
-  }
-
-  loadAtlas() {
-    const sheetPath = config.ssPath;
-    const sheets = config.sheets;
-
-    this.load.setPath(sheetPath);
-
-    for (let i = 0; i < sheets.length; i++) {
-      this.load.atlas(sheets[i], `${sheets[i]}.png`, `${sheets[i]}.json`);
-    }
-  }
-
-  loadAudio() {
-    const audioPath = config.audioPath;
-    const audioFiles = config.audioFiles;
-
-    this.load.setPath(audioPath);
-
-    for (let i = 0; i < audioFiles.length; i++) {
-      this.load.audio(audioFiles[i].key, audioFiles[i].mp3, audioFiles[i].ogg);
-    }
   }
 }

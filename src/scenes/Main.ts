@@ -1,10 +1,5 @@
-const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {
-  active: true,
-  visible: true,
-  key: 'Game',
-};
-
 import { Player } from '../entities/Player';
+import { TilesSize } from '../config/Tiles';
 import { ControlScene } from './ControlScene';
 
 export class Main extends ControlScene {
@@ -13,13 +8,15 @@ export class Main extends ControlScene {
   private blocks!: Phaser.Physics.Arcade.StaticGroup;
 
   constructor() {
-    super(sceneConfig);
+    super({
+      active: false,
+      visible: false,
+      key: 'main',
+    });
   }
 
   preload(): void {
     this.load.image('big', '/assets/sprites/tilemap.png');
-
-    Player.preload(this);
   }
 
   create(): void {
@@ -53,7 +50,7 @@ export class Main extends ControlScene {
 
     const walls = this.physics.add.staticGroup([wallLeft, wallRight]);
 
-    this.hero = new Player(this, 32, this.sys.game.canvas.height - 64);
+    this.hero = new Player(this, TilesSize * 2, this.sys.game.canvas.height);
 
     this.physics.world.addCollider(this.hero, walls);
   }

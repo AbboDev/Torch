@@ -152,7 +152,27 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     this.baseSpeed = this.scene.getWorldGravity().y / 2;
 
-    this.create();
+    this.scene.add.existing(this);
+    this.scene.physics.world.enable(this);
+
+    this
+      .setDepth(2)
+      .setOrigin(0, 0)
+      .setCollideWorldBounds(true)
+      .setBounce(0)
+      .setMaxVelocity(
+        this.getMaxRunSpeed(),
+        this.baseSpeed * Player.HIGH_JUMP_SPEED_MULTIPLIER
+      );
+
+    this.body
+      .setAllowGravity(true)
+      .setAllowDrag(true)
+      .setDragX(0.90);
+
+    this.body.useDamping = true;
+
+    this.bullets = new Bullets(this.scene);
   }
 
   public static preload(scene: Phaser.Scene): void {
@@ -187,65 +207,40 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         '/assets/sprites/hero_walk_right.png',
         spriteSize
       );
-
-    Bullet.preload(scene);
   }
 
-  protected create(): void {
-    this.scene.physics.world.enableBody(this);
-
-    this
-      .setDepth(2)
-      .setOrigin(0, 0)
-      .setCollideWorldBounds(true)
-      .setBounce(0)
-      .setMaxVelocity(
-        this.getMaxRunSpeed(),
-        this.baseSpeed * Player.HIGH_JUMP_SPEED_MULTIPLIER
-      );
-
-    this.body
-      .setAllowGravity(true)
-      .setAllowDrag(true)
-      .setDragX(0.90);
-
-    this.body.useDamping = true;
-
-    this.scene.add.existing(this);
-
-    this.bullets = new Bullets(this.scene);
-
-    this.scene.anims.create({
+  public static create(scene: Phaser.Scene): void {
+    scene.anims.create({
       key: 'hero_idle_center_animation',
-      frames: this.scene.anims.generateFrameNumbers('hero_idle_center', {}),
+      frames: scene.anims.generateFrameNumbers('hero_idle_center', {}),
       frameRate: 4,
       repeat: -1
     });
 
-    this.scene.anims.create({
+    scene.anims.create({
       key: 'hero_idle_left_animation',
-      frames: this.scene.anims.generateFrameNumbers('hero_idle_left', {}),
+      frames: scene.anims.generateFrameNumbers('hero_idle_left', {}),
       frameRate: 4,
       repeat: -1
     });
 
-    this.scene.anims.create({
+    scene.anims.create({
       key: 'hero_idle_right_animation',
-      frames: this.scene.anims.generateFrameNumbers('hero_idle_right', {}),
+      frames: scene.anims.generateFrameNumbers('hero_idle_right', {}),
       frameRate: 4,
       repeat: -1
     });
 
-    this.scene.anims.create({
+    scene.anims.create({
       key: 'hero_walk_left_animation',
-      frames: this.scene.anims.generateFrameNumbers('hero_walk_left', {}),
+      frames: scene.anims.generateFrameNumbers('hero_walk_left', {}),
       frameRate: 20,
       repeat: -1
     });
 
-    this.scene.anims.create({
+    scene.anims.create({
       key: 'hero_walk_right_animation',
-      frames: this.scene.anims.generateFrameNumbers('hero_walk_right', {}),
+      frames: scene.anims.generateFrameNumbers('hero_walk_right', {}),
       frameRate: 20,
       repeat: -1
     });
