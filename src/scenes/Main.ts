@@ -58,7 +58,7 @@ export class Main extends ControlScene {
     this.physics.world.addCollider(this.hero, walls);
   }
 
-  update(): void {
-    this.hero.update();
+  update(time: any, delta: number): void {
+    this.hero.update(time, delta);
   }
 }

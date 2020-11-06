@@ -2,6 +2,8 @@ import { Facing } from '../miscellaneous/Facing';
 import { DirectionAxisY, DirectionAxisX } from '../miscellaneous/Direction';
 import { ControllerKey } from '../miscellaneous/Controller';
 import { ControlScene } from '../scenes/ControlScene';
+import { Bullets } from './Bullets';
+import { Bullet } from './Bullet';
 
 export class Player extends Phaser.Physics.Arcade.Sprite {
   /**
@@ -9,6 +11,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    * @type {[type]}
    */
   public body!: Phaser.Physics.Arcade.Body;
+
+  /**
+   * The Player Phaser body
+   * @type {[type]}
+   */
+  public bullets!: Bullets;
 
   /**
    * Where the Player is watching
@@ -57,6 +65,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    * @type {Boolean}
    */
   private isPressingJump = false;
+
+  /**
+   * Check if the user had already shot a bullet release the key
+   * @type {Boolean}
+   */
+  private isPressingShot = false;
 
   /**
    * The Player has the ability to do the double jump
@@ -141,7 +155,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.create();
   }
 
-  static preload(scene: Phaser.Scene): void {
+  public static preload(scene: Phaser.Scene): void {
     const spriteSize: Phaser.Types.Loader.FileTypes.ImageFrameConfig = {
       frameWidth: 32,
       frameHeight: 48
@@ -173,6 +187,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         '/assets/sprites/hero_walk_right.png',
         spriteSize
       );
+
+    Bullet.preload(scene);
   }
 
   protected create(): void {
@@ -196,6 +212,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.body.useDamping = true;
 
     this.scene.add.existing(this);
+
+    this.bullets = new Bullets(this.scene);
 
     this.scene.anims.create({
       key: 'hero_idle_center_animation',
@@ -233,15 +251,31 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     });
   }
 
-  public update(): void {
+  public update(time: any, delta: number): void {
     // Handle all the movement along the y axis
     this.jump();
 
     // Handle all the movement along the x axis
     this.walk();
 
+    // Handle all the movement along the x axis
+    this.shoot(time);
+
     // Change the current animation based on previous operations
     this.animate();
+  }
+
+  /**
+   * Handle all the movement along the x axis
+   */
+  protected shoot(time: any): void {
+    const isShootPress = this.scene.isKeyPress(ControllerKey.B);
+
+    if (isShootPress) {
+      this.bullets.fireBullet(time, this.x, this.y);
+    }
+
+    this.isPressingShot = isShootPress;
   }
 
   /**
