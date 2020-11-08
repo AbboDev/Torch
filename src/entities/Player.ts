@@ -1,7 +1,7 @@
 import { Facing, DirectionAxisY, DirectionAxisX } from 'Miscellaneous/Direction';
 import { ControllerKey } from 'Miscellaneous/Controller';
 
-import { Bullets } from 'Entities/Bullets';
+import { Weapon } from 'Entities/Weapon';
 import { BulletConfig } from 'Entities/Bullet';
 
 import { ControlScene } from 'Scenes/ControlScene';
@@ -20,7 +20,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    * The Player Phaser body
    * @type {[type]}
    */
-  public bullets!: Bullets;
+  public weapon!: Weapon;
 
   /**
    * Where the Player is watching
@@ -200,7 +200,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     this.body.useDamping = true;
 
-    this.bullets = new Bullets(this.scene);
+    this.weapon = new Weapon(this.scene);
   }
 
   public static preload(scene: Phaser.Scene): void {
@@ -322,7 +322,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           allowGravity: this.hasBowAbility
         };
 
-        this.bullets.fireBullet(time, config);
+        this.weapon.fireBullet(time, config);
       }
     }
 

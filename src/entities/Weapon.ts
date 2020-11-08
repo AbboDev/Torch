@@ -3,7 +3,7 @@ import { Bullet, BulletConfig } from 'Entities/Bullet';
 
 import { ControlScene } from 'Scenes/ControlScene';
 
-export class Bullets extends Phaser.Physics.Arcade.Group {
+export class Weapon extends Phaser.Physics.Arcade.Group {
   private lastFired = 0;
   private rateOfFire = 0;
 
