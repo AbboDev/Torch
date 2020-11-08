@@ -1,5 +1,4 @@
-import { Facing } from 'Miscellaneous/Facing';
-import { DirectionAxisY, DirectionAxisX } from 'Miscellaneous/Direction';
+import { Facing, DirectionAxisY, DirectionAxisX } from 'Miscellaneous/Direction';
 import { ControllerKey } from 'Miscellaneous/Controller';
 
 import { Bullets } from 'Entities/Bullets';
@@ -9,6 +8,7 @@ import { ControlScene } from 'Scenes/ControlScene';
 
 import { PLAYER_DEPTH } from 'Config/depths';
 import { TILE_SIZE } from 'Config/tiles';
+
 export class Player extends Phaser.Physics.Arcade.Sprite {
   /**
    * The Player Phaser body
