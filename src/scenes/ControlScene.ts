@@ -1,4 +1,4 @@
-import { Controller, ControllerKey } from '../miscellaneous/Controller';
+import { Controller, ControllerKey } from 'Miscellaneous/Controller';
 
 export class ControlScene extends Phaser.Scene {
   protected control!: Controller;

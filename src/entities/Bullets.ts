@@ -1,5 +1,6 @@
-import { ControlScene } from '../scenes/ControlScene';
-import { Bullet } from './Bullet';
+import { Bullet } from 'Entities/Bullet';
+
+import { ControlScene } from 'Scenes/ControlScene';
 
 export class Bullets extends Phaser.Physics.Arcade.Group {
   private lastFired = 0;

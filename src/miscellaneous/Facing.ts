@@ -1,4 +1,4 @@
-import { DirectionAxisY, DirectionAxisX } from './Direction';
+import { DirectionAxisY, DirectionAxisX } from 'Miscellaneous/Direction';
 
 export interface Facing {
   x: null | DirectionAxisX,

@@ -1,9 +1,11 @@
-import { Facing } from '../miscellaneous/Facing';
-import { DirectionAxisY, DirectionAxisX } from '../miscellaneous/Direction';
-import { ControllerKey } from '../miscellaneous/Controller';
-import { ControlScene } from '../scenes/ControlScene';
-import { Bullets } from './Bullets';
-import { Bullet } from './Bullet';
+import { Facing } from 'Miscellaneous/Facing';
+import { DirectionAxisY, DirectionAxisX } from 'Miscellaneous/Direction';
+import { ControllerKey } from 'Miscellaneous/Controller';
+
+import { Bullets } from 'Entities/Bullets';
+import { Bullet } from 'Entities/Bullet';
+
+import { ControlScene } from 'Scenes/ControlScene';
 
 export class Player extends Phaser.Physics.Arcade.Sprite {
   /**

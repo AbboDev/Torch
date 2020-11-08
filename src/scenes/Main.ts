@@ -1,6 +1,6 @@
-import { Player } from '../entities/Player';
-import { TilesSize } from '../config/Tiles';
-import { ControlScene } from './ControlScene';
+import { Player } from 'Entities/Player';
+import { TilesSize } from 'Config/Tiles';
+import { ControlScene } from 'Scenes/ControlScene';
 
 export class Main extends ControlScene {
   private hero!: Player;

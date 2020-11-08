@@ -1,4 +1,4 @@
-import { ControlScene } from '../scenes/ControlScene';
+import { ControlScene } from 'Scenes/ControlScene';
 
 export class Bullet extends Phaser.Physics.Arcade.Sprite {
   /**

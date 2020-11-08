@@ -12,7 +12,15 @@
     ],
     "types": [
       "Phaser"
-    ]
+    ],
+
+    "baseUrl": "./src",
+    "paths": {
+      "Config/*": ["./config/*"],
+      "Entities/*": ["./entities/*"],
+      "Miscellaneous/*": ["./miscellaneous/*"],
+      "Scenes/*": ["./scenes/*"]
+    }
   },
   "include": [
     "./src/**/*"
