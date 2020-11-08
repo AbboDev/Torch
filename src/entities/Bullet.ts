@@ -3,6 +3,14 @@ import { Facing, getSign } from 'Miscellaneous/Direction';
 import { ControlScene } from 'Scenes/ControlScene';
 
 import { BULLET_DEPTH } from 'Config/depths';
+import { TILE_SIZE } from 'Config/tiles';
+
+export interface BulletConfig {
+  position: Phaser.Math.Vector2,
+  facing: Facing,
+  speed?: number,
+  allowGravity?: boolean
+};
 
 export class Bullet extends Phaser.Physics.Arcade.Sprite {
   /**
@@ -16,12 +24,16 @@ export class Bullet extends Phaser.Physics.Arcade.Sprite {
    * @type {Number}
    */
   protected speed = 64;
+  /**
+   * The baseSpeed of the bullet
+   * @type {Number}
+   */
+  protected allowGravity = false;
 
   public constructor(
     public scene: ControlScene,
     public x: number,
-    public y: number,
-    speed: number
+    public y: number
   ) {
     super(scene, x, y, 'bullet');
 
@@ -34,9 +46,6 @@ export class Bullet extends Phaser.Physics.Arcade.Sprite {
       .setBounce(0);
 
     this.body.onWorldBounds = true;
-
-    // If not set, use the default common bullet speed
-    this.speed = speed || this.speed;
   }
 
   public static preload(scene: Phaser.Scene): void {
@@ -53,17 +62,31 @@ export class Bullet extends Phaser.Physics.Arcade.Sprite {
       );
   }
 
-  public fire(facing: Facing, x: number, y: number): void {
+  public fire(config: BulletConfig): void {
+    // If not set, use the default common bullet speed
+    this.speed = config && config.speed
+      ? config.speed
+      : this.speed;
+
+    // If not set, use the default common bullet speed
+    this.allowGravity = config && config.allowGravity
+      ? config.allowGravity
+      : this.allowGravity;
+
     this.body
       // The bullet should not fall
-      .setAllowGravity(false)
+      .setAllowGravity(this.allowGravity)
       // The bullet have to collide with world bounds too
       .setCollideWorldBounds(true);
 
-    const sign = getSign(facing);
+    if (this.allowGravity) {
+      this.setGravityY(-TILE_SIZE * 10);
+    }
+
+    const sign = getSign(config.facing);
 
     this
-      .setPosition(x, y)
+      .setPosition(config.position.x, config.position.y)
       .setVelocity(
         this.speed * 5 * sign.x,
         this.speed * 5 * sign.y

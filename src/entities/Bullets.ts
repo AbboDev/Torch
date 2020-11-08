@@ -1,5 +1,5 @@
 import { Facing } from 'Miscellaneous/Direction';
-import { Bullet } from 'Entities/Bullet';
+import { Bullet, BulletConfig } from 'Entities/Bullet';
 
 import { ControlScene } from 'Scenes/ControlScene';
 
@@ -27,17 +27,12 @@ export class Bullets extends Phaser.Physics.Arcade.Group {
     this.scene.add.existing(this);
   }
 
-  fireBullet(time: any, facing: Facing, x: number | Phaser.Math.Vector2, y?: number) {
+  fireBullet(time: any, config: BulletConfig) {
     if (time > this.lastFired) {
-      if (x instanceof Phaser.Math.Vector2) {
-        y = x.y;
-        x = x;
-      }
-
       let bullet = this.get();
 
       if (bullet) {
-        bullet.fire(facing, x, y);
+        bullet.fire(config);
         this.lastFired = time + this.rateOfFire;
       }
     }
