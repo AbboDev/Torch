@@ -7,6 +7,7 @@ import { Bullet } from 'Entities/Bullet';
 
 import { ControlScene } from 'Scenes/ControlScene';
 
+import { PLAYER_DEPTH } from 'Config/depths';
 export class Player extends Phaser.Physics.Arcade.Sprite {
   /**
    * The Player Phaser body
@@ -158,7 +159,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.scene.physics.world.enable(this);
 
     this
-      .setDepth(2)
+      .setDepth(PLAYER_DEPTH)
       .setOrigin(0, 0)
       .setCollideWorldBounds(true)
       .setBounce(0)

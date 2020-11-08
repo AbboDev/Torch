@@ -1,5 +1,6 @@
 import { ControlScene } from 'Scenes/ControlScene';
 
+import { BULLET_DEPTH } from 'Config/depths';
 export class Bullet extends Phaser.Physics.Arcade.Sprite {
   /**
    * The Player Phaser body
@@ -21,8 +22,8 @@ export class Bullet extends Phaser.Physics.Arcade.Sprite {
     this.scene.physics.world.enable(this);
 
     this
-      .setDepth(1)
       .setOrigin(0, 0)
+      .setDepth(BULLET_DEPTH)
       .setBounce(0);
   }
 
