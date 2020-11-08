@@ -1,6 +1,8 @@
 import { Player } from 'Entities/Player';
-import { TilesSize } from 'Config/Tiles';
+
 import { ControlScene } from 'Scenes/ControlScene';
+
+import { TILE_SIZE } from 'Config/tiles';
 
 export class Main extends ControlScene {
   private hero!: Player;
@@ -50,7 +52,7 @@ export class Main extends ControlScene {
 
     const walls = this.physics.add.staticGroup([wallLeft, wallRight]);
 
-    this.hero = new Player(this, TilesSize * 2, this.sys.game.canvas.height);
+    this.hero = new Player(this, TILE_SIZE * 2, this.sys.game.canvas.height);
 
     this.physics.world.addCollider(this.hero, walls);
   }
