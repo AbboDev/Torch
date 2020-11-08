@@ -1,7 +1,8 @@
 import * as Phaser from 'phaser';
 
-import { Preloader } from './scenes/Preloader';
-import { Main } from './scenes/Main';
+import { Preloader } from 'Scenes/Preloader';
+import { Main } from 'Scenes/Main';
+
 import { TILE_SIZE } from 'Config/tiles';
 
 const config: Phaser.Types.Core.GameConfig = {
