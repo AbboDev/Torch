@@ -71,12 +71,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private isPressingJump = false;
 
   /**
-   * Check if the user had already shot a bullet release the key
-   * @type {Boolean}
-   */
-  private isPressingShot = false;
-
-  /**
    * The Player has the ability to do the double jump
    * @type {Boolean}
    */
@@ -131,10 +125,16 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   static BOOSTED_RUN_SPEED_MULTIPLIER = 1.5;
 
   /**
-   * Multiplier of run speed offers by dedicated powerup
+   * The max distance from wall where the player can yet perform a wall jump
    * @type {Number}
    */
   static WALL_DETECTION_DISTANCE = TILE_SIZE / 2;
+
+  /**
+   * The Y position to subtract from current Y to spawn bullets
+   * @type {Number}
+   */
+  static SHOT_HEIGHT = TILE_SIZE + 2;
 
   /**
    * The default movement speed based on game gravity
@@ -270,11 +270,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   protected shoot(time: any): void {
     const isShootPress = this.scene.isKeyPress(ControllerKey.B);
 
-    if (isShootPress) {
-      this.bullets.fireBullet(time, this.x, this.y);
+    // The user have to press Shot button and the player should not facing front
+    if (isShootPress && this.facing.x !== DirectionAxisX.CENTER) {
+      this.bullets.fireBullet(
+        time,
+        this.facing,
+        this.x + (this.facing.x === DirectionAxisX.RIGHT ? this.width : 0),
+        this.getShotHeight()
+      );
     }
-
-    this.isPressingShot = isShootPress;
   }
 
   /**
@@ -474,5 +478,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     );
 
     return walls as Phaser.Physics.Arcade.StaticBody[];
+  }
+
+  /**
+   * Calculate the y coordinate where the bullet should spaw
+   *
+   * @return {number} The calculated Y coordinate
+   */
+  public getShotHeight(): number {
+    return this.y + Player.SHOT_HEIGHT;
   }
 }
