@@ -8,6 +8,7 @@ import { Bullet } from 'Entities/Bullet';
 import { ControlScene } from 'Scenes/ControlScene';
 
 import { PLAYER_DEPTH } from 'Config/depths';
+import { TILE_SIZE } from 'Config/tiles';
 export class Player extends Phaser.Physics.Arcade.Sprite {
   /**
    * The Player Phaser body
@@ -133,7 +134,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    * Multiplier of run speed offers by dedicated powerup
    * @type {Number}
    */
-  static WALL_DETECTION_DISTANCE = 6;
+  static WALL_DETECTION_DISTANCE = TILE_SIZE / 2;
 
   /**
    * The default movement speed based on game gravity

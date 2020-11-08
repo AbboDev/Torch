@@ -2,7 +2,7 @@ import * as Phaser from 'phaser';
 
 import { Preloader } from './scenes/Preloader';
 import { Main } from './scenes/Main';
-import { TilesSize } from './config/Tiles';
+import { TILE_SIZE } from 'Config/tiles';
 
 const config: Phaser.Types.Core.GameConfig = {
   title: 'Torch',
@@ -25,7 +25,7 @@ const config: Phaser.Types.Core.GameConfig = {
     arcade: {
       debug: true,
       gravity: {
-        y: TilesSize * 32
+        y: TILE_SIZE * 32
       }
     }
   }
