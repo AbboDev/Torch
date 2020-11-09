@@ -1,6 +1,6 @@
 import { config } from 'Config/preload';
 import { Player } from 'Entities/Player';
-import { Bullet } from 'Entities/Bullet';
+import { Bullet } from 'Entities/Bullets/Bullet';
 
 export class Preloader extends Phaser.Scene {
   constructor() {

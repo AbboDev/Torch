@@ -1,8 +1,8 @@
 import { Facing, DirectionAxisY, DirectionAxisX } from 'Miscellaneous/Direction';
 import { ControllerKey } from 'Miscellaneous/Controller';
 
-import { Weapon } from 'Entities/Weapon';
-import { BulletConfig } from 'Entities/Bullet';
+import { Weapon } from 'Entities/Weapons/Weapon';
+import { BulletConfig } from 'Entities/Bullets/Bullet';
 
 import { ControlScene } from 'Scenes/ControlScene';
 

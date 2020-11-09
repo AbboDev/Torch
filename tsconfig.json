@@ -17,6 +17,8 @@
     "baseUrl": "./src",
     "paths": {
       "Config/*": ["./config/*"],
+      "Entities/Bullets/*": ["./entities/bullets/*"],
+      "Entities/Weapons/*": ["./entities/weapons/*"],
       "Entities/*": ["./entities/*"],
       "Miscellaneous/*": ["./miscellaneous/*"],
       "Scenes/*": ["./scenes/*"]
