@@ -1,5 +1,7 @@
 import { Player } from 'Entities/Player';
 
+import { ControllerKey } from 'Miscellaneous/Controller';
+
 import { ControlScene } from 'Scenes/ControlScene';
 
 import { TILE_SIZE } from 'Config/tiles';
@@ -59,5 +61,18 @@ export class Main extends ControlScene {
 
   update(time: any, delta: number): void {
     this.hero.update(time, delta);
+
+    if (this.getController().isKeyPressFirstTime(ControllerKey.DEBUG)) {
+      if (typeof this.physics.world.debugGraphic === 'undefined') {
+        this.physics.world.createDebugGraphic();
+        this.physics.world.drawDebug = true;
+      } else {
+        this.physics.world.drawDebug = !this.physics.world.drawDebug;
+      }
+
+      if (!this.physics.world.drawDebug) {
+        this.physics.world.debugGraphic.clear();
+      }
+    }
   }
 }
