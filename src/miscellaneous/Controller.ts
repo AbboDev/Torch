@@ -120,6 +120,13 @@ export class Controller {
       });
   }
 
+  /**
+   * Retrive the key if exist from symbolic string, otherwise return false
+   *
+   * @param  {ControllerKey} key The requested key
+   *
+   * @return {boolean|Key}       The requested Key or false if not found
+   */
   public getKey(key: ControllerKey): boolean | Phaser.Input.Keyboard.Key {
     if (!Object.values(ControllerKey).includes(key)) {
       return false;
@@ -134,7 +141,15 @@ export class Controller {
     return false;
   }
 
-  public isKeyPress(key: ControllerKey, duration?: number): boolean {
+  /**
+   * Test if the requested key is currently press
+   *
+   * @param  {ControllerKey} key      The requested key
+   * @param  {number}        duration Eventualy test the duration of press
+   *
+   * @return {boolean}                The check if the key is press or not
+   */
+  public isKeyPressed(key: ControllerKey, duration?: number): boolean {
     const input: boolean | Phaser.Input.Keyboard.Key = this.getKey(key);
 
     if (!input) {
@@ -151,7 +166,15 @@ export class Controller {
     }
   }
 
-  public isKeyPressFirstTime(key: ControllerKey): boolean {
+  /**
+   * Test if the requested key is been pressed before
+   * If not, then set it as pressed and return true
+   *
+   * @param  {ControllerKey} key The requested key
+   *
+   * @return {boolean}           The check if the key was not hold before
+   */
+  public isKeyPressedForFirstTime(key: ControllerKey): boolean {
     const input: boolean | Phaser.Input.Keyboard.Key = this.getKey(key);
 
     if (!input) {
@@ -164,7 +187,7 @@ export class Controller {
       return false;
     }
 
-    if (!this.isKeyPress(key)) {
+    if (!this.isKeyPressed(key)) {
       return false;
     }
 
@@ -174,9 +197,16 @@ export class Controller {
       (this[stringKey] as boolean) = true;
     }
 
-    return this.isKeyPress(key) && currentValue === false;
+    return this.isKeyPressed(key) && currentValue === false;
   }
 
+  /**
+   * Return the current press duration of a key
+   *
+   * @param  {ControllerKey} key The requested key
+   *
+   * @return {number}            The amount of time the key has been pressed
+   */
   public getKeyDuration(key: ControllerKey): number {
     const input: boolean | Phaser.Input.Keyboard.Key = this.getKey(key);
 

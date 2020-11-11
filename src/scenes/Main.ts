@@ -62,7 +62,7 @@ export class Main extends ControlScene {
   update(time: any, delta: number): void {
     this.hero.update(time, delta);
 
-    if (this.getController().isKeyPressFirstTime(ControllerKey.DEBUG)) {
+    if (this.getController().isKeyPressedForFirstTime(ControllerKey.DEBUG)) {
       if (typeof this.physics.world.debugGraphic === 'undefined') {
         this.physics.world.createDebugGraphic();
         this.physics.world.drawDebug = true;
