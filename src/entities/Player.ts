@@ -1,6 +1,9 @@
 import { Facing, DirectionAxisY, DirectionAxisX } from 'Miscellaneous/Direction';
 import { ControllerKey } from 'Miscellaneous/Controller';
 
+import { Gun } from 'Entities/Weapons/Gun';
+import { Bow } from 'Entities/Weapons/Bow';
+import { Rifle } from 'Entities/Weapons/Rifle';
 import { Weapon } from 'Entities/Weapons/Weapon';
 import { BulletConfig } from 'Entities/Bullets/Bullet';
 
@@ -12,15 +15,27 @@ import { TILE_SIZE } from 'Config/tiles';
 export class Player extends Phaser.Physics.Arcade.Sprite {
   /**
    * The Player Phaser body
-   * @type {[type]}
+   * @type {Phaser.Physics.Arcade.Body}
    */
   public body!: Phaser.Physics.Arcade.Body;
 
   /**
-   * The Player Phaser body
-   * @type {[type]}
+   * The Gun associated to Player
+   * @type {Gun}
    */
-  public weapon!: Weapon;
+  public gun!: Gun;
+
+  /**
+   * The Rifle associated to Player
+   * @type {Rifle}
+   */
+  public rifle!: Rifle;
+
+  /**
+   * The Rifle associated to Player
+   * @type {Bow}
+   */
+  public bow!: Bow;
 
   /**
    * Where the Player is watching
@@ -200,7 +215,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     this.body.useDamping = true;
 
-    this.weapon = new Weapon(this.scene);
+    this.gun = new Gun(this.scene);
+    this.rifle = new Rifle(this.scene);
+    this.bow = new Bow(this.scene);
   }
 
   public static preload(scene: Phaser.Scene): void {
@@ -295,34 +312,38 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    * Handle all the movement along the x axis
    */
   protected shoot(time: any): void {
+    if (!this.isPressingShot) {
+      this.gun.canShoot();
+      this.bow.canShoot();
+      this.rifle.canShoot();
+    }
+
     const isShootPress: boolean = this.scene.isKeyPress(ControllerKey.B);
 
     // The user have to press Shot button and the player should not facing front
     if (isShootPress && this.facing.x !== DirectionAxisX.CENTER) {
-      const isSingle = (this.hasGunAbility || this.hasBowAbility);
-
       // Test which weapon the player has and if is single or with rateo
-      if (!isSingle || isSingle && !this.isPressingShot) {
-        const bulletPosition = new Phaser.Math.Vector2(
-          this.x + (this.facing.x === DirectionAxisX.RIGHT ? this.width : 0),
-          this.getShotHeight()
-        );
+      const bulletPosition = new Phaser.Math.Vector2(
+        this.x + (this.facing.x === DirectionAxisX.RIGHT ? this.width : 0),
+        this.getShotHeight()
+      );
 
-        let speed = 64;
-        if (this.hasRifleAbility) {
-          speed *= 2;
-        } else if (this.hasBowAbility) {
-          speed *= 3;
-        }
+      const config: BulletConfig = {
+        facing: this.facing,
+        position: bulletPosition
+      };
 
-        const config: BulletConfig = {
-          facing: this.facing,
-          position: bulletPosition,
-          speed,
-          allowGravity: this.hasBowAbility
-        };
+      let weapon = null;
+      if (this.hasGunAbility) {
+        weapon = 'gun';
+      } else if (this.hasRifleAbility) {
+        weapon = 'rifle';
+      } else if (this.hasBowAbility) {
+        weapon = 'bow';
+      }
 
-        this.weapon.fireBullet(time, config);
+      if (weapon) {
+        (this[weapon as keyof Player] as Weapon).fireBullet(time, config);
       }
     }
 

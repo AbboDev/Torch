@@ -7,9 +7,7 @@ import { TILE_SIZE } from 'Config/tiles';
 
 export interface BulletConfig {
   position: Phaser.Math.Vector2,
-  facing: Facing,
-  speed?: number,
-  allowGravity?: boolean
+  facing: Facing
 };
 
 export class Bullet extends Phaser.Physics.Arcade.Sprite {
@@ -24,6 +22,7 @@ export class Bullet extends Phaser.Physics.Arcade.Sprite {
    * @type {Number}
    */
   protected speed = 64;
+
   /**
    * The baseSpeed of the bullet
    * @type {Number}
@@ -33,11 +32,11 @@ export class Bullet extends Phaser.Physics.Arcade.Sprite {
   public constructor(
     public scene: ControlScene,
     public x: number,
-    public y: number
+    public y: number,
+    public sprite: string
   ) {
-    super(scene, x, y, 'bullet');
+    super(scene, x, y, sprite);
 
-    this.scene.add.existing(this);
     this.scene.physics.world.enable(this);
 
     this
@@ -63,15 +62,7 @@ export class Bullet extends Phaser.Physics.Arcade.Sprite {
   }
 
   public fire(config: BulletConfig): void {
-    // If not set, use the default common bullet speed
-    this.speed = config && config.speed
-      ? config.speed
-      : this.speed;
-
-    // If not set, use the default common bullet speed
-    this.allowGravity = config && config.allowGravity
-      ? config.allowGravity
-      : this.allowGravity;
+    this.scene.add.existing(this);
 
     this.body
       // The bullet should not fall
@@ -91,6 +82,7 @@ export class Bullet extends Phaser.Physics.Arcade.Sprite {
         this.speed * 5 * sign.x,
         this.speed * 5 * sign.y
       )
+      .setScale(sign.x || 1, sign.y || 1)
       .setActive(true)
       .setVisible(true);
 
