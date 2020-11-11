@@ -313,6 +313,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // Change the current animation based on previous operations
     this.animate();
 
+    // Debug the player after all the update cycle
+    this.debug();
   }
 
   /**
@@ -533,6 +535,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const animation = isRunning ? 'walk' : 'idle';
 
     this.play(`hero_${animation}_${this.facing.x}_animation`, true);
+  }
+
+  /**
+   * Debug the player after all the update cycle
+   */
+  protected debug(): void {
+    console.debug(this.isStandingJumping);
   }
 
   public getJumpSpeed(applyMultlipier = true): number {
