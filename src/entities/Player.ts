@@ -50,6 +50,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private isJumping = false;
 
   /**
+   * The Player is jumping
+   * @type {Boolean}
+   */
+  private isStandingJumping = false;
+
+  /**
    * The Player is falling
    * @type {Boolean}
    */
@@ -95,7 +101,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    * The Player has the ability to do the double jump
    * @type {Boolean}
    */
-  private hasDoubleJumpAbility = false;
+  private hasDoubleJumpAbility = true;
 
   /**
    * The Player has the ability to perform an high jump
@@ -292,98 +298,25 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   public update(time: any, delta: number): void {
-    // Handle all the movement along the y axis
+    // Handles all the movement along the y axis
     this.jump();
 
-    // Handle all the movement along the x axis
+    // Handles all the movement along the x axis
     this.walk();
 
     // The user can shoot only if the Player has at least one range weapon
     if (this.hasAtLeastOneRangeWeapon()) {
-      // Handle all the movement along the x axis
+      // Handles all the ranged combat actions
       this.shoot(time);
     }
 
     // Change the current animation based on previous operations
     this.animate();
+
   }
 
   /**
-   * Handle all the movement along the x axis
-   */
-  protected shoot(time: any): void {
-    if (!this.isPressingShot) {
-      this.gun.canShoot();
-      this.bow.canShoot();
-      this.rifle.canShoot();
-    }
-
-    const isShootPress: boolean = this.scene
-      .getController()
-      .isKeyPressed(ControllerKey.B);
-
-    // The user have to press Shot button and the player should not facing front
-    if (isShootPress && this.facing.x !== DirectionAxisX.CENTER) {
-      // Test which weapon the player has and if is single or with rateo
-      const bulletPosition = new Phaser.Math.Vector2(
-        this.x + (this.facing.x === DirectionAxisX.RIGHT ? this.width : 0),
-        this.getShotHeight()
-      );
-
-      const config: BulletConfig = {
-        facing: this.facing,
-        position: bulletPosition
-      };
-
-      let weapon = null;
-      if (this.hasGunAbility) {
-        weapon = 'gun';
-      } else if (this.hasRifleAbility) {
-        weapon = 'rifle';
-      } else if (this.hasBowAbility) {
-        weapon = 'bow';
-      }
-
-      if (weapon) {
-        (this[weapon as keyof Player] as Weapon).fireBullet(time, config);
-      }
-    }
-
-    this.isPressingShot = isShootPress;
-  }
-
-  /**
-   * Handle all the movement along the x axis
-   */
-  protected walk(): void {
-    const isRightPress: boolean = this.scene
-      .getController()
-      .isKeyPressed(ControllerKey.RIGHT);
-    const isLeftPress: boolean = this.scene
-      .getController()
-      .isKeyPressed(ControllerKey.LEFT);
-
-    if (isRightPress && !isLeftPress) {
-      this.facing.x = DirectionAxisX.RIGHT;
-
-      this.setAccelerationX(this.getRunSpeed());
-    } else if (isLeftPress && !isRightPress) {
-      this.facing.x = DirectionAxisX.LEFT;
-
-      this.setAccelerationX(-this.getRunSpeed());
-    } else {
-      this.setAccelerationX(0);
-
-      // Simulate a little slide onto the floor for a bit
-      // and stop it if match certain X speed
-      if (Math.abs(this.body.velocity.x) < (this.baseSpeed / 20)) {
-        this.setVelocityX(0);
-      }
-    }
-  }
-
-  /**
-   * Handle all the movement along the y axis
+   * Handles all the movement along the y axis
    */
   protected jump(): void {
     // Test if the user is pressing the button 'A'
@@ -447,6 +380,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         // The Player is actually jumping
         this.isJumping = true;
 
+        this.isStandingJumping = Math.abs(this.body.velocity.x) <= TILE_SIZE * 2;
+        if (this.isStandingJumping) {
+          this.setMaxVelocity(
+            TILE_SIZE * 4,
+            this.baseSpeed * Player.HIGH_JUMP_SPEED_MULTIPLIER
+          );
+        }
+
         this.setVelocityY(this.getJumpSpeed());
       } else if (
         // First check if Player has unlocked double jump
@@ -461,6 +402,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         // The Player is actually jumping
         this.isJumping = true;
 
+        this.isStandingJumping = Math.abs(this.body.velocity.x) <= TILE_SIZE * 2;
+
         this.setVelocityY(this.getJumpSpeed());
       }
     } else if (this.body.onFloor()) {
@@ -470,6 +413,17 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
       this.canDoubleJump = false;
       this.hasDoneDoubleJump = false;
+    }
+
+    if (this.body.velocity.y === 0) {
+      this.isStandingJumping = false;
+    }
+
+    if (!this.isStandingJumping) {
+      this.setMaxVelocity(
+        this.getMaxRunSpeed(),
+        this.baseSpeed * Player.HIGH_JUMP_SPEED_MULTIPLIER
+      );
     }
 
     // Check if the user is actually holding the key
@@ -495,6 +449,80 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.setVelocityY(Math.max(newVelocity, 0));
       }
     }
+  }
+
+  /**
+   * Handles all the movement along the x axis
+   */
+  protected walk(): void {
+    const isRightPress: boolean = this.scene
+      .getController()
+      .isKeyPressed(ControllerKey.RIGHT);
+    const isLeftPress: boolean = this.scene
+      .getController()
+      .isKeyPressed(ControllerKey.LEFT);
+
+    if (isRightPress && !isLeftPress) {
+      this.facing.x = DirectionAxisX.RIGHT;
+
+      this.setAccelerationX(this.getRunSpeed());
+    } else if (isLeftPress && !isRightPress) {
+      this.facing.x = DirectionAxisX.LEFT;
+
+      this.setAccelerationX(-this.getRunSpeed());
+    } else {
+      this.setAccelerationX(0);
+
+      // Simulate a little slide onto the floor for a bit
+      // and stop it if match certain X speed
+      if (Math.abs(this.body.velocity.x) < (this.baseSpeed / 20)) {
+        this.setVelocityX(0);
+      }
+    }
+  }
+
+  /**
+   * Handles all the ranged combat actions
+   */
+  protected shoot(time: any): void {
+    if (!this.isPressingShot) {
+      this.gun.canShoot();
+      this.bow.canShoot();
+      this.rifle.canShoot();
+    }
+
+    const isShootPress: boolean = this.scene
+      .getController()
+      .isKeyPressed(ControllerKey.B);
+
+    // The user have to press Shot button and the player should not facing front
+    if (isShootPress && this.facing.x !== DirectionAxisX.CENTER) {
+      // Test which weapon the player has and if is single or with rateo
+      const bulletPosition = new Phaser.Math.Vector2(
+        this.x + (this.facing.x === DirectionAxisX.RIGHT ? this.width : 0),
+        this.getShotHeight()
+      );
+
+      const config: BulletConfig = {
+        facing: this.facing,
+        position: bulletPosition
+      };
+
+      let weapon = null;
+      if (this.hasGunAbility) {
+        weapon = 'gun';
+      } else if (this.hasRifleAbility) {
+        weapon = 'rifle';
+      } else if (this.hasBowAbility) {
+        weapon = 'bow';
+      }
+
+      if (weapon) {
+        (this[weapon as keyof Player] as Weapon).fireBullet(time, config);
+      }
+    }
+
+    this.isPressingShot = isShootPress;
   }
 
   /**
@@ -572,6 +600,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   /**
    * Return true if the Player has at least one ranged weapon in inventory
+   *
    * @return {boolean} [description]
    */
   public hasAtLeastOneRangeWeapon(): boolean {
