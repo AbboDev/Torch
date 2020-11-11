@@ -19,11 +19,15 @@ export class Main extends ControlScene {
     });
   }
 
-  preload(): void {
+  public init(): void {
+    console.clear();
+  }
+
+  public preload(): void {
     this.load.image('big', '/assets/sprites/tilemap.png');
   }
 
-  create(): void {
+  public create(): void {
     super.create();
 
     this.background = this.add.tileSprite(
@@ -59,7 +63,7 @@ export class Main extends ControlScene {
     this.physics.world.addCollider(this.hero, walls);
   }
 
-  update(time: any, delta: number): void {
+  public update(time: any, delta: number): void {
     this.hero.update(time, delta);
 
     if (this.getController().isKeyPressedForFirstTime(ControllerKey.DEBUG)) {
