@@ -11,8 +11,8 @@ const config: Phaser.Types.Core.GameConfig = {
   parent: 'canvas',
   backgroundColor: '#000000',
 
-  width: 640,
-  height: 360,
+  width: TILE_SIZE * 40,
+  height: TILE_SIZE * 20,
 
   zoom: 2,
 
