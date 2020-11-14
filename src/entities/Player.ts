@@ -7,7 +7,7 @@ import { Rifle } from 'Entities/Weapons/Rifle';
 import { Weapon } from 'Entities/Weapons/Weapon';
 import { BulletConfig } from 'Entities/Bullets/Bullet';
 
-import { ControlScene } from 'Scenes/ControlScene';
+import { MapScene } from 'Scenes/MapScene';
 
 import { PLAYER_DEPTH } from 'Config/depths';
 import { TILE_SIZE } from 'Config/tiles';
@@ -191,7 +191,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private rightWallHitbox: Phaser.GameObjects.Rectangle;
 
   constructor(
-    public scene: ControlScene,
+    public scene: MapScene,
     public x: number,
     public y: number
   ) {
@@ -656,8 +656,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     return this.scene.physics.overlap(
       hitbox,
-      // @ts-ignore
-      this.scene!.worldLayer,
+      this.scene.worldLayer,
       undefined,
       (hitbox, tile: unknown) => {
         if ((tile as Phaser.Tilemaps.Tile).index > -1) {
