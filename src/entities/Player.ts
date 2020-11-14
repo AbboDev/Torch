@@ -1,6 +1,7 @@
 import { Facing, DirectionAxisY, DirectionAxisX } from 'Miscellaneous/Direction';
 import { ControllerKey } from 'Miscellaneous/Controller';
 
+import { Hitbox } from 'Entities/Hitbox';
 import { Gun } from 'Entities/Weapons/Gun';
 import { Bow } from 'Entities/Weapons/Bow';
 import { Rifle } from 'Entities/Weapons/Rifle';
@@ -187,8 +188,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    */
   private baseSpeed: number;
 
-  private leftWallHitbox: Phaser.GameObjects.Rectangle;
-  private rightWallHitbox: Phaser.GameObjects.Rectangle;
+  private leftWallHitbox: Hitbox;
+  private rightWallHitbox: Hitbox;
 
   constructor(
     public scene: MapScene,
@@ -228,38 +229,21 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.rifle = new Rifle(this.scene);
     this.bow = new Bow(this.scene);
 
-    this.leftWallHitbox = new Phaser.GameObjects.Rectangle(
+    this.leftWallHitbox = new Hitbox(
       this.scene,
       this.x - Player.WALL_DETECTION_DISTANCE,
       this.y + this.body.halfHeight / 2,
       Player.WALL_DETECTION_DISTANCE,
-      this.body.halfHeight,
-      0x553300,
-      0.75
-    )
-      .setOrigin(0, 0);
+      this.body.halfHeight
+    );
 
-    this.rightWallHitbox = new Phaser.GameObjects.Rectangle(
+    this.rightWallHitbox = new Hitbox(
       this.scene,
       this.x + this.width + Player.WALL_DETECTION_DISTANCE,
       this.y + this.body.halfHeight / 2,
       Player.WALL_DETECTION_DISTANCE,
-      this.body.halfHeight,
-      0x553300,
-      0.75
-    )
-      .setOrigin(0, 0);
-
-    this.scene.add.existing(this.leftWallHitbox);
-    this.scene.add.existing(this.rightWallHitbox);
-    this.scene.physics.world.enable(this.leftWallHitbox);
-    this.scene.physics.world.enable(this.rightWallHitbox);
-
-    (this.leftWallHitbox.body as Phaser.Physics.Arcade.Body)
-      .setAllowGravity(false);
-
-    (this.rightWallHitbox.body as Phaser.Physics.Arcade.Body)
-      .setAllowGravity(false);
+      this.body.halfHeight
+    );
   }
 
   public static preload(scene: Phaser.Scene): void {
@@ -346,27 +330,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.shoot(time);
     }
 
-    const bounds = this.getBounds();
-    this.leftWallHitbox.setPosition(
-      bounds.left - Player.WALL_DETECTION_DISTANCE,
-      bounds.y + this.body.halfHeight / 2
-    );
-    this.rightWallHitbox.setPosition(
-      bounds.right,
-      bounds.y + this.body.halfHeight / 2
-    );
-
-    // this.body.updateCenter();
-    // (this.hitbox.body as Phaser.Physics.Arcade.Body).updateCenter();
-    (this.leftWallHitbox.body as Phaser.Physics.Arcade.Body)
-      .velocity
-      .copy(this.body.velocity);
-    (this.rightWallHitbox.body as Phaser.Physics.Arcade.Body)
-      .velocity
-      .copy(this.body.velocity);
-
     // Change the current animation based on previous operations
     this.animate();
+
+    // Change the current animation based on previous operations
+    this.updateHitbox(time, delta);
 
     // Debug the player after all the update cycle
     if (this.scene.physics.world.drawDebug) {
@@ -592,6 +560,22 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const animation = isRunning ? 'walk' : 'idle';
 
     this.play(`hero_${animation}_${this.facing.x}_animation`, true);
+  }
+
+  protected updateHitbox(time: any, delta: number): void {
+    const bounds = this.getBounds();
+
+    this.leftWallHitbox.alignToParent(
+      this,
+      bounds.left - Player.WALL_DETECTION_DISTANCE,
+      bounds.y + this.body.halfHeight / 2
+    );
+
+    this.rightWallHitbox.alignToParent(
+      this,
+      bounds.right,
+      bounds.y + this.body.halfHeight / 2
+    );
   }
 
   /**
