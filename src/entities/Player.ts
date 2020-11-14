@@ -101,13 +101,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    * The Player has the ability to do the double jump
    * @type {Boolean}
    */
-  private hasDoubleJumpAbility = true;
+  private hasDoubleJumpAbility = false;
 
   /**
    * The Player has the ability to perform an high jump
    * @type {Boolean}
    */
-  private hasHighJumpAbility = true;
+  private hasHighJumpAbility = false;
 
   /**
    * The Player has the ability to perform a wall jump
@@ -173,7 +173,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    * The max distance from wall where the player can yet perform a wall jump
    * @type {Number}
    */
-  static WALL_DETECTION_DISTANCE = TILE_SIZE / 2;
+  static WALL_DETECTION_DISTANCE = TILE_SIZE / 4;
 
   /**
    * The Y position to subtract from current Y to spawn bullets
@@ -186,6 +186,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    * @type {Number}
    */
   private baseSpeed: number;
+
+  private leftWallHitbox: Phaser.GameObjects.Rectangle;
+  private rightWallHitbox: Phaser.GameObjects.Rectangle;
 
   constructor(
     public scene: ControlScene,
@@ -224,6 +227,39 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.gun = new Gun(this.scene);
     this.rifle = new Rifle(this.scene);
     this.bow = new Bow(this.scene);
+
+    this.leftWallHitbox = new Phaser.GameObjects.Rectangle(
+      this.scene,
+      this.x - Player.WALL_DETECTION_DISTANCE,
+      this.y + this.body.halfHeight / 2,
+      Player.WALL_DETECTION_DISTANCE,
+      this.body.halfHeight,
+      0x553300,
+      0.75
+    )
+      .setOrigin(0, 0);
+
+    this.rightWallHitbox = new Phaser.GameObjects.Rectangle(
+      this.scene,
+      this.x + this.width + Player.WALL_DETECTION_DISTANCE,
+      this.y + this.body.halfHeight / 2,
+      Player.WALL_DETECTION_DISTANCE,
+      this.body.halfHeight,
+      0x553300,
+      0.75
+    )
+      .setOrigin(0, 0);
+
+    this.scene.add.existing(this.leftWallHitbox);
+    this.scene.add.existing(this.rightWallHitbox);
+    this.scene.physics.world.enable(this.leftWallHitbox);
+    this.scene.physics.world.enable(this.rightWallHitbox);
+
+    (this.leftWallHitbox.body as Phaser.Physics.Arcade.Body)
+      .setAllowGravity(false);
+
+    (this.rightWallHitbox.body as Phaser.Physics.Arcade.Body)
+      .setAllowGravity(false);
   }
 
   public static preload(scene: Phaser.Scene): void {
@@ -310,11 +346,32 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.shoot(time);
     }
 
+    const bounds = this.getBounds();
+    this.leftWallHitbox.setPosition(
+      bounds.left - Player.WALL_DETECTION_DISTANCE,
+      bounds.y + this.body.halfHeight / 2
+    );
+    this.rightWallHitbox.setPosition(
+      bounds.right,
+      bounds.y + this.body.halfHeight / 2
+    );
+
+    // this.body.updateCenter();
+    // (this.hitbox.body as Phaser.Physics.Arcade.Body).updateCenter();
+    (this.leftWallHitbox.body as Phaser.Physics.Arcade.Body)
+      .velocity
+      .copy(this.body.velocity);
+    (this.rightWallHitbox.body as Phaser.Physics.Arcade.Body)
+      .velocity
+      .copy(this.body.velocity);
+
     // Change the current animation based on previous operations
     this.animate();
 
     // Debug the player after all the update cycle
-    this.debug();
+    if (this.scene.physics.world.drawDebug) {
+      this.debug();
+    }
   }
 
   /**
@@ -329,14 +386,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // First check if Player has unlocked wall jump
     if (this.hasWallJumpAbility) {
       // Test if the Player is near walls
-      const walls = this.isTouchingWalls(
-        Player.WALL_DETECTION_DISTANCE,
-        this.height / 2
-      );
+      const walls: boolean[] = this.isTouchingWalls() as boolean[];
+      const wallsCount = walls.filter((wall) => {
+        return wall;
+      });
 
-      // Perform wall jump only if the Player,
-      // is not on the ground and is touching at least one wall
-      this.canWallJump = (!this.body.onFloor() && walls.length > 0);
+      // Perform wall jump only if the Player
+      // is not on the ground and is touching only one wall
+      this.canWallJump = (!this.body.onFloor() && wallsCount.length === 1);
       this.hasDoneWallJump = false;
 
       if (this.canWallJump) {
@@ -346,7 +403,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
           if (
             // The Player is touching a wall on left
-            walls[0].overlapX < 0
+            walls[0]
             // The user is moving on the opposite side of wall (right)
             && this.scene
               .getController()
@@ -354,7 +411,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             sign = 1;
           } else if (
             // The Player is touching a wall on right
-            walls[0].overlapX > 0
+            walls[1]
             // The user is moving on the opposite side of wall (left)
             && this.scene
               .getController()
@@ -541,7 +598,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    * Debug the player after all the update cycle
    */
   protected debug(): void {
-    console.debug(this.isStandingJumping);
+    // console.debug(this.isStandingJumping);
   }
 
   public getJumpSpeed(applyMultlipier = true): number {
@@ -579,23 +636,35 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       : Player.RUN_SPEED_MULTIPLIER;
   }
 
-  public isTouchingWalls(
-    distance?: number,
-    height?: number
-  ): Phaser.Physics.Arcade.StaticBody[] {
-    distance = distance || 0;
-    height = height || this.height;
+  public isTouchingWalls(direction?: DirectionAxisX): boolean | boolean[] {
+    let hitbox: Phaser.GameObjects.Rectangle;
 
-    const walls = this.scene.physics.overlapRect(
-      this.body.position.x - distance,
-      this.body.position.y - this.height / 2,
-      this.width + (distance * 2),
-      height,
-      false,
-      true
+    switch (direction) {
+      case DirectionAxisX.LEFT:
+        hitbox = this.leftWallHitbox;
+        break;
+      case DirectionAxisX.RIGHT:
+        hitbox = this.rightWallHitbox;
+        break;
+
+      default:
+        return [
+          this.isTouchingWalls(DirectionAxisX.LEFT) as boolean,
+          this.isTouchingWalls(DirectionAxisX.RIGHT) as boolean
+        ]
+    }
+
+    return this.scene.physics.overlap(
+      hitbox,
+      // @ts-ignore
+      this.scene!.worldLayer,
+      undefined,
+      (hitbox, tile: unknown) => {
+        if ((tile as Phaser.Tilemaps.Tile).index > -1) {
+          return true;
+        }
+      }
     );
-
-    return walls as Phaser.Physics.Arcade.StaticBody[];
   }
 
   /**

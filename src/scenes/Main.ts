@@ -11,6 +11,8 @@ export class Main extends ControlScene {
   private background!: Phaser.GameObjects.TileSprite;
   private blocks!: Phaser.Physics.Arcade.StaticGroup;
 
+  public worldLayer!: Phaser.Tilemaps.DynamicTilemapLayer;
+
   constructor() {
     super({
       active: false,
@@ -26,7 +28,7 @@ export class Main extends ControlScene {
   public preload(): void {
     this.load.image('big', '/assets/sprites/tilemap.png');
     this.load.image('chozodia_tiles', '/assets/tilesets/chozodia.png');
-    this.load.tilemapTiledJSON('chozodia_map', "../assets/maps/chozodia.json");
+    this.load.tilemapTiledJSON('chozodia_map', '../assets/maps/chozodia.json');
   }
 
   public create(): void {
@@ -50,15 +52,16 @@ export class Main extends ControlScene {
 
     // Parameters: layer name (or index) from Tiled, tileset, x, y
     const belowLayer = map.createStaticLayer('Background', tileset, 0, 0);
-    const worldLayer = map.createDynamicLayer('Collision', tileset, 0, 0);
+    this.worldLayer = map.createDynamicLayer('Collision', tileset, 0, 0);
     const aboveLayer = map.createStaticLayer('Frontground', tileset, 0, 0);
 
     aboveLayer.setDepth(1000);
 
-    worldLayer.setCollisionByProperty({ collides: true });
+    this.worldLayer.setCollisionByProperty({ collides: true });
 
-    const debugGraphics = this.add.graphics().setAlpha(0.75);
-    worldLayer.renderDebug(debugGraphics, {
+    const debugGraphics = this.add.graphics()
+      .setAlpha(0.75);
+    this.worldLayer.renderDebug(debugGraphics, {
       tileColor: null, // Color of non-colliding tiles
       collidingTileColor: new Phaser.Display.Color(243, 134, 48, 255), // Color of colliding tiles
       faceColor: new Phaser.Display.Color(40, 39, 37, 255) // Color of colliding face edges
@@ -70,7 +73,7 @@ export class Main extends ControlScene {
       this.sys.game.canvas.height - TILE_SIZE * 4
     );
 
-    this.physics.add.collider(this.hero, worldLayer);
+    this.physics.add.collider(this.hero, this.worldLayer);
   }
 
   public update(time: any, delta: number): void {
