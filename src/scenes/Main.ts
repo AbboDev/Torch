@@ -25,7 +25,8 @@ export class Main extends ControlScene {
 
   public preload(): void {
     this.load.image('big', '/assets/sprites/tilemap.png');
-    this.load.image('chozodia', '/assets/tilesets/chozodia.png');
+    this.load.image('chozodia_tiles', '/assets/tilesets/chozodia.png');
+    this.load.tilemapTiledJSON('chozodia_map', "../assets/maps/chozodia.json");
   }
 
   public create(): void {
@@ -41,49 +42,35 @@ export class Main extends ControlScene {
       .setOrigin(0, 0)
       .setAlpha(0.5);
 
-    const EMPTY_TILE = TILE_SIZE * 8 - 1;
-    const WALL_TILE = TILE_SIZE * 2 + 4;
-    const MIN_FLOOR_TILE = TILE_SIZE * 14 + 4;
-    const MAX_FLOOR_TILE = TILE_SIZE * 14 + 8;
+    const map = this.make.tilemap({ key: 'chozodia_map' });
 
-    const emptyRow = Array<number>(Math.floor(this.sys.game.canvas.width / TILE_SIZE))
-      .fill(EMPTY_TILE);
-    let emptyTable = Array<Array<number>>(Math.floor(this.sys.game.canvas.height / TILE_SIZE))
-      .fill(emptyRow);
+    // Parameters are the name you gave the tileset in Tiled and then the key of the tileset image in
+    // Phaser's cache (i.e. the name you used in preload)
+    const tileset = map.addTilesetImage('chozodia', 'chozodia_tiles');
 
-    let floor = Array<number>();
+    // Parameters: layer name (or index) from Tiled, tileset, x, y
+    const belowLayer = map.createStaticLayer('Background', tileset, 0, 0);
+    const worldLayer = map.createDynamicLayer('Collision', tileset, 0, 0);
+    const aboveLayer = map.createStaticLayer('Frontground', tileset, 0, 0);
 
-    const level = emptyTable.map((row, index, array) => {
-      if (index === 0) {
-        row = Array<number>(Math.floor(this.sys.game.canvas.width / TILE_SIZE))
-      } else if (index === emptyTable.length - 2) {
-        const random = Math.floor(Math.random() * (MAX_FLOOR_TILE - MIN_FLOOR_TILE + 1) + MIN_FLOOR_TILE);
+    aboveLayer.setDepth(1000);
 
-        floor = row = Array<number>(Math.floor(this.sys.game.canvas.width / TILE_SIZE))
-          .fill(random);
-      } else if (index === emptyTable.length - 1) {
-        console.log(index, array);
-        row = floor.map((tile, i) => {
-          if (i > 0 && i < row.length - 1) {
-            console.log(tile)
-            tile += TILE_SIZE;
-          }
+    worldLayer.setCollisionByProperty({ collides: true });
 
-          return tile;
-        });
-      }
-
-      row[0] = row[row.length - 1] = WALL_TILE;
-
-      return row;
+    const debugGraphics = this.add.graphics().setAlpha(0.75);
+    worldLayer.renderDebug(debugGraphics, {
+      tileColor: null, // Color of non-colliding tiles
+      collidingTileColor: new Phaser.Display.Color(243, 134, 48, 255), // Color of colliding tiles
+      faceColor: new Phaser.Display.Color(40, 39, 37, 255) // Color of colliding face edges
     });
 
-    // When loading from an array, make sure to specify the tileWidth and tileHeight
-    const map = this.make.tilemap({ data: level, tileWidth: 16, tileHeight: 16 });
-    const tiles = map.addTilesetImage('chozodia');
-    const layer = map.createStaticLayer(0, tiles, 0, 0);
+    this.hero = new Player(
+      this,
+      TILE_SIZE * 2,
+      this.sys.game.canvas.height - TILE_SIZE * 4
+    );
 
-    this.hero = new Player(this, TILE_SIZE * 2, this.sys.game.canvas.height);
+    this.physics.add.collider(this.hero, worldLayer);
   }
 
   public update(time: any, delta: number): void {
