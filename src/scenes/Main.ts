@@ -1,4 +1,5 @@
 import { Player } from 'Entities/Player';
+import { TiledObject } from 'Entities/TiledObject';
 
 import { MapScene } from 'Scenes/MapScene';
 
@@ -30,16 +31,20 @@ export class Main extends MapScene {
 
     const map = this.make.tilemap({ key: 'chozodia_map' });
 
+    const spawnPoint: TiledObject = map.findObject('objects', (obj) => {
+      return obj.name === 'spawn_point'
+    }) as TiledObject;
+
     // Parameters are the name you gave the tileset in Tiled and then the key of the tileset image in
     // Phaser's cache (i.e. the name you used in preload)
     const tileset = map.addTilesetImage('chozodia', 'chozodia_tiles');
 
-    this.belowLayer = map.createStaticLayer('Background', tileset, 0, 0)
+    this.belowLayer = map.createStaticLayer('background', tileset, 0, 0)
       .setDepth(1);
-    this.aboveLayer = map.createStaticLayer('Frontground', tileset, 0, 0)
+    this.aboveLayer = map.createStaticLayer('frontground', tileset, 0, 0)
       .setDepth(1000);
 
-    this.worldLayer = map.createDynamicLayer('Collision', tileset, 0, 0)
+    this.worldLayer = map.createDynamicLayer('collision', tileset, 0, 0)
       .setCollisionByProperty({ collides: true })
       .renderDebug(this.collisionDebugGraphics, {
         tileColor: null,
@@ -47,11 +52,7 @@ export class Main extends MapScene {
         faceColor: new Phaser.Display.Color(40, 39, 37, 255)
       });
 
-    this.hero = new Player(
-      this,
-      TILE_SIZE * 2,
-      this.sys.game.canvas.height - TILE_SIZE * 4
-    );
+    this.hero = new Player(this, spawnPoint.x, spawnPoint.y);
 
     this.physics.add.collider(this.hero, this.worldLayer);
   }

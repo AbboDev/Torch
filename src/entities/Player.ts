@@ -210,7 +210,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     this
       .setDepth(PLAYER_DEPTH)
-      .setOrigin(0, 0)
+      .setOrigin(0.5, 1)
       .setCollideWorldBounds(true)
       .setBounce(0)
       .setMaxVelocity(
