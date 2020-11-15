@@ -126,7 +126,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    * The Player has the gun range weapon
    * @type {Boolean}
    */
-  private hasGunAbility = false;
+  private hasGunAbility = true;
 
   /**
    * The Player has the rifle range weapon
@@ -138,7 +138,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    * The Player has the bow range weapon
    * @type {Boolean}
    */
-  private hasBowAbility = true;
+  private hasBowAbility = false;
 
   /**
    * Default multiplier of jump speed
@@ -532,7 +532,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (isShootPress && this.facing.x !== DirectionAxisX.CENTER) {
       // Test which weapon the player has and if is single or with rateo
       const bulletPosition = new Phaser.Math.Vector2(
-        this.body.x + (this.facing.x === DirectionAxisX.RIGHT ? this.width : 0),
+        this.x + (this.width / 2) * (this.facing.x === DirectionAxisX.RIGHT ? 1 : -1),
         this.getShotHeight()
       );
 
@@ -589,9 +589,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   /**
    * Debug the player after all the update cycle
    */
-  protected debug(): void {
-    // console.debug(this.isStandingJumping);
-  }
+  protected debug(): void {}
 
   public getJumpSpeed(applyMultlipier = true): number {
     return -this.baseSpeed
@@ -664,7 +662,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    * @return {number} The calculated Y coordinate
    */
   public getShotHeight(): number {
-    return this.getRightCenter().y + Player.SHOT_HEIGHT;
+    const bounds = this.getBounds();
+
+    return bounds.top + Player.SHOT_HEIGHT;
   }
 
   /**
