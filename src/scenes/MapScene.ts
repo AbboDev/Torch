@@ -33,6 +33,18 @@ export abstract class MapScene extends ControlScene {
   public collisionDebugGraphics!: Phaser.GameObjects.Graphics;
 
   /**
+   * The default spawnpoint of the Player
+   * @type {Phaser.Types.Tilemaps.TiledObject}
+   */
+  public spawnPoint!: Phaser.Types.Tilemaps.TiledObject;
+
+  /**
+   * The current group of rooms
+   * @type {Array<Phaser.Types.Tilemaps.TiledObject>}
+   */
+  public rooms!: Array<Phaser.Types.Tilemaps.TiledObject>;
+
+  /**
    * The current map stored
    * @type {Phaser.Tilemaps.Tilemap}
    */
@@ -44,6 +56,8 @@ export abstract class MapScene extends ControlScene {
     this.collisionDebugGraphics = this.add.graphics()
       .setAlpha(0.75)
       .setDepth(10000);
+
+    this.rooms = Array<Phaser.Types.Tilemaps.TiledObject>();
   }
 
   public update(time: any, delta: number): void {

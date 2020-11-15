@@ -191,10 +191,21 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private leftWallHitbox: Hitbox;
   private rightWallHitbox: Hitbox;
 
+  public previousRoom: number | null = null;
+  public roomChange: boolean = false;
+
+  /**
+   * Create the Player
+   *
+   * @param {MapScene} scene - scene creating the player.
+   * @param {number} x - Start location x value.
+   * @param {number} y - Start location y value.
+   */
   constructor(
     public scene: MapScene,
     public x: number,
-    public y: number
+    public y: number,
+    public currentRoom = 0
   ) {
     super(scene, x, y, 'hero_idle_center');
 
@@ -323,6 +334,70 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     });
   }
 
+  /**
+   * Called before Update
+   *
+   * @param {any} time
+   * @param {number} delta
+   */
+  public preUpdate(time: any, delta: number): void {
+    super.preUpdate(time, delta);
+
+    this.getRoom();
+  }
+
+  /**
+   * Returns player's current and previous room, flags rooms player has entered
+   */
+  public getRoom(): void {
+    if (this.scene.rooms.length > 1) {
+      let roomNumber: number | null = null;
+
+      const bounds = this.getBodyBounds();
+
+      // Test all the rooms in the map
+      for (let id in this.scene.rooms) {
+        const room: Phaser.Types.Tilemaps.TiledObject = this.scene.rooms[id];
+
+        const roomLeft = room.x || 0;
+        const roomRight = roomLeft + (room.width || 0);
+        const roomTop = room.y || 0;
+        const roomBottom = roomTop + (room.height || 0);
+
+        // Player is within the boundaries of this room
+        if (bounds.left > roomLeft
+          && bounds.right < roomRight
+          && bounds.top > roomTop
+          && bounds.bottom < roomBottom
+        ) {
+          roomNumber = parseInt(id);
+
+          // Set this room as visited by Player
+          if (room.properties) {
+            const visited = room.properties.find(function(property: any) {
+              return property.name === 'visited';
+            });
+
+            visited.value = true;
+          }
+        }
+      };
+
+      // Update player room variables
+      if (roomNumber !== null && roomNumber !== this.currentRoom) {
+        this.previousRoom = this.currentRoom;
+        this.currentRoom = roomNumber;
+        this.roomChange = true;
+      } else {
+        this.roomChange = false;
+      }
+    }
+  }
+
+  /**
+   * @param {any} time
+   * @param {number} delta
+   */
   public update(time: any, delta: number): void {
     // Handles all the movement along the y axis
     this.jump();
