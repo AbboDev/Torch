@@ -14,7 +14,7 @@ const config: Phaser.Types.Core.GameConfig = {
   backgroundColor: '#000000',
 
   width: TILE_SIZE * 40,
-  height: TILE_SIZE * 22.5,
+  height: TILE_SIZE * 22,
 
   zoom: 2,
   resolution: 2,
