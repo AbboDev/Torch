@@ -435,7 +435,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         // The Player is actually jumping
         this.isJumping = true;
 
-        this.isStandingJumping = Math.abs(this.body.velocity.x) <= TILE_SIZE * 2;
+        this.isStandingJumping = Math.abs(this.body.velocity.x) <= TILE_SIZE;
 
         this.setVelocityY(this.getJumpSpeed());
       }
