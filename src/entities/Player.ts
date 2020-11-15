@@ -191,8 +191,29 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private leftWallHitbox: Hitbox;
   private rightWallHitbox: Hitbox;
 
+  /**
+   * The current room number
+   * @type {number}
+   */
+  public currentRoom: number = 0;
+
+  /**
+   * The previous room number
+   * @type {number | null}
+   */
   public previousRoom: number | null = null;
+
+  /**
+   * Check if the Player overlap room bounds for start transition
+   * @type {boolean}
+   */
   public roomChange: boolean = false;
+
+  /**
+   * Check if the user can interact with Player
+   * @type {boolean}
+   */
+  public canInteract: boolean = true;
 
   /**
    * Create the Player
@@ -205,9 +226,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     public scene: MapScene,
     public x: number,
     public y: number,
-    public currentRoom = 0
+    currentRoom = 0
   ) {
     super(scene, x, y, 'hero_idle_center');
+
+    this.currentRoom = currentRoom;
 
     this.facing = {
       y: DirectionAxisY.MIDDLE,
@@ -365,10 +388,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         const roomBottom = roomTop + (room.height || 0);
 
         // Player is within the boundaries of this room
-        if (bounds.left > roomLeft
-          && bounds.right < roomRight
-          && bounds.top > roomTop
-          && bounds.bottom < roomBottom
+        if (bounds.centerX > roomLeft
+          && bounds.centerX < roomRight
+          && bounds.centerY > roomTop
+          && bounds.centerY < roomBottom
         ) {
           roomNumber = parseInt(id);
 
@@ -399,16 +422,18 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    * @param {number} delta
    */
   public update(time: any, delta: number): void {
-    // Handles all the movement along the y axis
-    this.jump();
+    if (this.canInteract) {
+      // Handles all the movement along the y axis
+      this.jump();
 
-    // Handles all the movement along the x axis
-    this.walk();
+      // Handles all the movement along the x axis
+      this.walk();
 
-    // The user can shoot only if the Player has at least one range weapon
-    if (this.hasAtLeastOneRangeWeapon()) {
-      // Handles all the ranged combat actions
-      this.shoot(time);
+      // The user can shoot only if the Player has at least one range weapon
+      if (this.hasAtLeastOneRangeWeapon()) {
+        // Handles all the ranged combat actions
+        this.shoot(time);
+      }
     }
 
     // Change the current animation based on previous operations

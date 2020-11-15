@@ -26,9 +26,9 @@ export class Main extends MapScene {
 
     this.map = this.make.tilemap({ key: 'chozodia_map' });
 
-    const objectsLayer = this.map.getObjectLayer('objects');
-
-    objectsLayer.objects
+    // Get the objects layer of the current loaded map for found
+    // the main spawn point and rooms
+    this.map.getObjectLayer('objects').objects
       .forEach((object: Phaser.Types.Tilemaps.TiledObject) => {
         if (object.type === 'room') {
           this.rooms.push(object);
@@ -66,31 +66,20 @@ export class Main extends MapScene {
     const y: number = this.spawnPoint.y || 0;
     let roomNumber: number = 0;
 
-    // loop through rooms in this level.
+    // Loop through rooms in this level
     this.rooms.forEach((room: Phaser.Types.Tilemaps.TiledObject, index: number) => {
       let roomLeft = room.x || 0;
       let roomRight = roomLeft + (room.width || 0);
       let roomTop = room.y || 0;
       let roomBottom = roomTop + (room.height || 0);
 
-      console.debug(room, index, roomLeft, roomRight, roomTop, roomBottom, x > roomLeft && x < roomRight && y > roomTop && y < roomBottom);
-
-      // Player is within the boundaries of this room.
+      // Player is within the boundaries of this room
       if (x > roomLeft && x < roomRight && y > roomTop && y < roomBottom) {
         roomNumber = index;
       }
     });
 
-    console.debug(x, y, roomNumber);
-
     this.hero = new Player(this, x, y, roomNumber);
-
-    this.cameras.main
-      .setZoom(2)
-      .setDeadzone(TILE_SIZE * 5, TILE_SIZE * 10)
-      .setBounds(0, 0, this.map.widthInPixels, this.map.heightInPixels)
-      .startFollow(this.hero);
-
     this.background = this.add.tileSprite(
       0,
       0,
@@ -102,30 +91,64 @@ export class Main extends MapScene {
       .setAlpha(0.5)
       .setDepth(-1);
 
-    this.boundsCamera(this.hero.currentRoom);
-
     this.physics.add.collider(this.hero, this.worldLayer);
+
+    this.cameras.main
+      .setZoom(2)
+      // The user must have a pretty deadzone to see incoming enemies
+      .setDeadzone(TILE_SIZE * 5, TILE_SIZE * 2)
+      .startFollow(this.hero)
+      .setBounds(
+        this.rooms[roomNumber].x || 0,
+        this.rooms[roomNumber].y || 0,
+        this.rooms[roomNumber].width || 0,
+        this.rooms[roomNumber].height || 0,
+        true
+      )
+      .fadeIn(2000, 0, 0, 0);
   }
 
   public update(time: any, delta: number): void {
     super.update(time, delta);
 
     this.hero.update(time, delta);
-    this.cameras.main.centerOnY(this.hero.y - TILE_SIZE * 4.5);
+    // this.cameras.main.centerOnY(this.hero.y - TILE_SIZE * 4.5);
 
     if (this.hero.roomChange && this.rooms.length > 0) {
-      console.log('test');
       this.boundsCamera(this.hero.currentRoom);
     }
   }
 
   protected boundsCamera(room: number): void {
-    this.cameras.main.setBounds(
-      this.rooms[room].x || 0,
-      this.rooms[room].y || 0,
-      this.rooms[room].width || 0,
-      this.rooms[room].height || 0,
-      true
-    );
+    // Start a fadeOut animation before change room
+    this.cameras.main
+      .fadeOut(250, 0, 0, 0, (camera: Phaser.Cameras.Scene2D.Camera, progress: number) => {
+        // Prevent Player to do anything
+        this.hero.canInteract = false;
+        // Pause all the physics events
+        this.physics.pause();
+
+        if (progress === 1) {
+          // Change camera boundaries when fade out complete
+          this.cameras.main.setBounds(
+            this.rooms[room].x || 0,
+            this.rooms[room].y || 0,
+            this.rooms[room].width || 0,
+            this.rooms[room].height || 0,
+            true
+          );
+
+          // Fade back in with new boundareis
+          this.cameras.main
+            .fadeIn(500, 0, 0, 0, (camera: Phaser.Cameras.Scene2D.Camera, progress: number) => {
+              if (progress === 1) {
+                // The Player can now interact
+                this.hero.canInteract = true;
+                // Resume all the physics events
+                this.physics.resume();
+              }
+            }, this);
+        }
+      }, this);
   }
 }
