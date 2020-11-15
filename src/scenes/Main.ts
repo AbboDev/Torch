@@ -29,22 +29,22 @@ export class Main extends MapScene {
   public create(): void {
     super.create();
 
-    const map = this.make.tilemap({ key: 'chozodia_map' });
+    this.map = this.make.tilemap({ key: 'chozodia_map' });
 
-    const spawnPoint: TiledObject = map.findObject('objects', (obj) => {
+    const spawnPoint: TiledObject = this.map.findObject('objects', (obj) => {
       return obj.name === 'spawn_point'
     }) as TiledObject;
 
     // Parameters are the name you gave the tileset in Tiled and then the key of the tileset image in
     // Phaser's cache (i.e. the name you used in preload)
-    const tileset = map.addTilesetImage('chozodia', 'chozodia_tiles');
+    const tileset = this.map.addTilesetImage('chozodia', 'chozodia_tiles');
 
-    this.belowLayer = map.createStaticLayer('background', tileset, 0, 0)
+    this.belowLayer = this.map.createStaticLayer('background', tileset, 0, 0)
       .setDepth(1);
-    this.aboveLayer = map.createStaticLayer('frontground', tileset, 0, 0)
+    this.aboveLayer = this.map.createStaticLayer('frontground', tileset, 0, 0)
       .setDepth(1000);
 
-    this.worldLayer = map.createDynamicLayer('collision', tileset, 0, 0)
+    this.worldLayer = this.map.createDynamicLayer('collision', tileset, 0, 0)
       .setDepth(999)
       .setCollisionByProperty({ collides: true })
       .renderDebug(this.collisionDebugGraphics, {
@@ -53,21 +53,21 @@ export class Main extends MapScene {
         faceColor: new Phaser.Display.Color(40, 39, 37, 255)
       });
 
-    this.physics.world.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
+    this.physics.world.setBounds(0, 0, this.map.widthInPixels, this.map.heightInPixels);
 
     this.hero = new Player(this, spawnPoint.x, spawnPoint.y);
 
     this.cameras.main
       .setZoom(2)
       .setDeadzone(TILE_SIZE * 5, TILE_SIZE * 10)
-      .setBounds(0, 0, map.widthInPixels, map.heightInPixels)
+      .setBounds(0, 0, this.map.widthInPixels, this.map.heightInPixels)
       .startFollow(this.hero);
 
     this.background = this.add.tileSprite(
       0,
       0,
-      map.widthInPixels,
-      map.widthInPixels,
+      this.map.widthInPixels,
+      this.map.widthInPixels,
       'big'
     )
       .setOrigin(0, 0)

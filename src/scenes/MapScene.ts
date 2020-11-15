@@ -32,6 +32,12 @@ export abstract class MapScene extends ControlScene {
    */
   public collisionDebugGraphics!: Phaser.GameObjects.Graphics;
 
+  /**
+   * The current map stored
+   * @type {Phaser.Tilemaps.Tilemap}
+   */
+  public map!: Phaser.Tilemaps.Tilemap;
+
   public create(): void {
     super.create();
 
