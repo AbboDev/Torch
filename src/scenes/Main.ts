@@ -45,6 +45,7 @@ export class Main extends MapScene {
       .setDepth(1000);
 
     this.worldLayer = map.createDynamicLayer('collision', tileset, 0, 0)
+      .setDepth(999)
       .setCollisionByProperty({ collides: true })
       .renderDebug(this.collisionDebugGraphics, {
         tileColor: null,
@@ -52,7 +53,25 @@ export class Main extends MapScene {
         faceColor: new Phaser.Display.Color(40, 39, 37, 255)
       });
 
+    this.physics.world.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
+
     this.hero = new Player(this, spawnPoint.x, spawnPoint.y);
+
+    this.cameras.main
+      // .setSize(this.sys.canvas.width / 2, this.sys.canvas.height / 2)
+      .setBounds(0, 0, map.widthInPixels, map.heightInPixels)
+      .startFollow(this.hero);
+
+    this.background = this.add.tileSprite(
+      0,
+      0,
+      map.widthInPixels,
+      map.widthInPixels,
+      'big'
+    )
+      .setOrigin(0, 0)
+      .setAlpha(0.5)
+      .setDepth(-1);
 
     this.physics.add.collider(this.hero, this.worldLayer);
   }

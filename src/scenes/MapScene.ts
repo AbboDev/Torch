@@ -35,17 +35,6 @@ export abstract class MapScene extends ControlScene {
   public create(): void {
     super.create();
 
-    this.background = this.add.tileSprite(
-      0,
-      0,
-      this.sys.game.canvas.width,
-      this.sys.game.canvas.height,
-      'big'
-    )
-      .setOrigin(0, 0)
-      .setAlpha(0.5)
-      .setDepth(-1);
-
     this.collisionDebugGraphics = this.add.graphics()
       .setAlpha(0.75)
       .setDepth(10000);
