@@ -16,10 +16,6 @@ export class Main extends MapScene {
     });
   }
 
-  public init(): void {
-    console.clear();
-  }
-
   public preload(): void {
     this.load.image('big', '/assets/sprites/tilemap.png');
     this.load.image('chozodia_tiles', '/assets/tilesets/chozodia.png');

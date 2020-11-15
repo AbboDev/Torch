@@ -5,6 +5,8 @@ import { Main } from 'Scenes/Main';
 
 import { TILE_SIZE } from 'Config/tiles';
 
+console.clear();
+
 const config: Phaser.Types.Core.GameConfig = {
   title: 'Torch',
   type: Phaser.AUTO,
