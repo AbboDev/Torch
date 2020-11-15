@@ -12,6 +12,7 @@ const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
   parent: 'canvas',
   backgroundColor: '#000000',
+  version: 'Dev',
 
   width: TILE_SIZE * 40,
   height: TILE_SIZE * 22,
@@ -23,6 +24,8 @@ const config: Phaser.Types.Core.GameConfig = {
     Preloader,
     Main
   ],
+
+  disableContextMenu: true,
 
   physics: {
     default: 'arcade',
