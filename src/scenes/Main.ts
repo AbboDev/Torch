@@ -58,7 +58,8 @@ export class Main extends MapScene {
     this.hero = new Player(this, spawnPoint.x, spawnPoint.y);
 
     this.cameras.main
-      // .setSize(this.sys.canvas.width / 2, this.sys.canvas.height / 2)
+      .setZoom(2)
+      .setDeadzone(TILE_SIZE * 5, TILE_SIZE * 10)
       .setBounds(0, 0, map.widthInPixels, map.heightInPixels)
       .startFollow(this.hero);
 
@@ -79,6 +80,8 @@ export class Main extends MapScene {
   public update(time: any, delta: number): void {
     super.update(time, delta);
 
+
     this.hero.update(time, delta);
+    this.cameras.main.centerOnY(this.hero.y - TILE_SIZE * 4.5);
   }
 }
