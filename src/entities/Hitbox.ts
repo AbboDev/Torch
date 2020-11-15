@@ -29,8 +29,6 @@ export class Hitbox extends Phaser.GameObjects.Rectangle {
     this.scene.add.existing(this);
     this.scene.physics.world.enable(this);
 
-    this.setOrigin(0, 0);
-
     this.body
       .setAllowGravity(false);
 
@@ -52,7 +50,7 @@ export class Hitbox extends Phaser.GameObjects.Rectangle {
    * @param {number} y The y coordinate, by default the same of the parent
    */
   public alignToParent(
-    parent: Phaser.Physics.Arcade.Sprite,
+    parent: Phaser.Physics.Arcade.Sprite & { body: Phaser.Physics.Arcade.Body },
     x?: number,
     y?: number
   ): void {

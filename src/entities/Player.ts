@@ -221,7 +221,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.body
       .setAllowGravity(true)
       .setAllowDrag(true)
-      .setDragX(0.90);
+      .setDragX(0.90)
+      .setOffset(TILE_SIZE / 2, TILE_SIZE / 2)
+      .setSize(TILE_SIZE, TILE_SIZE * 2.5, false);
 
     this.body.useDamping = true;
 
@@ -229,18 +231,22 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.rifle = new Rifle(this.scene);
     this.bow = new Bow(this.scene);
 
+    const bounds = this.getBodyBounds();
+
+    this.body.updateCenter();
+
     this.leftWallHitbox = new Hitbox(
       this.scene,
-      this.x - Player.WALL_DETECTION_DISTANCE,
-      this.y + this.body.halfHeight / 2,
+      bounds.left - Player.WALL_DETECTION_DISTANCE / 2,
+      bounds.top + this.body.halfHeight,
       Player.WALL_DETECTION_DISTANCE,
       this.body.halfHeight
     );
 
     this.rightWallHitbox = new Hitbox(
       this.scene,
-      this.x + this.width + Player.WALL_DETECTION_DISTANCE,
-      this.y + this.body.halfHeight / 2,
+      bounds.right + Player.WALL_DETECTION_DISTANCE / 2,
+      bounds.top + this.body.halfHeight,
       Player.WALL_DETECTION_DISTANCE,
       this.body.halfHeight
     );
@@ -248,8 +254,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   public static preload(scene: Phaser.Scene): void {
     const spriteSize: Phaser.Types.Loader.FileTypes.ImageFrameConfig = {
-      frameWidth: 32,
-      frameHeight: 48
+      frameWidth: TILE_SIZE * 2,
+      frameHeight: TILE_SIZE * 3
     };
 
     scene.load
@@ -526,7 +532,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (isShootPress && this.facing.x !== DirectionAxisX.CENTER) {
       // Test which weapon the player has and if is single or with rateo
       const bulletPosition = new Phaser.Math.Vector2(
-        this.x + (this.facing.x === DirectionAxisX.RIGHT ? this.width : 0),
+        this.body.x + (this.facing.x === DirectionAxisX.RIGHT ? this.width : 0),
         this.getShotHeight()
       );
 
@@ -563,18 +569,20 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   protected updateHitbox(time: any, delta: number): void {
-    const bounds = this.getBounds();
+    const bounds = this.getBodyBounds();
+
+    this.body.updateCenter();
 
     this.leftWallHitbox.alignToParent(
       this,
-      bounds.left - Player.WALL_DETECTION_DISTANCE,
-      bounds.y + this.body.halfHeight / 2
+      bounds.left - Player.WALL_DETECTION_DISTANCE / 2,
+      bounds.top + this.body.halfHeight
     );
 
     this.rightWallHitbox.alignToParent(
       this,
-      bounds.right,
-      bounds.y + this.body.halfHeight / 2
+      bounds.right + Player.WALL_DETECTION_DISTANCE / 2,
+      bounds.top + this.body.halfHeight
     );
   }
 
@@ -656,7 +664,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    * @return {number} The calculated Y coordinate
    */
   public getShotHeight(): number {
-    return this.y + Player.SHOT_HEIGHT;
+    return this.getRightCenter().y + Player.SHOT_HEIGHT;
   }
 
   /**
@@ -670,5 +678,22 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       || this.hasBowAbility;
 
     // TODO: add all other weapons into the function
+  }
+
+  /**
+   * Get the bounds of the current GameObject body, regardless of its origin
+   *
+   * @return {Phaser.Geom.Rectangle} The bounds of the body
+   */
+  public getBodyBounds(): Phaser.Geom.Rectangle {
+    // Get the current sprite bounds
+    const bounds: Phaser.Geom.Rectangle = this.getBounds();
+
+    return new Phaser.Geom.Rectangle(
+      bounds.left + (this.width / 2 - this.body.halfWidth),
+      bounds.top + (this.height / 2 - this.body.halfHeight),
+      this.body.width,
+      this.body.height
+    );
   }
 }
