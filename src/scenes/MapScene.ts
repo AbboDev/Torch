@@ -77,11 +77,16 @@ export abstract class MapScene extends ControlScene {
         this.physics.world.debugGraphic.clear();
       }
 
+      this.updateCollisionGraphic(this.physics.world.drawDebug);
+
       // The tilesmap's collision debug graphic, instead of been clean,
       // will be disable/enable and hide/show
-      this.collisionDebugGraphics
-        .setActive(this.physics.world.drawDebug)
-        .setVisible(this.physics.world.drawDebug);
     }
+  }
+
+  public updateCollisionGraphic(active: boolean): void {
+    this.collisionDebugGraphics
+      .setActive(active)
+      .setVisible(active);
   }
 }

@@ -93,6 +93,8 @@ export class Main extends MapScene {
 
     this.physics.add.collider(this.hero, this.worldLayer);
 
+    this.updateCollisionGraphic(this.physics.world.drawDebug);
+
     this.cameras.main
       .setZoom(2)
       // The user must have a pretty deadzone to see incoming enemies
