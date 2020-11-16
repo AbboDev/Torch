@@ -1,13 +1,14 @@
 import { Facing, DirectionAxisY, DirectionAxisX } from 'Miscellaneous/Direction';
 import { ControllerKey } from 'Miscellaneous/Controller';
 
+import { Hitbox } from 'Entities/Hitbox';
 import { Gun } from 'Entities/Weapons/Gun';
 import { Bow } from 'Entities/Weapons/Bow';
 import { Rifle } from 'Entities/Weapons/Rifle';
 import { Weapon } from 'Entities/Weapons/Weapon';
 import { BulletConfig } from 'Entities/Bullets/Bullet';
 
-import { ControlScene } from 'Scenes/ControlScene';
+import { MapScene } from 'Scenes/MapScene';
 
 import { PLAYER_DEPTH } from 'Config/depths';
 import { TILE_SIZE } from 'Config/tiles';
@@ -101,13 +102,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    * The Player has the ability to do the double jump
    * @type {Boolean}
    */
-  private hasDoubleJumpAbility = true;
+  private hasDoubleJumpAbility = false;
 
   /**
    * The Player has the ability to perform an high jump
    * @type {Boolean}
    */
-  private hasHighJumpAbility = true;
+  private hasHighJumpAbility = false;
 
   /**
    * The Player has the ability to perform a wall jump
@@ -125,7 +126,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    * The Player has the gun range weapon
    * @type {Boolean}
    */
-  private hasGunAbility = false;
+  private hasGunAbility = true;
 
   /**
    * The Player has the rifle range weapon
@@ -137,7 +138,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    * The Player has the bow range weapon
    * @type {Boolean}
    */
-  private hasBowAbility = true;
+  private hasBowAbility = false;
 
   /**
    * Default multiplier of jump speed
@@ -173,7 +174,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    * The max distance from wall where the player can yet perform a wall jump
    * @type {Number}
    */
-  static WALL_DETECTION_DISTANCE = TILE_SIZE / 2;
+  static WALL_DETECTION_DISTANCE = TILE_SIZE / 4;
 
   /**
    * The Y position to subtract from current Y to spawn bullets
@@ -187,12 +188,49 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    */
   private baseSpeed: number;
 
+  private leftWallHitbox: Hitbox;
+  private rightWallHitbox: Hitbox;
+
+  /**
+   * The current room number
+   * @type {number}
+   */
+  public currentRoom: number = 0;
+
+  /**
+   * The previous room number
+   * @type {number | null}
+   */
+  public previousRoom: number | null = null;
+
+  /**
+   * Check if the Player overlap room bounds for start transition
+   * @type {boolean}
+   */
+  public roomChange: boolean = false;
+
+  /**
+   * Check if the user can interact with Player
+   * @type {boolean}
+   */
+  public canInteract: boolean = true;
+
+  /**
+   * Create the Player
+   *
+   * @param {MapScene} scene - scene creating the player.
+   * @param {number} x - Start location x value.
+   * @param {number} y - Start location y value.
+   */
   constructor(
-    public scene: ControlScene,
+    public scene: MapScene,
     public x: number,
-    public y: number
+    public y: number,
+    currentRoom = 0
   ) {
     super(scene, x, y, 'hero_idle_center');
+
+    this.currentRoom = currentRoom;
 
     this.facing = {
       y: DirectionAxisY.MIDDLE,
@@ -206,7 +244,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     this
       .setDepth(PLAYER_DEPTH)
-      .setOrigin(0, 0)
+      .setOrigin(0.5, 1)
       .setCollideWorldBounds(true)
       .setBounce(0)
       .setMaxVelocity(
@@ -217,19 +255,41 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.body
       .setAllowGravity(true)
       .setAllowDrag(true)
-      .setDragX(0.90);
+      .setDragX(0.90)
+      .setOffset(TILE_SIZE / 2, TILE_SIZE / 2)
+      .setSize(TILE_SIZE, TILE_SIZE * 2.5, false);
 
     this.body.useDamping = true;
 
     this.gun = new Gun(this.scene);
     this.rifle = new Rifle(this.scene);
     this.bow = new Bow(this.scene);
+
+    const bounds = this.getBodyBounds();
+
+    this.body.updateCenter();
+
+    this.leftWallHitbox = new Hitbox(
+      this.scene,
+      bounds.left - Player.WALL_DETECTION_DISTANCE / 2,
+      bounds.top + this.body.halfHeight,
+      Player.WALL_DETECTION_DISTANCE,
+      this.body.halfHeight
+    );
+
+    this.rightWallHitbox = new Hitbox(
+      this.scene,
+      bounds.right + Player.WALL_DETECTION_DISTANCE / 2,
+      bounds.top + this.body.halfHeight,
+      Player.WALL_DETECTION_DISTANCE,
+      this.body.halfHeight
+    );
   }
 
   public static preload(scene: Phaser.Scene): void {
     const spriteSize: Phaser.Types.Loader.FileTypes.ImageFrameConfig = {
-      frameWidth: 32,
-      frameHeight: 48
+      frameWidth: TILE_SIZE * 2,
+      frameHeight: TILE_SIZE * 3
     };
 
     scene.load
@@ -297,24 +357,95 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     });
   }
 
+  /**
+   * Called before Update
+   *
+   * @param {any} time
+   * @param {number} delta
+   */
+  public preUpdate(time: any, delta: number): void {
+    super.preUpdate(time, delta);
+
+    this.getRoom();
+  }
+
+  /**
+   * Returns player's current and previous room, flags rooms player has entered
+   */
+  public getRoom(): void {
+    if (this.scene.rooms.length > 1) {
+      let roomNumber: number | null = null;
+
+      const bounds = this.getBodyBounds();
+
+      // Test all the rooms in the map
+      for (let id in this.scene.rooms) {
+        const room: Phaser.Types.Tilemaps.TiledObject = this.scene.rooms[id];
+
+        const roomLeft = room.x || 0;
+        const roomRight = roomLeft + (room.width || 0);
+        const roomTop = room.y || 0;
+        const roomBottom = roomTop + (room.height || 0);
+
+        // Player is within the boundaries of this room
+        if (bounds.centerX > roomLeft
+          && bounds.centerX < roomRight
+          && bounds.centerY > roomTop
+          && bounds.centerY < roomBottom
+        ) {
+          roomNumber = parseInt(id);
+
+          // Set this room as visited by Player
+          if (room.properties) {
+            const visited = room.properties.find(function(property: any) {
+              return property.name === 'visited';
+            });
+
+            visited.value = true;
+          }
+        }
+      };
+
+      // Update player room variables
+      if (roomNumber !== null && roomNumber !== this.currentRoom) {
+        this.previousRoom = this.currentRoom;
+        this.currentRoom = roomNumber;
+        this.roomChange = true;
+      } else {
+        this.roomChange = false;
+      }
+    }
+  }
+
+  /**
+   * @param {any} time
+   * @param {number} delta
+   */
   public update(time: any, delta: number): void {
-    // Handles all the movement along the y axis
-    this.jump();
+    if (this.canInteract) {
+      // Handles all the movement along the y axis
+      this.jump();
 
-    // Handles all the movement along the x axis
-    this.walk();
+      // Handles all the movement along the x axis
+      this.walk();
 
-    // The user can shoot only if the Player has at least one range weapon
-    if (this.hasAtLeastOneRangeWeapon()) {
-      // Handles all the ranged combat actions
-      this.shoot(time);
+      // The user can shoot only if the Player has at least one range weapon
+      if (this.hasAtLeastOneRangeWeapon()) {
+        // Handles all the ranged combat actions
+        this.shoot(time);
+      }
     }
 
     // Change the current animation based on previous operations
     this.animate();
 
+    // Change the current animation based on previous operations
+    this.updateHitbox(time, delta);
+
     // Debug the player after all the update cycle
-    this.debug();
+    if (this.scene.physics.world.drawDebug) {
+      this.debug();
+    }
   }
 
   /**
@@ -329,14 +460,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // First check if Player has unlocked wall jump
     if (this.hasWallJumpAbility) {
       // Test if the Player is near walls
-      const walls = this.isTouchingWalls(
-        Player.WALL_DETECTION_DISTANCE,
-        this.height / 2
-      );
+      const walls: boolean[] = this.isTouchingWalls() as boolean[];
+      const wallsCount = walls.filter((wall) => {
+        return wall;
+      });
 
-      // Perform wall jump only if the Player,
-      // is not on the ground and is touching at least one wall
-      this.canWallJump = (!this.body.onFloor() && walls.length > 0);
+      // Perform wall jump only if the Player
+      // is not on the ground and is touching only one wall
+      this.canWallJump = (!this.body.onFloor() && wallsCount.length === 1);
       this.hasDoneWallJump = false;
 
       if (this.canWallJump) {
@@ -346,7 +477,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
           if (
             // The Player is touching a wall on left
-            walls[0].overlapX < 0
+            walls[0]
             // The user is moving on the opposite side of wall (right)
             && this.scene
               .getController()
@@ -354,7 +485,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             sign = 1;
           } else if (
             // The Player is touching a wall on right
-            walls[0].overlapX > 0
+            walls[1]
             // The user is moving on the opposite side of wall (left)
             && this.scene
               .getController()
@@ -404,7 +535,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         // The Player is actually jumping
         this.isJumping = true;
 
-        this.isStandingJumping = Math.abs(this.body.velocity.x) <= TILE_SIZE * 2;
+        this.isStandingJumping = Math.abs(this.body.velocity.x) <= TILE_SIZE;
 
         this.setVelocityY(this.getJumpSpeed());
       }
@@ -501,7 +632,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (isShootPress && this.facing.x !== DirectionAxisX.CENTER) {
       // Test which weapon the player has and if is single or with rateo
       const bulletPosition = new Phaser.Math.Vector2(
-        this.x + (this.facing.x === DirectionAxisX.RIGHT ? this.width : 0),
+        this.x + (this.width / 2) * (this.facing.x === DirectionAxisX.RIGHT ? 1 : -1),
         this.getShotHeight()
       );
 
@@ -537,12 +668,28 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.play(`hero_${animation}_${this.facing.x}_animation`, true);
   }
 
+  protected updateHitbox(time: any, delta: number): void {
+    const bounds = this.getBodyBounds();
+
+    this.body.updateCenter();
+
+    this.leftWallHitbox.alignToParent(
+      this,
+      bounds.left - Player.WALL_DETECTION_DISTANCE / 2,
+      bounds.top + this.body.halfHeight
+    );
+
+    this.rightWallHitbox.alignToParent(
+      this,
+      bounds.right + Player.WALL_DETECTION_DISTANCE / 2,
+      bounds.top + this.body.halfHeight
+    );
+  }
+
   /**
    * Debug the player after all the update cycle
    */
-  protected debug(): void {
-    console.debug(this.isStandingJumping);
-  }
+  protected debug(): void {}
 
   public getJumpSpeed(applyMultlipier = true): number {
     return -this.baseSpeed
@@ -579,23 +726,34 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       : Player.RUN_SPEED_MULTIPLIER;
   }
 
-  public isTouchingWalls(
-    distance?: number,
-    height?: number
-  ): Phaser.Physics.Arcade.StaticBody[] {
-    distance = distance || 0;
-    height = height || this.height;
+  public isTouchingWalls(direction?: DirectionAxisX): boolean | boolean[] {
+    let hitbox: Phaser.GameObjects.Rectangle;
 
-    const walls = this.scene.physics.overlapRect(
-      this.body.position.x - distance,
-      this.body.position.y - this.height / 2,
-      this.width + (distance * 2),
-      height,
-      false,
-      true
+    switch (direction) {
+      case DirectionAxisX.LEFT:
+        hitbox = this.leftWallHitbox;
+        break;
+      case DirectionAxisX.RIGHT:
+        hitbox = this.rightWallHitbox;
+        break;
+
+      default:
+        return [
+          this.isTouchingWalls(DirectionAxisX.LEFT) as boolean,
+          this.isTouchingWalls(DirectionAxisX.RIGHT) as boolean
+        ]
+    }
+
+    return this.scene.physics.overlap(
+      hitbox,
+      this.scene.worldLayer,
+      undefined,
+      (hitbox, tile: unknown) => {
+        if ((tile as Phaser.Tilemaps.Tile).index > -1) {
+          return true;
+        }
+      }
     );
-
-    return walls as Phaser.Physics.Arcade.StaticBody[];
   }
 
   /**
@@ -604,7 +762,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    * @return {number} The calculated Y coordinate
    */
   public getShotHeight(): number {
-    return this.y + Player.SHOT_HEIGHT;
+    const bounds = this.getBounds();
+
+    return bounds.top + Player.SHOT_HEIGHT;
   }
 
   /**
@@ -618,5 +778,22 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       || this.hasBowAbility;
 
     // TODO: add all other weapons into the function
+  }
+
+  /**
+   * Get the bounds of the current GameObject body, regardless of its origin
+   *
+   * @return {Phaser.Geom.Rectangle} The bounds of the body
+   */
+  public getBodyBounds(): Phaser.Geom.Rectangle {
+    // Get the current sprite bounds
+    const bounds: Phaser.Geom.Rectangle = this.getBounds();
+
+    return new Phaser.Geom.Rectangle(
+      bounds.left + (this.width / 2 - this.body.halfWidth),
+      bounds.top + (this.height / 2 - this.body.halfHeight),
+      this.body.width,
+      this.body.height
+    );
   }
 }

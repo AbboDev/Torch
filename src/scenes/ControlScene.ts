@@ -1,6 +1,10 @@
 import { Controller, ControllerKey } from 'Miscellaneous/Controller';
 
-export class ControlScene extends Phaser.Scene {
+export abstract class ControlScene extends Phaser.Scene {
+  /**
+   * The Controller for handle all the user inputs
+   * @type {[type]}
+   */
   private controller!: Controller;
 
   public create(): void {
