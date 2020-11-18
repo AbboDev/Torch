@@ -292,6 +292,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       frameHeight: TILE_SIZE * 3
     };
 
+    // const smallSpriteSize: Phaser.Types.Loader.FileTypes.ImageFrameConfig = {
+    //   frameWidth: TILE_SIZE * 2,
+    //   frameHeight: TILE_SIZE * 2
+    // };
+
     scene.load
       .spritesheet(
         'hero_idle_center',
@@ -316,6 +321,36 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       .spritesheet(
         'hero_walk_right',
         '/assets/sprites/hero_walk_right.png',
+        spriteSize
+      )
+      .spritesheet(
+        'hero_jump_idle_left',
+        '/assets/sprites/hero_jump_idle_left.png',
+        spriteSize
+      )
+      .spritesheet(
+        'hero_jump_idle_right',
+        '/assets/sprites/hero_jump_idle_right.png',
+        spriteSize
+      )
+      .spritesheet(
+        'hero_jump_left',
+        '/assets/sprites/hero_jump_left.png',
+        spriteSize
+      )
+      .spritesheet(
+        'hero_jump_right',
+        '/assets/sprites/hero_jump_right.png',
+        spriteSize
+      )
+      .spritesheet(
+        'hero_jump_left_start',
+        '/assets/sprites/hero_jump_left_start.png',
+        spriteSize
+      )
+      .spritesheet(
+        'hero_jump_right_start',
+        '/assets/sprites/hero_jump_right_start.png',
         spriteSize
       );
   }
@@ -352,6 +387,56 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     scene.anims.create({
       key: 'hero_walk_right_animation',
       frames: scene.anims.generateFrameNumbers('hero_walk_right', {}),
+      frameRate: 20,
+      repeat: -1
+    });
+
+    scene.anims.create({
+      key: 'hero_jump_idle_left_animation',
+      frames: scene.anims.generateFrameNumbers('hero_jump_idle_left', {
+        start: 0,
+        end: 1
+      }),
+      duration: 300
+    });
+
+    scene.anims.create({
+      key: 'hero_jump_idle_right_animation',
+      frames: scene.anims.generateFrameNumbers('hero_jump_idle_right', {
+        start: 0,
+        end: 1
+      }),
+      duration: 300
+    });
+
+    scene.anims.create({
+      key: 'hero_fall_idle_left_animation',
+      frames: scene.anims.generateFrameNumbers('hero_jump_idle_left', {
+        start: 2,
+        end: 3
+      }),
+      duration: 300
+    });
+
+    scene.anims.create({
+      key: 'hero_fall_idle_right_animation',
+      frames: scene.anims.generateFrameNumbers('hero_jump_idle_right', {
+        start: 2,
+        end: 3
+      }),
+      duration: 300
+    });
+
+    scene.anims.create({
+      key: 'hero_jump_left_animation',
+      frames: scene.anims.generateFrameNumbers('hero_jump_left', {}),
+      frameRate: 20,
+      repeat: -1
+    });
+
+    scene.anims.create({
+      key: 'hero_jump_right_animation',
+      frames: scene.anims.generateFrameNumbers('hero_jump_right', {}),
       frameRate: 20,
       repeat: -1
     });
@@ -423,8 +508,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    */
   public update(time: any, delta: number): void {
     if (this.canInteract) {
-      // Handles all the movement along the y axis
-      this.jump();
+      // Prevent jump when is facing forward
+      if (this.facing.x !== DirectionAxisX.CENTER) {
+        // Handles all the movement along the y axis
+        this.jump();
+      }
 
       // Handles all the movement along the x axis
       this.walk();
@@ -567,6 +655,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.isFalling = true;
       // If the Player is falling, he cannot also jump
       this.isJumping = false;
+    } else {
+      this.isFalling = false;
     }
 
     // Detect if the Player is jumping by checking if his y speed is negative
@@ -662,10 +752,28 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    * Change the current animation based on previous operations
    */
   protected animate(): void {
-    const isRunning = this.body.velocity.x != 0;
-    const animation = isRunning ? 'walk' : 'idle';
+    let action: string = '';
 
-    this.play(`hero_${animation}_${this.facing.x}_animation`, true);
+    const isMoving: boolean = this.body.velocity.x !== 0;
+
+    if (this.body.onFloor()) {
+      action = isMoving ? 'walk' : 'idle';
+    } else {
+      if (!this.isStandingJumping) {
+        action = 'jump';
+      } else if (this.isJumping) {
+        action = 'jump_idle';
+      } else {
+        action = 'fall_idle';
+      }
+    }
+
+    const animation: string = `hero_${action}_${this.facing.x}_animation`;
+    const doNewAnimation: boolean = animation !== this.anims.getCurrentKey();
+
+    if (doNewAnimation) {
+      this.anims.play(animation, true);
+    }
   }
 
   protected updateHitbox(time: any, delta: number): void {
