@@ -144,7 +144,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    * Default multiplier of jump speed
    * @type {Number}
    */
-  static JUMP_SPEED_MULTIPLIER = 1.2;
+  static JUMP_SPEED_MULTIPLIER = 1.25;
 
   /**
    * Multiplier of jump speed offers by dedicated powerup
