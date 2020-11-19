@@ -292,10 +292,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       frameHeight: TILE_SIZE * 3
     };
 
-    // const smallSpriteSize: Phaser.Types.Loader.FileTypes.ImageFrameConfig = {
-    //   frameWidth: TILE_SIZE * 2,
-    //   frameHeight: TILE_SIZE * 2
-    // };
+    const smallSpriteSize: Phaser.Types.Loader.FileTypes.ImageFrameConfig = {
+      frameWidth: TILE_SIZE * 2,
+      frameHeight: TILE_SIZE * 2
+    };
 
     scene.load
       .spritesheet(
@@ -336,22 +336,22 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       .spritesheet(
         'hero_jump_left',
         '/assets/sprites/hero_jump_left.png',
-        spriteSize
+        smallSpriteSize
       )
       .spritesheet(
         'hero_jump_right',
         '/assets/sprites/hero_jump_right.png',
-        spriteSize
+        smallSpriteSize
       )
       .spritesheet(
         'hero_jump_left_start',
         '/assets/sprites/hero_jump_left_start.png',
-        spriteSize
+        smallSpriteSize
       )
       .spritesheet(
         'hero_jump_right_start',
         '/assets/sprites/hero_jump_right_start.png',
-        spriteSize
+        smallSpriteSize
       );
   }
 
@@ -583,7 +583,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
           // Test if both the actions are corrects
           if (sign !== 0) {
+            // The Player is actually performing a jump
+            this.isJumping = true;
+
+            // The Player has done a wall jump
             this.hasDoneWallJump = true;
+
             // Then push the player on the opposite side of wall and to the ceil
             this.setVelocity(
               Math.abs(this.getJumpSpeed(false)) * 2 * sign,
@@ -671,6 +676,19 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         // The Player slowly stop to jump and perform a linear fall
         this.setVelocityY(Math.max(newVelocity, 0));
       }
+    }
+
+    // Check if the Player is in mid air, but with an sufficient x speed
+    if (!this.isStandingJumping && (this.isFalling || this.isJumping)) {
+      // Shrink his body to fit with the animation
+      this.body
+        .setOffset(TILE_SIZE / 2, 0)
+        .setSize(TILE_SIZE, TILE_SIZE * 2, false);
+    } else {
+      // Reset the body to his original shape
+      this.body
+        .setOffset(TILE_SIZE / 2, TILE_SIZE / 2)
+        .setSize(TILE_SIZE, TILE_SIZE * 2.5, false);
     }
   }
 
