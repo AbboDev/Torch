@@ -29,6 +29,8 @@ export class Hitbox extends Phaser.GameObjects.Rectangle {
     this.scene.add.existing(this);
     this.scene.physics.world.enable(this);
 
+    this.setOrigin(0.5, 0.5);
+
     this.body
       .setAllowGravity(false);
 
