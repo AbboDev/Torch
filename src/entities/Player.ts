@@ -1025,8 +1025,8 @@ export class Player extends SpriteCollidable {
     const bounds: Phaser.Geom.Rectangle = this.getBounds();
 
     return new Phaser.Geom.Rectangle(
-      bounds.left + (this.width / 2 - this.body.halfWidth),
-      bounds.top + (this.height / 2 - this.body.halfHeight),
+      bounds.left + (this.width - this.body.width) * this.originX,
+      bounds.top + (this.height - this.body.height) * this.originY,
       this.body.width,
       this.body.height
     );
