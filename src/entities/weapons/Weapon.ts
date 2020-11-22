@@ -1,9 +1,11 @@
 import { Facing } from 'Miscellaneous/Direction';
 import { Bullet, BulletConfig } from 'Entities/Bullets/Bullet';
 
-import { ControlScene } from 'Scenes/ControlScene';
+import { GroupCollidable } from 'Entities/WorldCollidable';
 
-export class Weapon extends Phaser.Physics.Arcade.Group {
+import { MapScene } from 'Scenes/MapScene';
+
+export class Weapon extends GroupCollidable {
   /**
    * The time when the last bullet had been shot
    * @type {Number}
@@ -27,16 +29,12 @@ export class Weapon extends Phaser.Physics.Arcade.Group {
   public defaultKey = 'bullet';
 
   public constructor(
-    public scene: ControlScene
+    public scene: MapScene
   ) {
-    super(
-      scene.physics.world,
-      scene,
-      {
-        runChildUpdate: true,
-        classType: Bullet
-      }
-    );
+    super(scene, {
+      runChildUpdate: true,
+      classType: Bullet
+    });
 
     this.scene.add.existing(this);
   }
@@ -62,5 +60,12 @@ export class Weapon extends Phaser.Physics.Arcade.Group {
 
   public canShoot() {
     this.hasAlreayShoot = false;
+  }
+
+  protected postChildCollision(
+    bullet: Bullet,
+    tile: Phaser.GameObjects.GameObject
+  ): void {
+    bullet.impact();
   }
 }

@@ -108,7 +108,7 @@ export class Bullet extends Phaser.Physics.Arcade.Sprite {
   /**
    * Stop physics and render updates for this object
    */
-  protected impact(): void {
+  public impact(): void {
     this
       .setActive(false)
       .setVisible(false)

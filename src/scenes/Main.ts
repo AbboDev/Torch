@@ -91,8 +91,6 @@ export class Main extends MapScene {
       .setAlpha(0.5)
       .setDepth(-1);
 
-    this.physics.add.collider(this.hero, this.worldLayer);
-
     this.updateCollisionGraphic(this.physics.world.drawDebug);
 
     this.cameras.main

@@ -7,13 +7,14 @@ import { Bow } from 'Entities/Weapons/Bow';
 import { Rifle } from 'Entities/Weapons/Rifle';
 import { Weapon } from 'Entities/Weapons/Weapon';
 import { BulletConfig } from 'Entities/Bullets/Bullet';
+import { SpriteCollidable } from 'Entities/WorldCollidable';
 
 import { MapScene } from 'Scenes/MapScene';
 
 import { PLAYER_DEPTH } from 'Config/depths';
 import { TILE_SIZE } from 'Config/tiles';
 
-export class Player extends Phaser.Physics.Arcade.Sprite {
+export class Player extends SpriteCollidable {
   /**
    * The Player Phaser body
    * @type {Phaser.Physics.Arcade.Body}
