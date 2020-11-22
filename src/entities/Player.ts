@@ -216,6 +216,24 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   public canInteract: boolean = true;
 
   /**
+   * Determinate if Player is crouch
+   * @type {boolean}
+   */
+  public isCrouch: boolean = false;
+
+  /**
+   * Determinate if Player can crouch
+   * @type {boolean}
+   */
+  public canCrouch: boolean = true;
+
+  /**
+   * Determinate if Player has smaller collision box
+   * @type {boolean}
+   */
+  public isBodySmall: boolean = false;
+
+  /**
    * Create the Player
    *
    * @param {MapScene} scene - scene creating the player.
@@ -352,6 +370,16 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         'hero_jump_right_start',
         '/assets/sprites/hero_jump_right_start.png',
         smallSpriteSize
+      )
+      .spritesheet(
+        'hero_crouch_idle_left',
+        '/assets/sprites/hero_crouch_idle_left.png',
+        smallSpriteSize
+      )
+      .spritesheet(
+        'hero_crouch_idle_right',
+        '/assets/sprites/hero_crouch_idle_right.png',
+        smallSpriteSize
       );
   }
 
@@ -373,6 +401,20 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     scene.anims.create({
       key: 'hero_idle_right_animation',
       frames: scene.anims.generateFrameNumbers('hero_idle_right', {}),
+      frameRate: 4,
+      repeat: -1
+    });
+
+    scene.anims.create({
+      key: 'hero_crouch_idle_left_animation',
+      frames: scene.anims.generateFrameNumbers('hero_crouch_idle_left', {}),
+      frameRate: 4,
+      repeat: -1
+    });
+
+    scene.anims.create({
+      key: 'hero_crouch_idle_right_animation',
+      frames: scene.anims.generateFrameNumbers('hero_crouch_idle_right', {}),
       frameRate: 4,
       repeat: -1
     });
@@ -516,6 +558,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
       // Handles all the movement along the x axis
       this.walk();
+
+      // Prevent crouch when is facing forward
+      if (this.facing.x !== DirectionAxisX.CENTER) {
+        // Handles the Player crouch action
+        this.crouch();
+      }
+
+      // Handles all the Player body resizing based on current state
+      this.resizeBody();
 
       // The user can shoot only if the Player has at least one range weapon
       if (this.hasAtLeastOneRangeWeapon()) {
@@ -678,17 +729,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       }
     }
 
-    // Check if the Player is in mid air, but with an sufficient x speed
-    if (!this.isStandingJumping && (this.isFalling || this.isJumping)) {
-      // Shrink his body to fit with the animation
-      this.body
-        .setOffset(TILE_SIZE / 2, 0)
-        .setSize(TILE_SIZE, TILE_SIZE * 2, false);
-    } else {
-      // Reset the body to his original shape
-      this.body
-        .setOffset(TILE_SIZE / 2, TILE_SIZE / 2)
-        .setSize(TILE_SIZE, TILE_SIZE * 2.5, false);
+    // When the Player is in mid air, he must stand up
+    if (this.body.velocity.y !== 0) {
+      this.canCrouch = false;
+      this.isCrouch = false;
     }
   }
 
@@ -702,6 +746,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const isLeftPress: boolean = this.scene
       .getController()
       .isKeyPressed(ControllerKey.LEFT);
+
+    // When the Player is moving, he cannot also be crouch
+    if (isRightPress || isLeftPress) {
+      this.canCrouch = false;
+      this.isCrouch = false;
+    }
 
     if (isRightPress && !isLeftPress) {
       this.facing.x = DirectionAxisX.RIGHT;
@@ -718,6 +768,58 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       // and stop it if match certain X speed
       if (Math.abs(this.body.velocity.x) < (this.baseSpeed / 20)) {
         this.setVelocityX(0);
+      }
+    }
+  }
+
+  /**
+   * Handles the Player crouch action
+   */
+  protected crouch(): void {
+    // Test if the Player can crouch in the current state and position
+    if (this.canCrouch) {
+      const isDownPressed: boolean = this.scene
+        .getController()
+        .isKeyPressed(ControllerKey.DOWN);
+
+      const isUpPressed: boolean = this.scene
+        .getController()
+        .isKeyPressed(ControllerKey.UP);
+
+      if (isDownPressed && !this.isCrouch) {
+        this.isCrouch = true;
+      } else if (isUpPressed && this.isCrouch) {
+        this.isCrouch = false;
+      }
+    }
+
+    this.canCrouch = true;
+  }
+
+  /**
+   * Handles all the Player body resizing based on current state
+   */
+  protected resizeBody(): void {
+    // Check if the Player is in mid air, but with an sufficient x speed
+    if (this.isCrouch ||
+      !this.isStandingJumping && (this.isFalling || this.isJumping)
+    ) {
+      if (!this.isBodySmall) {
+        // Shrink his body to fit with the animation
+        this.body
+          .setOffset(TILE_SIZE / 2, 0)
+          .setSize(TILE_SIZE, TILE_SIZE * 2, false);
+
+        this.isBodySmall = true;
+      }
+    } else {
+      if (this.isBodySmall) {
+        // Reset the body to his original shape
+        this.body
+          .setOffset(TILE_SIZE / 2, TILE_SIZE / 2)
+          .setSize(TILE_SIZE, TILE_SIZE * 2.5, false);
+
+        this.isBodySmall = false;
       }
     }
   }
@@ -775,7 +877,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const isMoving: boolean = this.body.velocity.x !== 0;
 
     if (this.body.onFloor()) {
-      action = isMoving ? 'walk' : 'idle';
+      if (this.isCrouch) {
+        action = 'crouch_idle';
+      } else if (this.body.velocity.x !== 0) {
+        action = 'walk';
+      } else {
+        action = 'idle';
+      }
     } else {
       if (!this.isStandingJumping) {
         action = 'jump';
@@ -802,13 +910,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.leftWallHitbox.alignToParent(
       this,
       bounds.left - Player.WALL_DETECTION_DISTANCE / 2,
-      bounds.top + this.body.halfHeight
+      bounds.centerY
     );
 
     this.rightWallHitbox.alignToParent(
       this,
       bounds.right + Player.WALL_DETECTION_DISTANCE / 2,
-      bounds.top + this.body.halfHeight
+      bounds.centerY
     );
   }
 
@@ -867,7 +975,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         return [
           this.isTouchingWalls(DirectionAxisX.LEFT) as boolean,
           this.isTouchingWalls(DirectionAxisX.RIGHT) as boolean
-        ]
+        ];
     }
 
     return this.scene.physics.overlap(
