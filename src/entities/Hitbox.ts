@@ -1,4 +1,5 @@
 import { MapScene } from 'Scenes/MapScene';
+import { PLAYER_DEPTH } from 'Config/depths';
 
 export class Hitbox extends Phaser.GameObjects.Rectangle {
   /**
@@ -22,14 +23,16 @@ export class Hitbox extends Phaser.GameObjects.Rectangle {
       y,
       width,
       height,
-      fillColor || 0xfff,
-      fillAlpha || 0
+      fillColor || 0xffffff,
+      fillAlpha || 1
     );
 
     this.scene.add.existing(this);
     this.scene.physics.world.enable(this);
 
-    this.setOrigin(0.5, 0.5);
+    this
+      .setOrigin(0.5, 0.5)
+      .setDepth(PLAYER_DEPTH + 1);
 
     this.body
       .setAllowGravity(false);
