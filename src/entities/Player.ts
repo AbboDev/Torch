@@ -1,7 +1,7 @@
 import { Facing, DirectionAxisY, DirectionAxisX } from 'Miscellaneous/Direction';
 import { ControllerKey } from 'Miscellaneous/Controller';
 
-import { Hitbox } from 'Entities/Hitbox';
+import { Hitbox, AreaPosition } from 'Entities/Hitbox';
 import { Gun } from 'Entities/Weapons/Gun';
 import { Bow } from 'Entities/Weapons/Bow';
 import { Rifle } from 'Entities/Weapons/Rifle';
@@ -183,6 +183,9 @@ export class Player extends SpriteCollidable {
    */
   static SHOT_HEIGHT = TILE_SIZE + 2;
 
+  static BODY_WIDTH = TILE_SIZE;
+  static BODY_HEIGHT = TILE_SIZE * 2;
+
   /**
    * The default movement speed based on game gravity
    * @type {Number}
@@ -191,6 +194,9 @@ export class Player extends SpriteCollidable {
 
   private leftWallHitbox: Hitbox;
   private rightWallHitbox: Hitbox;
+
+  private leftGrabHitbox: Hitbox;
+  private rightGrabHitbox: Hitbox;
 
   /**
    * The current room number
@@ -235,6 +241,12 @@ export class Player extends SpriteCollidable {
   public isBodySmall: boolean = false;
 
   /**
+   * Determinate if Player is hanging on a tile
+   * @type {boolean}
+   */
+  public isHanging: boolean = false;
+
+  /**
    * Create the Player
    *
    * @param {MapScene} scene - scene creating the player.
@@ -263,7 +275,7 @@ export class Player extends SpriteCollidable {
 
     this
       .setDepth(PLAYER_DEPTH)
-      .setOrigin(0.5, 1)
+      .setOrigin(0.5, 0)
       .setCollideWorldBounds(true)
       .setBounce(0)
       .setMaxVelocity(
@@ -275,8 +287,11 @@ export class Player extends SpriteCollidable {
       .setAllowGravity(true)
       .setAllowDrag(true)
       .setDragX(0.90)
-      .setOffset(TILE_SIZE / 2, TILE_SIZE / 2)
-      .setSize(TILE_SIZE, TILE_SIZE * 2.5, false);
+      .setOffset(
+        (this.width - Player.BODY_WIDTH) * (1 - this.originX),
+        (this.height - Player.BODY_HEIGHT) * (1 - this.originY)
+      )
+      .setSize(Player.BODY_WIDTH, Player.BODY_HEIGHT, false);
 
     this.body.useDamping = true;
 
@@ -284,14 +299,14 @@ export class Player extends SpriteCollidable {
     this.rifle = new Rifle(this.scene);
     this.bow = new Bow(this.scene);
 
-    const bounds = this.getBodyBounds();
-
     this.body.updateCenter();
+
+    const bounds = this.getBodyBounds();
 
     this.leftWallHitbox = new Hitbox(
       this.scene,
       bounds.left - Player.WALL_DETECTION_DISTANCE / 2,
-      bounds.top + this.body.halfHeight,
+      bounds.centerY,
       Player.WALL_DETECTION_DISTANCE,
       this.body.halfHeight
     );
@@ -299,9 +314,29 @@ export class Player extends SpriteCollidable {
     this.rightWallHitbox = new Hitbox(
       this.scene,
       bounds.right + Player.WALL_DETECTION_DISTANCE / 2,
-      bounds.top + this.body.halfHeight,
+      bounds.centerY,
       Player.WALL_DETECTION_DISTANCE,
       this.body.halfHeight
+    );
+
+    this.leftGrabHitbox = new Hitbox(
+      this.scene,
+      bounds.left - Player.WALL_DETECTION_DISTANCE / 2 - 1,
+      bounds.top + Player.WALL_DETECTION_DISTANCE / 2 + 1,
+      Player.WALL_DETECTION_DISTANCE,
+      Player.WALL_DETECTION_DISTANCE,
+      0x00ff00,
+      0
+    );
+
+    this.rightGrabHitbox = new Hitbox(
+      this.scene,
+      bounds.right + Player.WALL_DETECTION_DISTANCE / 2 + 1,
+      bounds.top + Player.WALL_DETECTION_DISTANCE / 2 + 1,
+      Player.WALL_DETECTION_DISTANCE,
+      Player.WALL_DETECTION_DISTANCE,
+      0x00ff00,
+      0
     );
   }
 
@@ -311,10 +346,11 @@ export class Player extends SpriteCollidable {
       frameHeight: TILE_SIZE * 3
     };
 
-    const smallSpriteSize: Phaser.Types.Loader.FileTypes.ImageFrameConfig = {
-      frameWidth: TILE_SIZE * 2,
-      frameHeight: TILE_SIZE * 2
-    };
+    const smallSpriteSize: Phaser.Types.Loader.FileTypes.ImageFrameConfig = spriteSize;
+    // const smallSpriteSize: Phaser.Types.Loader.FileTypes.ImageFrameConfig = {
+    //   frameWidth: TILE_SIZE * 2,
+    //   frameHeight: TILE_SIZE * 2
+    // };
 
     scene.load
       .spritesheet(
@@ -560,14 +596,17 @@ export class Player extends SpriteCollidable {
       // Handles all the movement along the x axis
       this.walk();
 
+      // Handles the grab action
+      this.grab();
+
       // Prevent crouch when is facing forward
       if (this.facing.x !== DirectionAxisX.CENTER) {
-        // Handles the Player crouch action
+        // Handles the crouch action
         this.crouch();
       }
 
       // Handles all the Player body resizing based on current state
-      this.resizeBody();
+      // this.resizeBody();
 
       // The user can shoot only if the Player has at least one range weapon
       if (this.hasAtLeastOneRangeWeapon()) {
@@ -580,7 +619,7 @@ export class Player extends SpriteCollidable {
     this.animate();
 
     // Change the current animation based on previous operations
-    this.updateHitbox(time, delta);
+    this.updateHitboxes();
 
     // Debug the player after all the update cycle
     if (this.scene.physics.world.drawDebug) {
@@ -774,7 +813,65 @@ export class Player extends SpriteCollidable {
   }
 
   /**
-   * Handles the Player crouch action
+   * Handles the grab action
+   */
+  protected grab(): void {
+    if (this.body.velocity.y !== 0 || this.isHanging) {
+      let hitbox!: Hitbox;
+      // let checkHitbox!: Hitbox;
+      let isTouchingTiles: boolean = false;
+      let hasTileOnHand: boolean = false;
+
+      if (this.facing.x === DirectionAxisX.LEFT) {
+        hitbox = this.leftGrabHitbox;
+      } else if (this.facing.x === DirectionAxisX.RIGHT) {
+        hitbox = this.rightGrabHitbox;
+      }
+
+      if (typeof hitbox !== 'undefined') {
+        // Test if Player's hitbox is touching a tile
+        isTouchingTiles = hitbox.overlapTilesArea(AreaPosition.TOP_HALF);
+        let currentTile!: Phaser.Tilemaps.Tile;
+
+        if (isTouchingTiles) {
+          // If the Player is touching a tile test which tiles
+          // are inside the hitbox area
+          const tiles = this.scene
+            .map
+            .getTilesWithinShape(hitbox.getBounds())
+            .filter((tile) => {
+              // Filter the void tile
+              return tile.index > -1;
+            });
+
+          if (tiles.length === 1) {
+            currentTile = tiles[0];
+            // Check if there is a tile upper the current one
+            const upperTile = this.scene.map.getTileAt(currentTile.x, currentTile.y - 1);
+            hasTileOnHand = upperTile === null;
+          }
+        }
+
+        if (hasTileOnHand) {
+          this.isHanging = true;
+          // Prevent the Player to slide down
+          this.body.setAllowGravity(false);
+
+          this.setGravity(0);
+          this.setVelocityY(0);
+          // Align the body to the current tile
+          this.body.y = currentTile.pixelY;
+        } else {
+          this.isHanging = false;
+
+          this.body.setAllowGravity(true);
+        }
+      }
+    }
+  }
+
+  /**
+   * Handles the crouch action
    */
   protected crouch(): void {
     // Test if the Player can crouch in the current state and position
@@ -802,23 +899,33 @@ export class Player extends SpriteCollidable {
    */
   protected resizeBody(): void {
     // Check if the Player is in mid air, but with an sufficient x speed
-    if (this.isCrouch ||
-      !this.isStandingJumping && (this.isFalling || this.isJumping)
-    ) {
+    const isMovingY = !this.isStandingJumping && (this.isFalling || this.isJumping);
+
+    if (!this.isHanging && (this.isCrouch || isMovingY)) {
       if (!this.isBodySmall) {
+        const newHeight = Player.BODY_HEIGHT / 4 * 3;
+        // const offsetX = this.body.offset.x;
+        const offsetX = (this.width - Player.BODY_WIDTH) * (1 - this.originX);
+        const offsetY = (this.height - newHeight) * (1 - this.originY);
+
         // Shrink his body to fit with the animation
         this.body
-          .setOffset(TILE_SIZE / 2, 0)
-          .setSize(TILE_SIZE, TILE_SIZE * 2, false);
+          .setOffset(offsetX, offsetY)
+          .setSize(Player.BODY_WIDTH, newHeight, false)
+          .updateCenter();
 
         this.isBodySmall = true;
       }
     } else {
-      if (this.isBodySmall) {
+      if (this.isBodySmall/* || this.isHanging*/) {
         // Reset the body to his original shape
+        const offsetX = (this.width - Player.BODY_WIDTH) * (1 - this.originX);
+        const offsetY = (this.height - Player.BODY_HEIGHT) * (1 - this.originY);
+
         this.body
-          .setOffset(TILE_SIZE / 2, TILE_SIZE / 2)
-          .setSize(TILE_SIZE, TILE_SIZE * 2.5, false);
+          .setOffset(offsetX, offsetY)
+          .setSize(Player.BODY_WIDTH, Player.BODY_HEIGHT, false)
+          .updateCenter();
 
         this.isBodySmall = false;
       }
@@ -903,10 +1010,10 @@ export class Player extends SpriteCollidable {
     }
   }
 
-  protected updateHitbox(time: any, delta: number): void {
-    const bounds = this.getBodyBounds();
-
+  protected updateHitboxes(): void {
     this.body.updateCenter();
+
+    const bounds = this.getBodyBounds();
 
     this.leftWallHitbox.alignToParent(
       this,
@@ -919,12 +1026,28 @@ export class Player extends SpriteCollidable {
       bounds.right + Player.WALL_DETECTION_DISTANCE / 2,
       bounds.centerY
     );
+
+    this.leftGrabHitbox.alignToParent(
+      this,
+      bounds.left - Player.WALL_DETECTION_DISTANCE / 2 - 1,
+      bounds.top + Player.WALL_DETECTION_DISTANCE / 2 + 1
+    );
+
+    this.rightGrabHitbox.alignToParent(
+      this,
+      bounds.right + Player.WALL_DETECTION_DISTANCE / 2 + 1,
+      bounds.top + Player.WALL_DETECTION_DISTANCE / 2 + 1
+    );
   }
 
   /**
    * Debug the player after all the update cycle
    */
-  protected debug(): void {}
+  protected debug(): void {
+    if (this.scene.getController().isKeyPressedForFirstTime(ControllerKey.X)) {
+      this.body.setAllowGravity(!this.body.allowGravity);
+    }
+  }
 
   public getJumpSpeed(applyMultlipier = true): number {
     return -this.baseSpeed
@@ -961,8 +1084,15 @@ export class Player extends SpriteCollidable {
       : Player.RUN_SPEED_MULTIPLIER;
   }
 
+  /**
+   * Detect if the required Hitbox is overlapping at least one tile
+   *
+   * @param  {DirectionAxisX} direction The direction where to test the overlapping.
+   *                                    If not specified, both direction are tested
+   * @return {boolean|boolean[]}        True if a least one tile per direction is overlapped
+   */
   public isTouchingWalls(direction?: DirectionAxisX): boolean | boolean[] {
-    let hitbox: Phaser.GameObjects.Rectangle;
+    let hitbox: Hitbox;
 
     switch (direction) {
       case DirectionAxisX.LEFT:
@@ -979,16 +1109,7 @@ export class Player extends SpriteCollidable {
         ];
     }
 
-    return this.scene.physics.overlap(
-      hitbox,
-      this.scene.worldLayer,
-      undefined,
-      (hitbox, tile: unknown) => {
-        if ((tile as Phaser.Tilemaps.Tile).index > -1) {
-          return true;
-        }
-      }
-    );
+    return hitbox.overlapTiles();
   }
 
   /**
@@ -1025,10 +1146,26 @@ export class Player extends SpriteCollidable {
     const bounds: Phaser.Geom.Rectangle = this.getBounds();
 
     return new Phaser.Geom.Rectangle(
-      bounds.left + (this.width - this.body.width) * this.originX,
-      bounds.top + (this.height - this.body.height) * this.originY,
+      bounds.left + (this.width - this.body.width) * (1 - this.originX),
+      bounds.top + (this.height - this.body.height) * (1 - this.originY),
       this.body.width,
       this.body.height
+    );
+  }
+
+  public getBodyOffset(width?: number, height?: number): Phaser.Math.Vector2 {
+    if (typeof height === 'undefined') {
+      if (typeof width === 'undefined') {
+        width = Player.BODY_WIDTH;
+        height = Player.BODY_HEIGHT;
+      } else {
+        height = width;
+      }
+    }
+
+    return new Phaser.Math.Vector2(
+      (this.width - (width as number)) * (1 - this.originX),
+      (this.height - height) * (1 - this.originY)
     );
   }
 }
