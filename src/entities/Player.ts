@@ -124,6 +124,12 @@ export class Player extends SpriteCollidable {
   private hasBoostedRunAbility = false;
 
   /**
+   * The Player has the ability to hang to cliffs
+   * @type {Boolean}
+   */
+  private hasHangAbility = true;
+
+  /**
    * The Player has the gun range weapon
    * @type {Boolean}
    */
@@ -840,55 +846,56 @@ export class Player extends SpriteCollidable {
    * Handles the grab action
    */
   protected grab(): void {
-    if (this.body.velocity.y !== 0 || this.isHanging) {
-      let hitbox!: Hitbox;
-      // let checkHitbox!: Hitbox;
-      let isTouchingTiles: boolean = false;
-      let hasTileOnHand: boolean = false;
+    if (this.hasHangAbility) {
+      if (this.body.velocity.y !== 0 || this.isHanging) {
+        let hitbox!: Hitbox;
+        let isTouchingTiles: boolean = false;
+        let hasTileOnHand: boolean = false;
 
-      if (this.facing.x === DirectionAxisX.LEFT) {
-        hitbox = this.leftGrabHitbox;
-      } else if (this.facing.x === DirectionAxisX.RIGHT) {
-        hitbox = this.rightGrabHitbox;
-      }
-
-      if (typeof hitbox !== 'undefined') {
-        // Test if Player's hitbox is touching a tile
-        isTouchingTiles = hitbox.overlapTilesArea(AreaPosition.TOP_HALF);
-        let currentTile!: Phaser.Tilemaps.Tile;
-
-        if (isTouchingTiles) {
-          // If the Player is touching a tile test which tiles
-          // are inside the hitbox area
-          const tiles = this.scene
-            .map
-            .getTilesWithinShape(hitbox.getBounds())
-            .filter((tile) => {
-              // Filter the void tile
-              return tile.index > -1;
-            });
-
-          if (tiles.length === 1) {
-            currentTile = tiles[0];
-            // Check if there is a tile upper the current one
-            const upperTile = this.scene.map.getTileAt(currentTile.x, currentTile.y - 1);
-            hasTileOnHand = upperTile === null;
-          }
+        if (this.facing.x === DirectionAxisX.LEFT) {
+          hitbox = this.leftGrabHitbox;
+        } else if (this.facing.x === DirectionAxisX.RIGHT) {
+          hitbox = this.rightGrabHitbox;
         }
 
-        if (hasTileOnHand) {
-          this.isHanging = true;
-          // Prevent the Player to slide down
-          this.body.setAllowGravity(false);
+        if (typeof hitbox !== 'undefined') {
+          // Test if Player's hitbox is touching a tile
+          isTouchingTiles = hitbox.overlapTilesArea(AreaPosition.TOP_HALF);
+          let currentTile!: Phaser.Tilemaps.Tile;
 
-          this.setGravity(0);
-          this.setVelocityY(0);
-          // Align the body to the current tile
-          this.body.y = currentTile.pixelY;
-        } else {
-          this.isHanging = false;
+          if (isTouchingTiles) {
+            // If the Player is touching a tile test which tiles
+            // are inside the hitbox area
+            const tiles = this.scene
+              .map
+              .getTilesWithinShape(hitbox.getBounds())
+              .filter((tile) => {
+                // Filter the void tile
+                return tile.index > -1;
+              });
 
-          this.body.setAllowGravity(true);
+            if (tiles.length === 1) {
+              currentTile = tiles[0];
+              // Check if there is a tile upper the current one
+              const upperTile = this.scene.map.getTileAt(currentTile.x, currentTile.y - 1);
+              hasTileOnHand = upperTile === null;
+            }
+          }
+
+          if (hasTileOnHand) {
+            this.isHanging = true;
+            // Prevent the Player to slide down
+            this.body.setAllowGravity(false);
+
+            this.setGravity(0);
+            this.setVelocityY(0);
+            // Align the body to the current tile
+            this.body.y = currentTile.pixelY;
+          } else {
+            this.isHanging = false;
+
+            this.body.setAllowGravity(true);
+          }
         }
       }
     }
