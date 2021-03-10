@@ -389,6 +389,16 @@ export class Player extends SpriteCollidable {
         spriteSize
       )
       .spritesheet(
+        'hero_hang_left',
+        '/assets/sprites/hero_hang_left.png',
+        spriteSize
+      )
+      .spritesheet(
+        'hero_hang_right',
+        '/assets/sprites/hero_hang_right.png',
+        spriteSize
+      )
+      .spritesheet(
         'hero_jump_left',
         '/assets/sprites/hero_jump_left.png',
         smallSpriteSize
@@ -517,6 +527,20 @@ export class Player extends SpriteCollidable {
       key: 'hero_jump_right_animation',
       frames: scene.anims.generateFrameNumbers('hero_jump_right', {}),
       frameRate: 20,
+      repeat: -1
+    });
+
+    scene.anims.create({
+      key: 'hero_hang_left_animation',
+      frames: scene.anims.generateFrameNumbers('hero_hang_left', {}),
+      frameRate: 4,
+      repeat: -1
+    });
+
+    scene.anims.create({
+      key: 'hero_hang_right_animation',
+      frames: scene.anims.generateFrameNumbers('hero_hang_right', {}),
+      frameRate: 4,
       repeat: -1
     });
   }
@@ -993,7 +1017,9 @@ export class Player extends SpriteCollidable {
         action = 'idle';
       }
     } else {
-      if (!this.isStandingJumping) {
+      if (this.isHanging) {
+        action = 'hang';
+      } else if (!this.isStandingJumping) {
         action = 'jump';
       } else if (this.isJumping) {
         action = 'jump_idle';
