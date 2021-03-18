@@ -1,3 +1,19 @@
+export enum ControllerKey {
+  UP = 'Up',
+  DOWN = 'Down',
+  LEFT = 'Left',
+  RIGHT = 'Right',
+  A = 'A',
+  B = 'B',
+  X = 'X',
+  Y = 'Y',
+  L = 'L',
+  R = 'R',
+  START = 'Start',
+  SELECT = 'Select',
+  DEBUG = 'Debug',
+}
+
 export class Controller {
   public keyUp: Phaser.Input.Keyboard.Key;
   public isKeyUpPress = false;
@@ -66,19 +82,19 @@ export class Controller {
       });
 
     this.keyA = keyboard
-      .addKey(Phaser.Input.Keyboard.KeyCodes.Z)
+      .addKey(Phaser.Input.Keyboard.KeyCodes.X)
       .on('up', () => {
         this.isKeyAPress = false;
       });
 
     this.keyB = keyboard
-      .addKey(Phaser.Input.Keyboard.KeyCodes.X)
+      .addKey(Phaser.Input.Keyboard.KeyCodes.C)
       .on('up', () => {
         this.isKeyBPress = false;
       });
 
     this.keyX = keyboard
-      .addKey(Phaser.Input.Keyboard.KeyCodes.C)
+      .addKey(Phaser.Input.Keyboard.KeyCodes.Z)
       .on('up', () => {
         this.isKeyXPress = false;
       });
@@ -216,20 +232,4 @@ export class Controller {
 
     return (input as Phaser.Input.Keyboard.Key).getDuration();
   }
-}
-
-export enum ControllerKey {
-  UP = 'Up',
-  DOWN = 'Down',
-  LEFT = 'Left',
-  RIGHT = 'Right',
-  A = 'A',
-  B = 'B',
-  X = 'X',
-  Y = 'Y',
-  L = 'L',
-  R = 'R',
-  START = 'Start',
-  SELECT = 'Select',
-  DEBUG = 'Debug',
 }
