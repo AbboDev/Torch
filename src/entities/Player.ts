@@ -43,6 +43,12 @@ export class Player extends SpriteCollidable {
    * Where the Player is watching
    * @type {Facing}
    */
+  private adjustTo?: Phaser.Math.Vector2;
+
+  /**
+   * Where the Player is watching
+   * @type {Facing}
+   */
   private facing: Facing;
 
   /**
@@ -192,6 +198,9 @@ export class Player extends SpriteCollidable {
   static BODY_WIDTH = TILE_SIZE;
   static BODY_HEIGHT = TILE_SIZE * 2;
 
+  static BODY_SMALL_WIDTH = TILE_SIZE;
+  static BODY_SMALL_HEIGHT = Player.BODY_HEIGHT / 4 * 3;;
+
   /**
    * The default movement speed based on game gravity
    * @type {Number}
@@ -201,8 +210,8 @@ export class Player extends SpriteCollidable {
   private leftWallHitbox: Hitbox;
   private rightWallHitbox: Hitbox;
 
-  private leftGrabHitbox: Hitbox;
-  private rightGrabHitbox: Hitbox;
+  private leftHangHitbox: Hitbox;
+  private rightHangHitbox: Hitbox;
 
   /**
    * The current room number
@@ -325,7 +334,7 @@ export class Player extends SpriteCollidable {
       this.body.halfHeight
     );
 
-    this.leftGrabHitbox = new Hitbox(
+    this.leftHangHitbox = new Hitbox(
       this.scene,
       bounds.left - Player.WALL_DETECTION_DISTANCE / 2 - 1,
       bounds.top + Player.WALL_DETECTION_DISTANCE / 2 + 1,
@@ -335,7 +344,7 @@ export class Player extends SpriteCollidable {
       0
     );
 
-    this.rightGrabHitbox = new Hitbox(
+    this.rightHangHitbox = new Hitbox(
       this.scene,
       bounds.right + Player.WALL_DETECTION_DISTANCE / 2 + 1,
       bounds.top + Player.WALL_DETECTION_DISTANCE / 2 + 1,
@@ -616,6 +625,8 @@ export class Player extends SpriteCollidable {
    * @param {number} delta
    */
   public update(time: any, delta: number): void {
+    super.update();
+
     if (this.canInteract) {
       // Prevent jump when is facing forward
       if (this.facing.x !== DirectionAxisX.CENTER) {
@@ -626,17 +637,14 @@ export class Player extends SpriteCollidable {
       // Handles all the movement along the x axis
       this.walk();
 
-      // Handles the grab action
-      this.grab();
+      // Handles the hang action
+      this.hang();
 
       // Prevent crouch when is facing forward
       if (this.facing.x !== DirectionAxisX.CENTER) {
         // Handles the crouch action
         this.crouch();
       }
-
-      // Handles all the Player body resizing based on current state
-      // this.resizeBody();
 
       // The user can shoot only if the Player has at least one range weapon
       if (this.hasAtLeastOneRangeWeapon()) {
@@ -646,10 +654,13 @@ export class Player extends SpriteCollidable {
     }
 
     // Change the current animation based on previous operations
-    this.animate();
+    this.adjustPosition();
 
     // Change the current animation based on previous operations
     this.updateHitboxes();
+
+    // Change the current animation based on previous operations
+    this.animate();
 
     // Debug the player after all the update cycle
     if (this.scene.physics.world.drawDebug) {
@@ -762,7 +773,7 @@ export class Player extends SpriteCollidable {
       this.hasDoneDoubleJump = false;
     }
 
-    if (this.body.velocity.y === 0) {
+    if (this.body.velocity.y === 0 && this.body.onFloor()) {
       this.isStandingJumping = false;
     }
 
@@ -843,9 +854,9 @@ export class Player extends SpriteCollidable {
   }
 
   /**
-   * Handles the grab action
+   * Handles the hang action
    */
-  protected grab(): void {
+  protected hang(): void {
     if (this.hasHangAbility) {
       if (this.body.velocity.y !== 0 || this.isHanging) {
         let hitbox!: Hitbox;
@@ -853,9 +864,9 @@ export class Player extends SpriteCollidable {
         let hasTileOnHand: boolean = false;
 
         if (this.facing.x === DirectionAxisX.LEFT) {
-          hitbox = this.leftGrabHitbox;
+          hitbox = this.leftHangHitbox;
         } else if (this.facing.x === DirectionAxisX.RIGHT) {
-          hitbox = this.rightGrabHitbox;
+          hitbox = this.rightHangHitbox;
         }
 
         if (typeof hitbox !== 'undefined') {
@@ -890,7 +901,7 @@ export class Player extends SpriteCollidable {
             this.setGravity(0);
             this.setVelocityY(0);
             // Align the body to the current tile
-            this.body.y = currentTile.pixelY;
+            this.setNewPosition(null, currentTile.pixelY);
           } else {
             this.isHanging = false;
 
@@ -932,34 +943,51 @@ export class Player extends SpriteCollidable {
     // Check if the Player is in mid air, but with an sufficient x speed
     const isMovingY = !this.isStandingJumping && (this.isFalling || this.isJumping);
 
+    let updateBody: boolean = false;
+    let offsetX!: number;
+    let offsetY!: number;
+
     if (!this.isHanging && (this.isCrouch || isMovingY)) {
       if (!this.isBodySmall) {
-        const newHeight = Player.BODY_HEIGHT / 4 * 3;
-        // const offsetX = this.body.offset.x;
-        const offsetX = (this.width - Player.BODY_WIDTH) * (1 - this.originX);
-        const offsetY = (this.height - newHeight) * (1 - this.originY);
-
         // Shrink his body to fit with the animation
-        this.body
-          .setOffset(offsetX, offsetY)
-          .setSize(Player.BODY_WIDTH, newHeight, false)
-          .updateCenter();
+        offsetX = (this.width - Player.BODY_SMALL_WIDTH) * (1 - this.originX);
+        offsetY = (this.height - Player.BODY_SMALL_HEIGHT) * (1 - this.originY);
 
-        this.isBodySmall = true;
+        updateBody = true;
       }
     } else {
-      if (this.isBodySmall/* || this.isHanging*/) {
+      if (this.isBodySmall) {
         // Reset the body to his original shape
-        const offsetX = (this.width - Player.BODY_WIDTH) * (1 - this.originX);
-        const offsetY = (this.height - Player.BODY_HEIGHT) * (1 - this.originY);
+        offsetX = (this.width - Player.BODY_WIDTH) * (1 - this.originX);
+        offsetY = (this.height - Player.BODY_HEIGHT) * (1 - this.originY);
 
-        this.body
-          .setOffset(offsetX, offsetY)
-          .setSize(Player.BODY_WIDTH, Player.BODY_HEIGHT, false)
-          .updateCenter();
-
-        this.isBodySmall = false;
+        updateBody = true;
       }
+    }
+
+    if (updateBody) {
+      const previousOffset = this.body.offset.clone();
+
+      this.body
+        .setOffset(offsetX, offsetY)
+        .setSize(
+          this.isBodySmall ? Player.BODY_WIDTH : Player.BODY_SMALL_WIDTH,
+          this.isBodySmall ? Player.BODY_HEIGHT : Player.BODY_SMALL_HEIGHT,
+          false
+        )
+        .updateCenter();
+
+      if (this.adjustTo) {
+        const clone = this.adjustTo.clone();
+        clone.add(new Phaser.Math.Vector2(
+          previousOffset.x - offsetX,
+          previousOffset.y - offsetY
+        ));
+
+        this.setNewPosition(clone);
+      }
+
+      this.isBodySmall = !this.isBodySmall;
     }
   }
 
@@ -1005,6 +1033,23 @@ export class Player extends SpriteCollidable {
     }
 
     this.isPressingShot = isShootPress;
+  }
+
+  /**
+   * Adjust the current body position
+   */
+  protected adjustPosition(): void {
+    if (this.adjustTo) {
+      if (this.adjustTo.x !== -1) {
+        this.body.x = this.adjustTo.x;
+      }
+
+      if (this.adjustTo.y !== -1) {
+        this.body.y = this.adjustTo.y;
+      }
+
+      delete this.adjustTo;
+    }
   }
 
   /**
@@ -1060,13 +1105,13 @@ export class Player extends SpriteCollidable {
       bounds.centerY
     );
 
-    this.leftGrabHitbox.alignToParent(
+    this.leftHangHitbox.alignToParent(
       this,
       bounds.left - Player.WALL_DETECTION_DISTANCE / 2 - 1,
       bounds.top + Player.WALL_DETECTION_DISTANCE / 2 + 1
     );
 
-    this.rightGrabHitbox.alignToParent(
+    this.rightHangHitbox.alignToParent(
       this,
       bounds.right + Player.WALL_DETECTION_DISTANCE / 2 + 1,
       bounds.top + Player.WALL_DETECTION_DISTANCE / 2 + 1
@@ -1079,6 +1124,10 @@ export class Player extends SpriteCollidable {
   protected debug(): void {
     if (this.scene.getController().isKeyPressedForFirstTime(ControllerKey.X)) {
       this.body.setAllowGravity(!this.body.allowGravity);
+    }
+
+    if (this.scene.getController().isKeyPressedForFirstTime(ControllerKey.SELECT)) {
+      console.clear();
     }
   }
 
@@ -1143,6 +1192,29 @@ export class Player extends SpriteCollidable {
     }
 
     return hitbox.overlapTiles();
+  }
+
+  /**
+   * Calculate the y coordinate where the bullet should spaw
+   *
+   * @return {number} The calculated Y coordinate
+   */
+  private setNewPosition(x: number | Phaser.Math.Vector2 | null, y?: number): void {
+    if (x instanceof Phaser.Math.Vector2) {
+      this.adjustTo = x as Phaser.Math.Vector2;
+    } else {
+      if (!this.adjustTo) {
+        this.adjustTo = new Phaser.Math.Vector2(x || -1, y || -1);
+      } else {
+        if (x) {
+          this.adjustTo.set(x, this.adjustTo.y);
+        }
+
+        if (y) {
+          this.adjustTo.set(this.adjustTo.x, y);
+        }
+      }
+    }
   }
 
   /**
