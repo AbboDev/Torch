@@ -693,6 +693,9 @@ export class Player extends SpriteCollidable {
       // Handles the hang action
       this.hang();
 
+      // Handles the hang action
+      this.resizeBody();
+
       // Prevent crouch when is facing forward
       if (this.facing.x !== DirectionAxisX.CENTER) {
         // Handles the crouch action
@@ -1029,13 +1032,12 @@ export class Player extends SpriteCollidable {
    */
   protected resizeBody(): void {
     // Check if the Player is in mid air, but with an sufficient x speed
-    const isMovingY = !this.isStandingJumping && (this.isFalling || this.isJumping);
 
     let updateBody: boolean = false;
     let offsetX!: number;
     let offsetY!: number;
 
-    if (!this.isHanging && (this.isCrouch || isMovingY)) {
+    if (!this.isHanging && this.isCrouch) {
       if (!this.isBodySmall) {
         // Shrink his body to fit with the animation
         offsetX = (this.width - Player.BODY_SMALL_WIDTH) * (1 - this.originX);
