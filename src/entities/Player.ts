@@ -339,9 +339,7 @@ export class Player extends SpriteCollidable {
       bounds.left - Player.WALL_DETECTION_DISTANCE / 2 - 1,
       bounds.top + Player.WALL_DETECTION_DISTANCE / 2 + 1,
       Player.WALL_DETECTION_DISTANCE,
-      Player.WALL_DETECTION_DISTANCE,
-      0x00ff00,
-      0
+      Player.WALL_DETECTION_DISTANCE
     );
 
     this.rightHangHitbox = new Hitbox(
@@ -349,9 +347,7 @@ export class Player extends SpriteCollidable {
       bounds.right + Player.WALL_DETECTION_DISTANCE / 2 + 1,
       bounds.top + Player.WALL_DETECTION_DISTANCE / 2 + 1,
       Player.WALL_DETECTION_DISTANCE,
-      Player.WALL_DETECTION_DISTANCE,
-      0x00ff00,
-      0
+      Player.WALL_DETECTION_DISTANCE
     );
   }
 

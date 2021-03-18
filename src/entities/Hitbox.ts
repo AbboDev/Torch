@@ -29,8 +29,8 @@ export class Hitbox extends Phaser.GameObjects.Rectangle {
     public y: number,
     public width: number,
     public height: number,
-    fillColor?: number | undefined,
-    fillAlpha?: number | undefined
+    public fillColor: number = 0xffffff,
+    public fillAlpha: number = 0
   ) {
     super(
       scene,
@@ -38,8 +38,8 @@ export class Hitbox extends Phaser.GameObjects.Rectangle {
       y,
       width,
       height,
-      fillColor || 0xffffff,
-      fillAlpha || 1
+      fillColor,
+      fillAlpha
     );
 
     this.scene.add.existing(this);
