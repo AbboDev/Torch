@@ -40,8 +40,8 @@ export class Player extends SpriteCollidable {
   public bow!: Bow;
 
   /**
-   * Where the Player is watching
-   * @type {Facing}
+   * The correct position where the Player where collocated
+   * @type {Phaser.Math.Vector2}
    */
   private adjustTo?: Phaser.Math.Vector2;
 
@@ -213,10 +213,28 @@ export class Player extends SpriteCollidable {
    */
   static SHOT_HEIGHT = TILE_SIZE + 2;
 
+  /**
+   * The standard body width
+   * @type {Number}
+   */
   static BODY_WIDTH = TILE_SIZE;
+
+  /**
+   * The standard body height
+   * @type {Number}
+   */
   static BODY_HEIGHT = TILE_SIZE * 2;
 
+  /**
+   * The body width when it's crouch or jumping
+   * @type {Number}
+   */
   static BODY_SMALL_WIDTH = TILE_SIZE;
+
+  /**
+   * The body height when it's crouch or jumping
+   * @type {Number}
+   */
   static BODY_SMALL_HEIGHT = Player.BODY_HEIGHT / 4 * 3;;
 
   /**
@@ -225,10 +243,28 @@ export class Player extends SpriteCollidable {
    */
   private baseSpeed: number;
 
+  /**
+   * The hitbox dedicated to detect overlapping with walls on the left
+   * @type {Hitbox}
+   */
   private leftWallHitbox: Hitbox;
+
+  /**
+   * The hitbox dedicated to detect overlapping with walls on the right
+   * @type {Hitbox}
+   */
   private rightWallHitbox: Hitbox;
 
+  /**
+   * The hitbox dedicated to detect overlapping with tiles on the left
+   * @type {Hitbox}
+   */
   private leftHangHitbox: Hitbox;
+
+  /**
+   * The hitbox dedicated to detect overlapping with tiles on the right
+   * @type {Hitbox}
+   */
   private rightHangHitbox: Hitbox;
 
   /**
