@@ -106,6 +106,12 @@ export class Player extends SpriteCollidable {
   private isPressingShot = false;
 
   /**
+   * Check if the user had previously performed a dash without releasing the key
+   * @type {Boolean}
+   */
+  private isPressingDash = false;
+
+  /**
    * The Player has the ability to do the double jump
    * @type {Boolean}
    */
@@ -134,6 +140,12 @@ export class Player extends SpriteCollidable {
    * @type {Boolean}
    */
   private hasHangAbility = true;
+
+  /**
+   * The Player has the ability to make an horizontal dash
+   * @type {Boolean}
+   */
+  private hasDashAbility = true;
 
   /**
    * The Player has the gun range weapon
@@ -176,6 +188,12 @@ export class Player extends SpriteCollidable {
    * @type {Number}
    */
   static RUN_SPEED_MULTIPLIER = 0.75;
+
+  /**
+   * Multiplier of dash speed offers by dedicated powerup
+   * @type {Number}
+   */
+  static DASH_SPEED_MULTIPLIER = 2;
 
   /**
    * Multiplier of run speed offers by dedicated powerup
@@ -295,7 +313,7 @@ export class Player extends SpriteCollidable {
       .setBounce(0)
       .setMaxVelocity(
         this.getMaxRunSpeed(),
-        this.baseSpeed * Player.HIGH_JUMP_SPEED_MULTIPLIER
+        this.getMaxJumpSpeed()
       );
 
     this.body
@@ -633,6 +651,9 @@ export class Player extends SpriteCollidable {
       // Handles all the movement along the x axis
       this.walk();
 
+      // Handles all the movement along the x axis
+      this.dash();
+
       // Handles the hang action
       this.hang();
 
@@ -737,8 +758,8 @@ export class Player extends SpriteCollidable {
         this.isStandingJumping = Math.abs(this.body.velocity.x) <= TILE_SIZE * 2;
         if (this.isStandingJumping) {
           this.setMaxVelocity(
-            TILE_SIZE * 4,
-            this.baseSpeed * Player.HIGH_JUMP_SPEED_MULTIPLIER
+            this.getStandingRunSpeed(),
+            this.getMaxJumpSpeed()
           );
         }
 
@@ -776,7 +797,7 @@ export class Player extends SpriteCollidable {
     if (!this.isStandingJumping) {
       this.setMaxVelocity(
         this.getMaxRunSpeed(),
-        this.baseSpeed * Player.HIGH_JUMP_SPEED_MULTIPLIER
+        this.getMaxJumpSpeed()
       );
     }
 
@@ -847,6 +868,41 @@ export class Player extends SpriteCollidable {
         this.setVelocityX(0);
       }
     }
+  }
+
+  /**
+   * Handles the dash action
+   */
+  protected dash(): void {
+    const isDashPress: boolean = this.scene
+      .getController()
+      .isKeyPressed(ControllerKey.X);
+
+    if (this.hasDashAbility) {
+      const time = this.scene.getController().getKeyDuration(ControllerKey.X);
+
+      const maxVelocity = this.body.maxVelocity.clone();
+
+      if (time < 100 && isDashPress && this.facing.x !== DirectionAxisX.CENTER) {
+        const facing: number = (this.facing.x === DirectionAxisX.RIGHT ? 1 : -1);
+
+        this.setMaxVelocity(
+          this.getDashSpeed(),
+          this.getMaxJumpSpeed()
+        );
+
+        this.setVelocityX(this.getDashSpeed() * facing);
+      } else {
+        this.setMaxVelocity(
+          this.isStandingJumping
+            ? this.getStandingRunSpeed()
+            : this.getMaxRunSpeed(),
+          this.getMaxJumpSpeed()
+        );
+      }
+    }
+
+    this.isPressingDash = isDashPress;
   }
 
   /**
@@ -1118,7 +1174,7 @@ export class Player extends SpriteCollidable {
    * Debug the player after all the update cycle
    */
   protected debug(): void {
-    if (this.scene.getController().isKeyPressedForFirstTime(ControllerKey.X)) {
+    if (this.scene.getController().isKeyPressedForFirstTime(ControllerKey.START)) {
       this.body.setAllowGravity(!this.body.allowGravity);
     }
 
@@ -1148,8 +1204,20 @@ export class Player extends SpriteCollidable {
     return Player.JUMP_SPEED_MULTIPLIER;
   }
 
+  public getMaxJumpSpeed(): number {
+    return this.baseSpeed * Player.HIGH_JUMP_SPEED_MULTIPLIER;
+  }
+
   public getRunSpeed(): number {
     return this.baseSpeed * 2;
+  }
+
+  public getStandingRunSpeed(): number {
+    return TILE_SIZE * 4;
+  }
+
+  public getDashSpeed(): number {
+    return this.baseSpeed * Player.DASH_SPEED_MULTIPLIER;
   }
 
   public getMaxRunSpeed(): number {
