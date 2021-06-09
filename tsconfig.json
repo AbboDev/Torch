@@ -19,6 +19,7 @@
       "Config/*": ["./config/*"],
       "Entities/Bullets/*": ["./entities/bullets/*"],
       "Entities/Weapons/*": ["./entities/weapons/*"],
+      "Entities/Hitboxes/*": ["./entities/hitboxes/*"],
       "Entities/*": ["./entities/*"],
       "Miscellaneous/*": ["./miscellaneous/*"],
       "Scenes/*": ["./scenes/*"]

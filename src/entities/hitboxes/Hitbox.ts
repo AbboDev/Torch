@@ -62,8 +62,8 @@ export class Hitbox extends Phaser.GameObjects.Rectangle {
   }
 
   /**
-   * An Hitbox should always add to a parent, so this function synchronize
-   * the coordinates and the velocity of the two elements
+   * An Hitbox should always be associated to a parent, so this function
+   * synchronize the coordinates and the velocity of the two elements
    *
    * @param {Phaser.Physics.Arcade.Sprite} parent The parent of the hitbox
    * @param {number} x The x coordinate, by default the same of the parent

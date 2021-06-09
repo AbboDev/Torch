@@ -1,7 +1,12 @@
-import { Facing, DirectionAxisY, DirectionAxisX } from 'Miscellaneous/Direction';
+import {
+  Facing,
+  DirectionAxisY,
+  DirectionAxisX
+} from 'Miscellaneous/Direction';
 import { ControllerKey } from 'Miscellaneous/Controller';
 
-import { Hitbox, AreaPosition } from 'Entities/Hitbox';
+import { Hitbox, AreaPosition } from 'Entities/Hitboxes/Hitbox';
+
 import { Gun } from 'Entities/Weapons/Gun';
 import { Bow } from 'Entities/Weapons/Bow';
 import { Rifle } from 'Entities/Weapons/Rifle';
