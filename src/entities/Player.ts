@@ -57,6 +57,13 @@ export class Player extends SpriteCollidable {
   private facing: Facing;
 
   /**
+   * If the Player is aim diagonally
+   *
+   * @type {Boolean}
+   */
+  private isDiagonal = false;
+
+  /**
    * The Player is jumping
    * @type {Boolean}
    */
@@ -340,7 +347,7 @@ export class Player extends SpriteCollidable {
     this.facing = {
       y: DirectionAxisY.MIDDLE,
       x: DirectionAxisX.CENTER,
-    }
+    };
 
     this.baseSpeed = this.scene.getWorldGravity().y / 2;
 
@@ -466,6 +473,36 @@ export class Player extends SpriteCollidable {
       .spritesheet(
         'hero_hang_right',
         '/assets/sprites/hero_hang_right.png',
+        spriteSize
+      )
+      .spritesheet(
+        'hero_aim_up_left',
+        '/assets/sprites/hero_aim_up_left.png',
+        spriteSize
+      )
+      .spritesheet(
+        'hero_aim_up_right',
+        '/assets/sprites/hero_aim_up_right.png',
+        spriteSize
+      )
+      .spritesheet(
+        'hero_aim_up_diagonal_left',
+        '/assets/sprites/hero_aim_up_diagonal_left.png',
+        spriteSize
+      )
+      .spritesheet(
+        'hero_aim_up_diagonal_right',
+        '/assets/sprites/hero_aim_up_diagonal_right.png',
+        spriteSize
+      )
+      .spritesheet(
+        'hero_aim_down_diagonal_left',
+        '/assets/sprites/hero_aim_down_diagonal_left.png',
+        spriteSize
+      )
+      .spritesheet(
+        'hero_aim_down_diagonal_right',
+        '/assets/sprites/hero_aim_down_diagonal_right.png',
         spriteSize
       )
       .spritesheet(
@@ -613,6 +650,48 @@ export class Player extends SpriteCollidable {
       frameRate: 4,
       repeat: -1
     });
+
+    scene.anims.create({
+      key: 'hero_aim_up_left_animation',
+      frames: scene.anims.generateFrameNumbers('hero_aim_up_left', {}),
+      frameRate: 4,
+      repeat: -1
+    });
+
+    scene.anims.create({
+      key: 'hero_aim_up_right_animation',
+      frames: scene.anims.generateFrameNumbers('hero_aim_up_right', {}),
+      frameRate: 4,
+      repeat: -1
+    });
+
+    scene.anims.create({
+      key: 'hero_aim_up_diagonal_left_animation',
+      frames: scene.anims.generateFrameNumbers('hero_aim_up_diagonal_left', {}),
+      frameRate: 4,
+      repeat: -1
+    });
+
+    scene.anims.create({
+      key: 'hero_aim_up_diagonal_right_animation',
+      frames: scene.anims.generateFrameNumbers('hero_aim_up_diagonal_right', {}),
+      frameRate: 4,
+      repeat: -1
+    });
+
+    scene.anims.create({
+      key: 'hero_aim_down_diagonal_left_animation',
+      frames: scene.anims.generateFrameNumbers('hero_aim_down_diagonal_left', {}),
+      frameRate: 4,
+      repeat: -1
+    });
+
+    scene.anims.create({
+      key: 'hero_aim_down_diagonal_right_animation',
+      frames: scene.anims.generateFrameNumbers('hero_aim_down_diagonal_right', {}),
+      frameRate: 4,
+      repeat: -1
+    });
   }
 
   /**
@@ -683,6 +762,9 @@ export class Player extends SpriteCollidable {
     super.update();
 
     if (this.canInteract) {
+      // Handles all the movement along the x axis
+      this.tiltAim();
+
       // Prevent jump when is facing forward
       if (this.facing.x !== DirectionAxisX.CENTER) {
         // Handles all the movement along the y axis
@@ -727,6 +809,44 @@ export class Player extends SpriteCollidable {
     if (this.scene.physics.world.drawDebug) {
       this.debug();
     }
+  }
+
+  /**
+   * Handles all the movement along the y axis
+   */
+  protected tiltAim(): void {
+    const isAimPress: boolean = this.scene
+      .getController()
+      .isKeyPressed(ControllerKey.L);
+
+    const isUpPressed: boolean = this.scene
+      .getController()
+      .isKeyPressed(ControllerKey.UP);
+
+    const isDownPressed: boolean = this.scene
+      .getController()
+      .isKeyPressed(ControllerKey.DOWN);
+
+    const isLeftPressed: boolean = this.scene
+      .getController()
+      .isKeyPressed(ControllerKey.LEFT);
+
+    const isRightPressed: boolean = this.scene
+      .getController()
+      .isKeyPressed(ControllerKey.RIGHT);
+
+    const isAimingWhileMoving = (isLeftPressed || isRightPressed)
+      && (isUpPressed || isDownPressed);
+
+    if (isUpPressed || (isAimPress && !this.isDiagonal)) {
+      this.facing.y = DirectionAxisY.UP;
+    } else if (isDownPressed && (this.body.velocity.y !== 0 || isAimPress || isAimingWhileMoving)) {
+      this.facing.y = DirectionAxisY.DOWN;
+    } else if (!this.isDiagonal) {
+      this.facing.y = DirectionAxisY.MIDDLE;
+    }
+
+    this.isDiagonal = isAimPress || isAimingWhileMoving;
   }
 
   /**
@@ -1022,7 +1142,7 @@ export class Player extends SpriteCollidable {
         .getController()
         .isKeyPressed(ControllerKey.UP);
 
-      if (isDownPressed && !this.isCrouch) {
+      if (isDownPressed && !this.isCrouch && !this.isDiagonal) {
         this.isCrouch = true;
       } else if (isUpPressed && this.isCrouch) {
         this.isCrouch = false;
@@ -1110,6 +1230,7 @@ export class Player extends SpriteCollidable {
 
       const config: BulletConfig = {
         facing: this.facing,
+        diagonal: this.isDiagonal,
         position: bulletPosition
       };
 
@@ -1151,15 +1272,21 @@ export class Player extends SpriteCollidable {
    * Change the current animation based on previous operations
    */
   protected animate(): void {
-    let action: string = '';
-
-    const isMoving: boolean = this.body.velocity.x !== 0;
+    let action = '';
 
     if (this.body.onFloor()) {
       if (this.isCrouch) {
         action = 'crouch_idle';
       } else if (this.body.velocity.x !== 0) {
-        action = 'walk';
+        if (this.isDiagonal) {
+          action = `aim_${this.facing.y}_diagonal`;
+        } else {
+          action = 'walk';
+        }
+      } else if (this.isDiagonal) {
+        action = `aim_${this.facing.y}_diagonal`;
+      } else if (this.facing.y === DirectionAxisY.UP) {
+        action = `aim_${this.facing.y}`;
       } else {
         action = 'idle';
       }
@@ -1176,6 +1303,7 @@ export class Player extends SpriteCollidable {
     }
 
     const animation: string = `hero_${action}_${this.facing.x}_animation`;
+    console.debug(animation);
     const doNewAnimation: boolean = animation !== this.anims.getCurrentKey();
 
     if (doNewAnimation) {

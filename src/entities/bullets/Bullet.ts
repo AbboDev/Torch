@@ -7,6 +7,7 @@ import { TILE_SIZE } from 'Config/tiles';
 
 export interface BulletConfig {
   position: Phaser.Math.Vector2,
+  diagonal: boolean,
   facing: Facing
 };
 
@@ -75,6 +76,10 @@ export class Bullet extends Phaser.Physics.Arcade.Sprite {
     }
 
     const sign = getSign(config.facing);
+    // Test if the bullet should be shot diagonally or vertically
+    if (!config.diagonal && sign.y !== 0) {
+      sign.x = 0;
+    }
 
     this
       .setPosition(config.position.x, config.position.y)
