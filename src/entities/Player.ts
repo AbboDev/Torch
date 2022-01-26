@@ -57,11 +57,24 @@ export class Player extends SpriteCollidable {
   private facing: Facing;
 
   /**
+   * Where the Player was watching
+   * @type {Facing}
+   */
+  private previousFacing: Facing;
+
+  /**
    * If the Player is aim diagonally
    *
    * @type {Boolean}
    */
-  private isDiagonal = false;
+  private isAimingDiagonal = false;
+
+  /**
+   * If the Player has aimed diagonally
+   *
+   * @type {Boolean}
+   */
+  private hasAimingDiagonal = false;
 
   /**
    * The Player is jumping
@@ -348,6 +361,8 @@ export class Player extends SpriteCollidable {
       y: DirectionAxisY.MIDDLE,
       x: DirectionAxisX.CENTER,
     };
+
+    this.previousFacing = this.facing;
 
     this.baseSpeed = this.scene.getWorldGravity().y / 2;
 
@@ -761,6 +776,8 @@ export class Player extends SpriteCollidable {
   public update(time: any, delta: number): void {
     super.update();
 
+    this.previousFacing = {...this.facing};
+
     if (this.canInteract) {
       // Handles all the movement along the x axis
       this.tiltAim();
@@ -838,15 +855,17 @@ export class Player extends SpriteCollidable {
     const isAimingWhileMoving = (isLeftPressed || isRightPressed)
       && (isUpPressed || isDownPressed);
 
-    if (isUpPressed || (isAimPress && !this.isDiagonal)) {
+    this.hasAimingDiagonal = this.isAimingDiagonal;
+
+    if (isUpPressed || (isAimPress && !this.isAimingDiagonal)) {
       this.facing.y = DirectionAxisY.UP;
     } else if (isDownPressed && (this.body.velocity.y !== 0 || isAimPress || isAimingWhileMoving)) {
       this.facing.y = DirectionAxisY.DOWN;
-    } else if (!this.isDiagonal) {
+    } else if (!this.isAimingDiagonal) {
       this.facing.y = DirectionAxisY.MIDDLE;
     }
 
-    this.isDiagonal = isAimPress || isAimingWhileMoving;
+    this.isAimingDiagonal = isAimPress || isAimingWhileMoving;
   }
 
   /**
@@ -1136,14 +1155,16 @@ export class Player extends SpriteCollidable {
     if (this.canCrouch) {
       const isDownPressed: boolean = this.scene
         .getController()
-        .isKeyPressed(ControllerKey.DOWN);
+        .isKeyPressedForFirstTime(ControllerKey.DOWN);
 
       const isUpPressed: boolean = this.scene
         .getController()
         .isKeyPressed(ControllerKey.UP);
 
-      if (isDownPressed && !this.isCrouch && !this.isDiagonal) {
-        this.isCrouch = true;
+      if (isDownPressed && !this.isCrouch) {
+        if (this.isAimingDiagonal && this.previousFacing.y === this.facing.y) {
+          this.isCrouch = true;
+        }
       } else if (isUpPressed && this.isCrouch) {
         this.isCrouch = false;
       }
@@ -1230,7 +1251,7 @@ export class Player extends SpriteCollidable {
 
       const config: BulletConfig = {
         facing: this.facing,
-        diagonal: this.isDiagonal,
+        diagonal: this.isAimingDiagonal,
         position: bulletPosition
       };
 
@@ -1278,14 +1299,17 @@ export class Player extends SpriteCollidable {
       if (this.isCrouch) {
         action = 'crouch_idle';
       } else if (this.body.velocity.x !== 0) {
-        if (this.isDiagonal) {
+        if (this.isAimingDiagonal) {
           action = `aim_${this.facing.y}_diagonal`;
         } else {
           action = 'walk';
         }
-      } else if (this.isDiagonal) {
+      } else if (this.isAimingDiagonal) {
         action = `aim_${this.facing.y}_diagonal`;
-      } else if (this.facing.y === DirectionAxisY.UP) {
+      } else if (this.facing.y === DirectionAxisY.UP
+        // Avoid going from diagonal to up while leaving aim
+        && !this.hasAimingDiagonal
+      ) {
         action = `aim_${this.facing.y}`;
       } else {
         action = 'idle';
