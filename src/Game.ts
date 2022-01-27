@@ -25,6 +25,17 @@ const config: Phaser.Types.Core.GameConfig = {
     Main
   ],
 
+  scale: {
+    parent: 'canvas',
+    mode: Phaser.Scale.FIT,
+    autoCenter: Phaser.Scale.NO_CENTER,
+
+    min: {
+      width: TILE_SIZE * 20,
+      height: TILE_SIZE * 11,
+    }
+  },
+
   disableContextMenu: true,
 
   physics: {
