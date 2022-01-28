@@ -78,16 +78,10 @@ export class HUD extends ControlScene {
         this.ammoCounter.setText(`${data.current} / ${data.max}`);
       })
       .on('changeLife', (data: UpdateStatusObject) => {
-        this.lifeCounter.setText(`${data.current} / ${data.max}`);
+        this.lifeCounter.setText(data.current.toString());
       })
       .on('changeBattery', (data: UpdateStatusObject) => {
-        this.batteryCounter.setText(`${data.current} / ${data.max}`);
+        this.batteryCounter.setText(data.current.toString());
       });
-  }
-
-  update(): void {
-    // this.lifeCounter.setText('99');
-    // this.batteryCounter.setText('99');
-    // this.ammoCounter.setText('99 / 99');
   }
 }
