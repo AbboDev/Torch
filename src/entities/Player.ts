@@ -62,7 +62,7 @@ export class Player extends SpriteCollidable {
    *
    * @type {Number}
    */
-  public battery = 99;
+  public battery = 0;
 
   /**
    * Maximum battery level
@@ -70,6 +70,13 @@ export class Player extends SpriteCollidable {
    * @type {Number}
    */
   public maxBattery = 99;
+
+  /**
+   * Maximum battery level
+   *
+   * @type {Number}
+   */
+  private batteryRechargeTimer: Phaser.Time.TimerEvent;
 
   /**
    * The Gun associated to Player
@@ -527,6 +534,29 @@ export class Player extends SpriteCollidable {
       Player.WALL_DETECTION_DISTANCE,
       Player.WALL_DETECTION_DISTANCE
     );
+
+    // TODO:
+    // console.debug(this.scene.data);
+
+    this.batteryRechargeTimer = this.scene.time.addEvent({
+      delay: 200,
+      callback: this.timer.bind(this),
+      loop: true
+    });
+  }
+
+  public timer(): void {
+    if (this.battery === this.maxBattery) {
+      this.batteryRechargeTimer.remove();
+    }
+
+    ++this.battery;
+
+    const status: UpdateStatusObject = {
+      current: this.battery,
+      max: this.maxBattery
+    };
+    this.scene.events.emit('changeBattery', status);
   }
 
   public static preload(scene: Phaser.Scene): void {
