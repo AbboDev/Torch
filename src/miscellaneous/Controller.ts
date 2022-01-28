@@ -54,7 +54,9 @@ export class Controller {
   public keyDebug: Phaser.Input.Keyboard.Key;
   public isKeyDebugPress = false;
 
-  public constructor(protected scene: Phaser.Scene) {
+  private static instance: Controller;
+
+  private constructor(protected scene: Phaser.Scene) {
     const keyboard = this.scene.input.keyboard;
 
     this.keyUp = keyboard
@@ -134,6 +136,20 @@ export class Controller {
       .on('up', () => {
         this.isKeyDebugPress = false;
       });
+  }
+
+  /**
+   * The static method that controls the access to the singleton instance.
+   *
+   * This implementation let you subclass the Singleton class while keeping
+   * just one instance of each subclass around.
+   */
+  public static getInstance(scene: Phaser.Scene): Controller {
+    if (!Controller.instance) {
+      Controller.instance = new Controller(scene);
+    }
+
+    return Controller.instance;
   }
 
   /**

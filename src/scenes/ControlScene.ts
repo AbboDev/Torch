@@ -9,7 +9,7 @@ export abstract class ControlScene extends Phaser.Scene {
   private controller!: Controller;
 
   public create(): void {
-    this.controller = new Controller(this);
+    this.controller = Controller.getInstance(this);
   }
 
   public getController(): Controller {
