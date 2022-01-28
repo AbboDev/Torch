@@ -5,7 +5,7 @@ export enum DirectionAxisY {
   UP = 'up',
   DOWN = 'down',
   MIDDLE = 'middle'
-};
+}
 
 /**
  * The three possible orientations along the X axis
@@ -14,7 +14,7 @@ export enum DirectionAxisX {
   LEFT = 'left',
   RIGHT = 'right',
   CENTER = 'center'
-};
+}
 
 /**
  * A game object should have both
@@ -22,7 +22,7 @@ export enum DirectionAxisX {
 export interface Facing {
   x: null | DirectionAxisX,
   y: null | DirectionAxisY
-};
+}
 
 /**
  * From the given direction, it return the sign for move along the X axis

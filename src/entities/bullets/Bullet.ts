@@ -9,23 +9,26 @@ export interface BulletConfig {
   position: Phaser.Math.Vector2,
   diagonal: boolean,
   facing: Facing
-};
+}
 
 export class Bullet extends Phaser.Physics.Arcade.Sprite {
   /**
    * The Bullet Phaser body
-   * @type {[type]}
+   *
+   * @type {Phaser.Physics.Arcade.Body}
    */
   public body!: Phaser.Physics.Arcade.Body;
 
   /**
    * The baseSpeed of the bullet
+   *
    * @type {Number}
    */
   protected speed = 64;
 
   /**
    * The baseSpeed of the bullet
+   *
    * @type {Number}
    */
   protected allowGravity = false;
