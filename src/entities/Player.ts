@@ -186,21 +186,24 @@ export class Player extends SpriteCollidable {
   private hasDoneWallJump = false;
 
   /**
-   * Check if the user had previously performed a jump without releasing the key
+   * Check if the user had previously
+   * performed a jump without releasing the key
    *
    * @type {Boolean}
    */
   private isPressingJump = false;
 
   /**
-   * Check if the user had previously performed a shoot without releasing the key
+   * Check if the user had previously
+   * performed a shoot without releasing the key
    *
    * @type {Boolean}
    */
   private isPressingShot = false;
 
   /**
-   * Check if the user had previously performed a dash without releasing the key
+   * Check if the user had previously
+   * performed a dash without releasing the key
    *
    * @type {Boolean}
    */
@@ -351,7 +354,7 @@ export class Player extends SpriteCollidable {
    *
    * @type {Number}
    */
-  static BODY_SMALL_HEIGHT = Player.BODY_HEIGHT / 4 * 3;;
+  static BODY_SMALL_HEIGHT = Player.BODY_HEIGHT / 4 * 3;
 
   /**
    * The default movement speed based on game gravity
@@ -393,7 +396,7 @@ export class Player extends SpriteCollidable {
    *
    * @type {number}
    */
-  public currentRoom: number = 0;
+  public currentRoom = 0;
 
   /**
    * The previous room number
@@ -407,42 +410,42 @@ export class Player extends SpriteCollidable {
    *
    * @type {boolean}
    */
-  public roomChange: boolean = false;
+  public roomChange = false;
 
   /**
    * Check if the user can interact with Player
    *
    * @type {boolean}
    */
-  public canInteract: boolean = true;
+  public canInteract = true;
 
   /**
    * Determinate if Player is crouch
    *
    * @type {boolean}
    */
-  public isCrouch: boolean = false;
+  public isCrouch = false;
 
   /**
    * Determinate if Player can crouch
    *
    * @type {boolean}
    */
-  public canCrouch: boolean = true;
+  public canCrouch = true;
 
   /**
    * Determinate if Player has smaller collision box
    *
    * @type {boolean}
    */
-  public isBodySmall: boolean = false;
+  public isBodySmall = false;
 
   /**
    * Determinate if Player is hanging on a tile
    *
    * @type {boolean}
    */
-  public isHanging: boolean = false;
+  public isHanging = false;
 
   /**
    * Create the Player
@@ -565,12 +568,6 @@ export class Player extends SpriteCollidable {
       frameHeight: TILE_SIZE * 3
     };
 
-    const smallSpriteSize: Phaser.Types.Loader.FileTypes.ImageFrameConfig = spriteSize;
-    // const smallSpriteSize: Phaser.Types.Loader.FileTypes.ImageFrameConfig = {
-    //   frameWidth: TILE_SIZE * 2,
-    //   frameHeight: TILE_SIZE * 2
-    // };
-
     scene.load
       .spritesheet(
         'hero_idle_center',
@@ -650,32 +647,32 @@ export class Player extends SpriteCollidable {
       .spritesheet(
         'hero_jump_left',
         '/assets/sprites/hero_jump_left.png',
-        smallSpriteSize
+        spriteSize
       )
       .spritesheet(
         'hero_jump_right',
         '/assets/sprites/hero_jump_right.png',
-        smallSpriteSize
+        spriteSize
       )
       .spritesheet(
         'hero_jump_left_start',
         '/assets/sprites/hero_jump_left_start.png',
-        smallSpriteSize
+        spriteSize
       )
       .spritesheet(
         'hero_jump_right_start',
         '/assets/sprites/hero_jump_right_start.png',
-        smallSpriteSize
+        spriteSize
       )
       .spritesheet(
         'hero_crouch_idle_left',
         '/assets/sprites/hero_crouch_idle_left.png',
-        smallSpriteSize
+        spriteSize
       )
       .spritesheet(
         'hero_crouch_idle_right',
         '/assets/sprites/hero_crouch_idle_right.png',
-        smallSpriteSize
+        spriteSize
       );
   }
 
@@ -858,9 +855,7 @@ export class Player extends SpriteCollidable {
       const bounds = this.getBodyBounds();
 
       // Test all the rooms in the map
-      for (let id in this.scene.rooms) {
-        const room: Phaser.Types.Tilemaps.TiledObject = this.scene.rooms[id];
-
+      this.scene.rooms.forEach((room, roomNumber) => {
         const roomLeft = room.x || 0;
         const roomRight = roomLeft + (room.width || 0);
         const roomTop = room.y || 0;
@@ -872,8 +867,6 @@ export class Player extends SpriteCollidable {
           && bounds.centerY > roomTop
           && bounds.centerY < roomBottom
         ) {
-          roomNumber = parseInt(id);
-
           // Set this room as visited by Player
           if (room.properties) {
             const visited = room.properties.find(function(property: any) {
@@ -883,7 +876,7 @@ export class Player extends SpriteCollidable {
             visited.value = true;
           }
         }
-      };
+      });
 
       // Update player room variables
       if (roomNumber !== null && roomNumber !== this.currentRoom) {
@@ -986,7 +979,9 @@ export class Player extends SpriteCollidable {
 
     if (isUpPressed || (isAimPress && !this.isAimingDiagonal)) {
       this.facing.y = DirectionAxisY.UP;
-    } else if (isDownPressed && (this.body.velocity.y !== 0 || isAimPress || isAimingWhileMoving)) {
+    } else if (isDownPressed
+      && (this.body.velocity.y !== 0 || isAimPress || isAimingWhileMoving)
+    ) {
       this.facing.y = DirectionAxisY.DOWN;
     } else if (!this.isAimingDiagonal) {
       this.facing.y = DirectionAxisY.MIDDLE;
@@ -1065,7 +1060,8 @@ export class Player extends SpriteCollidable {
         // The Player is actually jumping
         this.isJumping = true;
 
-        this.isStandingJumping = Math.abs(this.body.velocity.x) <= TILE_SIZE * 2;
+        const velocity = Math.abs(this.body.velocity.x);
+        this.isStandingJumping = velocity <= TILE_SIZE * 2;
         if (this.isStandingJumping) {
           this.setMaxVelocity(
             this.getStandingRunSpeed(),
@@ -1196,7 +1192,8 @@ export class Player extends SpriteCollidable {
         && this.battery > 0
         && this.facing.x !== DirectionAxisX.CENTER
       ) {
-        const facing: number = (this.facing.x === DirectionAxisX.RIGHT ? 1 : -1);
+        const isRight = this.facing.x === DirectionAxisX.RIGHT;
+        const facing: number = (isRight ? 1 : -1);
 
         this.setMaxVelocity(
           this.getDashSpeed(),
@@ -1232,8 +1229,8 @@ export class Player extends SpriteCollidable {
     if (this.hasHangAbility) {
       if (this.body.velocity.y !== 0 || this.isHanging) {
         let hitbox!: Hitbox;
-        let isTouchingTiles: boolean = false;
-        let hasTileOnHand: boolean = false;
+        let isTouchingTiles = false;
+        let hasTileOnHand = false;
 
         if (this.facing.x === DirectionAxisX.LEFT) {
           hitbox = this.leftHangHitbox;
@@ -1260,7 +1257,8 @@ export class Player extends SpriteCollidable {
             if (tiles.length === 1) {
               currentTile = tiles[0];
               // Check if there is a tile upper the current one
-              const upperTile = this.scene.map.getTileAt(currentTile.x, currentTile.y - 1);
+              const upperTile = this.scene.map
+                .getTileAt(currentTile.x, currentTile.y - 1);
               hasTileOnHand = upperTile === null;
             }
           }
@@ -1316,7 +1314,7 @@ export class Player extends SpriteCollidable {
   protected resizeBody(): void {
     // Check if the Player is in mid air, but with an sufficient x speed
 
-    let updateBody: boolean = false;
+    let updateBody = false;
     let offsetX!: number;
     let offsetY!: number;
 
@@ -1447,11 +1445,13 @@ export class Player extends SpriteCollidable {
         action = 'crouch_idle';
       } else if (this.body.velocity.x !== 0) {
         if (this.isAimingDiagonal) {
+          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
           action = `aim_${this.facing.y}_diagonal`;
         } else {
           action = 'walk';
         }
       } else if (this.isAimingDiagonal) {
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         action = `aim_${this.facing.y}_diagonal`;
       } else if (this.facing.y === DirectionAxisY.UP
         // Avoid going from diagonal to up while leaving aim
@@ -1473,8 +1473,8 @@ export class Player extends SpriteCollidable {
       }
     }
 
-    const animation: string = `hero_${action}_${this.facing.x}_animation`;
-    // console.debug(animation);
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+    const animation = `hero_${action}_${this.facing.x}_animation`;
     const doNewAnimation: boolean = animation !== this.anims.getCurrentKey();
 
     if (doNewAnimation) {
@@ -1521,6 +1521,7 @@ export class Player extends SpriteCollidable {
     }
 
     if (this.scene.getController().isKeyPressedForFirstTime(ControllerKey.SELECT)) {
+      // eslint-disable-next-line no-console
       console.clear();
     }
   }
@@ -1575,26 +1576,28 @@ export class Player extends SpriteCollidable {
   /**
    * Detect if the required Hitbox is overlapping at least one tile
    *
-   * @param  {DirectionAxisX} direction The direction where to test the overlapping.
-   *                                    If not specified, both direction are tested
+   * @param  {DirectionAxisX} direction The direction where to test
+   *                                    the overlapping. If not specified,
+   *                                    both direction are tested
+   *
    * @return {boolean|boolean[]}        True if a least one tile per direction is overlapped
    */
   public isTouchingWalls(direction?: DirectionAxisX): boolean | boolean[] {
     let hitbox: Hitbox;
 
     switch (direction) {
-      case DirectionAxisX.LEFT:
-        hitbox = this.leftWallHitbox;
-        break;
-      case DirectionAxisX.RIGHT:
-        hitbox = this.rightWallHitbox;
-        break;
+    case DirectionAxisX.LEFT:
+      hitbox = this.leftWallHitbox;
+      break;
+    case DirectionAxisX.RIGHT:
+      hitbox = this.rightWallHitbox;
+      break;
 
-      default:
-        return [
-          this.isTouchingWalls(DirectionAxisX.LEFT) as boolean,
-          this.isTouchingWalls(DirectionAxisX.RIGHT) as boolean
-        ];
+    default:
+      return [
+        this.isTouchingWalls(DirectionAxisX.LEFT) as boolean,
+        this.isTouchingWalls(DirectionAxisX.RIGHT) as boolean
+      ];
     }
 
     return hitbox.overlapTiles();
@@ -1607,7 +1610,7 @@ export class Player extends SpriteCollidable {
    */
   private setNewPosition(x: number | Phaser.Math.Vector2 | null, y?: number): void {
     if (x instanceof Phaser.Math.Vector2) {
-      this.adjustTo = x as Phaser.Math.Vector2;
+      this.adjustTo = x;
     } else {
       if (!this.adjustTo) {
         this.adjustTo = new Phaser.Math.Vector2(x || -1, y || -1);
@@ -1667,9 +1670,12 @@ export class Player extends SpriteCollidable {
   public getBodyOffset(width?: number, height?: number): Phaser.Math.Vector2 {
     if (typeof height === 'undefined') {
       if (typeof width === 'undefined') {
+        // eslint-disable-next-line no-param-reassign
         width = Player.BODY_WIDTH;
+        // eslint-disable-next-line no-param-reassign
         height = Player.BODY_HEIGHT;
       } else {
+        // eslint-disable-next-line no-param-reassign
         height = width;
       }
     }
