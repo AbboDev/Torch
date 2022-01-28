@@ -1,13 +1,12 @@
 import { Player } from 'Entities/Player';
-
+import { ControllerKey } from 'Miscellaneous/Controller';
 import { MapScene } from 'Scenes/MapScene';
-
 import { TILE_SIZE } from 'Config/tiles';
 
 export class Main extends MapScene {
   private hero!: Player;
 
-  constructor() {
+  public constructor() {
     super({
       active: false,
       visible: false,
@@ -40,7 +39,7 @@ export class Main extends MapScene {
       });
 
     if (!this.spawnPoint) {
-      throw "No Spawn Point detected";
+      throw 'No Spawn Point detected';
       return;
     }
 
@@ -64,20 +63,21 @@ export class Main extends MapScene {
 
     const x: number = this.spawnPoint.x || 0;
     const y: number = this.spawnPoint.y || 0;
-    let roomNumber: number = 0;
+    let roomNumber = 0;
 
     // Loop through rooms in this level
-    this.rooms.forEach((room: Phaser.Types.Tilemaps.TiledObject, index: number) => {
-      let roomLeft = room.x || 0;
-      let roomRight = roomLeft + (room.width || 0);
-      let roomTop = room.y || 0;
-      let roomBottom = roomTop + (room.height || 0);
+    this.rooms
+      .forEach((room: Phaser.Types.Tilemaps.TiledObject, index: number) => {
+        const roomLeft = room.x || 0;
+        const roomRight = roomLeft + (room.width || 0);
+        const roomTop = room.y || 0;
+        const roomBottom = roomTop + (room.height || 0);
 
-      // Player is within the boundaries of this room
-      if (x > roomLeft && x < roomRight && y > roomTop && y < roomBottom) {
-        roomNumber = index;
-      }
-    });
+        // Player is within the boundaries of this room
+        if (x > roomLeft && x < roomRight && y > roomTop && y < roomBottom) {
+          roomNumber = index;
+        }
+      });
 
     this.hero = new Player(this, x, y, roomNumber);
     this.background = this.add.tileSprite(
@@ -116,6 +116,14 @@ export class Main extends MapScene {
 
     if (this.hero.roomChange && this.rooms.length > 0) {
       this.boundsCamera(this.hero.currentRoom);
+    }
+
+    const isStartPressed: boolean = this.getController()
+      .isKeyPressedForFirstTime(ControllerKey.START);
+
+    if (isStartPressed) {
+      this.scene.pause();
+      this.scene.launch('inventory');
     }
   }
 

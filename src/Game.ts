@@ -3,9 +3,11 @@ import * as Phaser from 'phaser';
 import { Preloader } from 'Scenes/Preloader';
 import { Main } from 'Scenes/Main';
 import { HUD } from 'Scenes/HUD';
+import { Inventory } from 'Scenes/Inventory';
 
 import { TILE_SIZE } from 'Config/tiles';
 
+// eslint-disable-next-line no-console
 console.clear();
 
 const config: Phaser.Types.Core.GameConfig = {
@@ -24,7 +26,8 @@ const config: Phaser.Types.Core.GameConfig = {
   scene: [
     Preloader,
     Main,
-    HUD
+    HUD,
+    Inventory
   ],
 
   scale: {

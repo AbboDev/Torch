@@ -1516,9 +1516,9 @@ export class Player extends SpriteCollidable {
    * Debug the player after all the update cycle
    */
   protected debug(): void {
-    if (this.scene.getController().isKeyPressedForFirstTime(ControllerKey.START)) {
-      this.body.setAllowGravity(!this.body.allowGravity);
-    }
+    // if (this.scene.getController().isKeyPressedForFirstTime(ControllerKey.START)) {
+    //   this.body.setAllowGravity(!this.body.allowGravity);
+    // }
 
     if (this.scene.getController().isKeyPressedForFirstTime(ControllerKey.SELECT)) {
       // eslint-disable-next-line no-console

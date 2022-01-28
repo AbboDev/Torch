@@ -15,7 +15,7 @@ export class HUD extends ControlScene {
 
   private mainScene!: Phaser.Scene;
 
-  constructor() {
+  public constructor() {
     super({
       active: false,
       visible: false,
@@ -23,7 +23,9 @@ export class HUD extends ControlScene {
     });
   }
 
-  create(): void {
+  public create(): void {
+    super.create();
+
     const style: Phaser.Types.GameObjects.Text.TextStyle = {
       fontSize: `${TILE_SIZE}px`
     };
