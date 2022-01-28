@@ -1,6 +1,8 @@
 import { ControlScene } from 'Scenes/ControlScene';
 import { TILE_SIZE } from 'Config/tiles';
 
+import { UpdateStatusObject } from 'Miscellaneous/UpdateStatusObject';
+
 export class HUD extends ControlScene {
   private life!: Phaser.GameObjects.Image;
   private lifeCounter!: Phaser.GameObjects.Text;
@@ -10,6 +12,8 @@ export class HUD extends ControlScene {
 
   private ammo!: Phaser.GameObjects.Image;
   private ammoCounter!: Phaser.GameObjects.Text;
+
+  private mainScene!: Phaser.Scene;
 
   constructor() {
     super({
@@ -67,6 +71,18 @@ export class HUD extends ControlScene {
     )
       .setAlign('right')
       .setOrigin(1, 0);
+
+    this.mainScene = this.scene.get('main');
+    this.mainScene.events
+      .on('changeAmmo', (data: UpdateStatusObject) => {
+        this.ammoCounter.setText(`${data.current} / ${data.max}`);
+      })
+      .on('changeLife', (data: UpdateStatusObject) => {
+        this.lifeCounter.setText(`${data.current} / ${data.max}`);
+      })
+      .on('changeBattery', (data: UpdateStatusObject) => {
+        this.batteryCounter.setText(`${data.current} / ${data.max}`);
+      });
   }
 
   update(): void {

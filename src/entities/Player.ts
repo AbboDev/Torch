@@ -16,54 +16,106 @@ import { SpriteCollidable } from 'Entities/WorldCollidable';
 
 import { MapScene } from 'Scenes/MapScene';
 
+import { UpdateStatusObject } from 'Miscellaneous/UpdateStatusObject';
+
 import { PLAYER_DEPTH } from 'Config/depths';
 import { TILE_SIZE } from 'Config/tiles';
 
 export class Player extends SpriteCollidable {
   /**
    * The Player Phaser body
+   *
    * @type {Phaser.Physics.Arcade.Body}
    */
   public body!: Phaser.Physics.Arcade.Body;
 
   /**
+   * Current health points
+   *
+   * @type {Number}
+   */
+  public life = 99;
+
+  /**
+   * Maximum health points
+   *
+   * @type {Number}
+   */
+  public maxLife = 99;
+
+  /**
+   * Current ammo
+   *
+   * @type {Number}
+   */
+  public ammo = 30;
+
+  /**
+   * Maximum ammo
+   *
+   * @type {Number}
+   */
+  public maxAmmo = 30;
+
+  /**
+   * Current battery level
+   *
+   * @type {Number}
+   */
+  public battery = 99;
+
+  /**
+   * Maximum battery level
+   *
+   * @type {Number}
+   */
+  public maxBattery = 99;
+
+  /**
    * The Gun associated to Player
+   *
    * @type {Gun}
    */
   public gun!: Gun;
 
   /**
    * The Rifle associated to Player
+   *
    * @type {Rifle}
    */
   public rifle!: Rifle;
 
   /**
    * The Rifle associated to Player
+   *
    * @type {Bow}
    */
   public bow!: Bow;
 
   /**
    * The correct position where the Player where collocated
+   *
    * @type {Phaser.Math.Vector2}
    */
   private adjustTo?: Phaser.Math.Vector2;
 
   /**
    * Where the Player is watching
+   *
    * @type {Facing}
    */
   private facing: Facing;
 
   /**
    * Where the Player was watching
+   *
    * @type {Facing}
    */
   private previousFacing: Facing;
 
   /**
    * If the Player is aim diagonally
+   *
    *
    * @type {Boolean}
    */
@@ -72,270 +124,315 @@ export class Player extends SpriteCollidable {
   /**
    * If the Player has aimed diagonally
    *
+   *
    * @type {Boolean}
    */
   private hasAimingDiagonal = false;
 
   /**
    * The Player is jumping
+   *
    * @type {Boolean}
    */
   private isJumping = false;
 
   /**
    * The Player is jumping
+   *
    * @type {Boolean}
    */
   private isStandingJumping = false;
 
   /**
    * The Player is falling
+   *
    * @type {Boolean}
    */
   private isFalling = false;
 
   /**
    * The Player can now perform the double jump
+   *
    * @type {Boolean}
    */
   private canDoubleJump = false;
 
   /**
    * The Player had actually performed the double jump
+   *
    * @type {Boolean}
    */
   private hasDoneDoubleJump = false;
 
   /**
    * The Player can now perform a wall jump
+   *
    * @type {Boolean}
    */
   private canWallJump = false;
 
   /**
    * The Player had actually performed the wall jump
+   *
    * @type {Boolean}
    */
   private hasDoneWallJump = false;
 
   /**
    * Check if the user had previously performed a jump without releasing the key
+   *
    * @type {Boolean}
    */
   private isPressingJump = false;
 
   /**
    * Check if the user had previously performed a shoot without releasing the key
+   *
    * @type {Boolean}
    */
   private isPressingShot = false;
 
   /**
    * Check if the user had previously performed a dash without releasing the key
+   *
    * @type {Boolean}
    */
   private isPressingDash = false;
 
   /**
    * The Player has the ability to do the double jump
+   *
    * @type {Boolean}
    */
   private hasDoubleJumpAbility = false;
 
   /**
    * The Player has the ability to perform an high jump
+   *
    * @type {Boolean}
    */
   private hasHighJumpAbility = false;
 
   /**
    * The Player has the ability to perform a wall jump
+   *
    * @type {Boolean}
    */
   private hasWallJumpAbility = true;
 
   /**
    * The Player has the ability to run quickly
+   *
    * @type {Boolean}
    */
   private hasBoostedRunAbility = false;
 
   /**
    * The Player has the ability to hang to cliffs
+   *
    * @type {Boolean}
    */
   private hasHangAbility = true;
 
   /**
    * The Player has the ability to make an horizontal dash
+   *
    * @type {Boolean}
    */
   private hasDashAbility = true;
 
   /**
    * The Player has the gun range weapon
+   *
    * @type {Boolean}
    */
   private hasGunAbility = true;
 
   /**
    * The Player has the rifle range weapon
+   *
    * @type {Boolean}
    */
   private hasRifleAbility = false;
 
   /**
    * The Player has the bow range weapon
+   *
    * @type {Boolean}
    */
   private hasBowAbility = false;
 
   /**
    * Default multiplier of jump speed
+   *
    * @type {Number}
    */
   static JUMP_SPEED_MULTIPLIER = 1.25;
 
   /**
    * Multiplier of jump speed offers by dedicated powerup
+   *
    * @type {Number}
    */
   static WALL_JUMP_SPEED_MULTIPLIER = 1.1;
 
   /**
    * Multiplier of jump speed offers by dedicated powerup
+   *
    * @type {Number}
    */
   static HIGH_JUMP_SPEED_MULTIPLIER = 1.5;
 
   /**
    * Default multiplier of run speed
+   *
    * @type {Number}
    */
   static RUN_SPEED_MULTIPLIER = 0.75;
 
   /**
    * Multiplier of dash speed offers by dedicated powerup
+   *
    * @type {Number}
    */
   static DASH_SPEED_MULTIPLIER = 2;
 
   /**
    * Multiplier of run speed offers by dedicated powerup
+   *
    * @type {Number}
    */
   static BOOSTED_RUN_SPEED_MULTIPLIER = 1.5;
 
   /**
    * The max distance from wall where the player can yet perform a wall jump
+   *
    * @type {Number}
    */
   static WALL_DETECTION_DISTANCE = TILE_SIZE / 4;
 
   /**
    * The Y position to subtract from current Y to spawn bullets
+   *
    * @type {Number}
    */
   static SHOT_HEIGHT = TILE_SIZE + 2;
 
   /**
    * The standard body width
+   *
    * @type {Number}
    */
   static BODY_WIDTH = TILE_SIZE;
 
   /**
    * The standard body height
+   *
    * @type {Number}
    */
   static BODY_HEIGHT = TILE_SIZE * 2;
 
   /**
    * The body width when it's crouch or jumping
+   *
    * @type {Number}
    */
   static BODY_SMALL_WIDTH = TILE_SIZE;
 
   /**
    * The body height when it's crouch or jumping
+   *
    * @type {Number}
    */
   static BODY_SMALL_HEIGHT = Player.BODY_HEIGHT / 4 * 3;;
 
   /**
    * The default movement speed based on game gravity
+   *
    * @type {Number}
    */
   private baseSpeed: number;
 
   /**
    * The hitbox dedicated to detect overlapping with walls on the left
+   *
    * @type {Hitbox}
    */
   private leftWallHitbox: Hitbox;
 
   /**
    * The hitbox dedicated to detect overlapping with walls on the right
+   *
    * @type {Hitbox}
    */
   private rightWallHitbox: Hitbox;
 
   /**
    * The hitbox dedicated to detect overlapping with tiles on the left
+   *
    * @type {Hitbox}
    */
   private leftHangHitbox: Hitbox;
 
   /**
    * The hitbox dedicated to detect overlapping with tiles on the right
+   *
    * @type {Hitbox}
    */
   private rightHangHitbox: Hitbox;
 
   /**
    * The current room number
+   *
    * @type {number}
    */
   public currentRoom: number = 0;
 
   /**
    * The previous room number
+   *
    * @type {number | null}
    */
   public previousRoom: number | null = null;
 
   /**
    * Check if the Player overlap room bounds for start transition
+   *
    * @type {boolean}
    */
   public roomChange: boolean = false;
 
   /**
    * Check if the user can interact with Player
+   *
    * @type {boolean}
    */
   public canInteract: boolean = true;
 
   /**
    * Determinate if Player is crouch
+   *
    * @type {boolean}
    */
   public isCrouch: boolean = false;
 
   /**
    * Determinate if Player can crouch
+   *
    * @type {boolean}
    */
   public canCrouch: boolean = true;
 
   /**
    * Determinate if Player has smaller collision box
+   *
    * @type {boolean}
    */
   public isBodySmall: boolean = false;
 
   /**
    * Determinate if Player is hanging on a tile
+   *
    * @type {boolean}
    */
   public isHanging: boolean = false;
@@ -1064,9 +1161,11 @@ export class Player extends SpriteCollidable {
     if (this.hasDashAbility) {
       const time = this.scene.getController().getKeyDuration(ControllerKey.X);
 
-      const maxVelocity = this.body.maxVelocity.clone();
-
-      if (time < 100 && isDashPress && this.facing.x !== DirectionAxisX.CENTER) {
+      if (time < 100
+        && isDashPress
+        && this.battery > 0
+        && this.facing.x !== DirectionAxisX.CENTER
+      ) {
         const facing: number = (this.facing.x === DirectionAxisX.RIGHT ? 1 : -1);
 
         this.setMaxVelocity(
@@ -1075,6 +1174,14 @@ export class Player extends SpriteCollidable {
         );
 
         this.setVelocityX(this.getDashSpeed() * facing);
+
+        --this.battery;
+
+        const status: UpdateStatusObject = {
+          current: this.battery,
+          max: this.maxBattery
+        };
+        this.scene.events.emit('changeBattery', status);
       } else {
         this.setMaxVelocity(
           this.isStandingJumping
@@ -1255,17 +1362,27 @@ export class Player extends SpriteCollidable {
         position: bulletPosition
       };
 
-      let weapon = null;
+      let equippedWeapon = null;
       if (this.hasGunAbility) {
-        weapon = 'gun';
+        equippedWeapon = 'gun';
       } else if (this.hasRifleAbility) {
-        weapon = 'rifle';
+        equippedWeapon = 'rifle';
       } else if (this.hasBowAbility) {
-        weapon = 'bow';
+        equippedWeapon = 'bow';
       }
 
-      if (weapon) {
-        (this[weapon as keyof Player] as Weapon).fireBullet(time, config);
+      if (equippedWeapon && this.ammo > 0) {
+        const weapon = (this[equippedWeapon as keyof Player] as Weapon);
+        const wasFired = weapon.fireBullet(time, config);
+
+        if (wasFired) {
+          --this.ammo;
+          const status: UpdateStatusObject = {
+            current: this.ammo,
+            max: this.maxAmmo
+          };
+          this.scene.events.emit('changeAmmo', status);
+        }
       }
     }
 
@@ -1327,7 +1444,7 @@ export class Player extends SpriteCollidable {
     }
 
     const animation: string = `hero_${action}_${this.facing.x}_animation`;
-    console.debug(animation);
+    // console.debug(animation);
     const doNewAnimation: boolean = animation !== this.anims.getCurrentKey();
 
     if (doNewAnimation) {

@@ -8,12 +8,14 @@ import { MapScene } from 'Scenes/MapScene';
 export class Weapon extends GroupCollidable {
   /**
    * The time when the last bullet had been shot
+   *
    * @type {Number}
    */
   private lastFired = 0;
 
   /**
-   * The minimum time required t
+   * The minimum time required to shot another bullet
+   *
    * @type {Number}
    */
   protected rateOfFire = 128;
@@ -39,26 +41,28 @@ export class Weapon extends GroupCollidable {
     this.scene.add.existing(this);
   }
 
-  public fireBullet(time: any, config: BulletConfig) {
-    let canShoot = time > this.lastFired
+  public fireBullet(time: any, config: BulletConfig): boolean {
+    const canShoot = time > this.lastFired
       && (!this.isSingle
         || !this.hasAlreayShoot);
 
     if (canShoot) {
-      let bullet = this.get();
+      const bullet = this.get() as Bullet;
 
       if (bullet) {
         bullet.fire(config);
-        this.lastFired = time + this.rateOfFire;
+        this.lastFired = time as integer + this.rateOfFire;
       }
     }
 
     if (this.isSingle) {
       this.hasAlreayShoot = true;
     }
+
+    return canShoot;
   }
 
-  public canShoot() {
+  public canShoot(): void {
     this.hasAlreayShoot = false;
   }
 
