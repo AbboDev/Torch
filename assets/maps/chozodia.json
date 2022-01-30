@@ -68,9 +68,9 @@
                  "name":"room_bottom",
                  "properties":[
                         {
-                         "name":"visited",
-                         "type":"bool",
-                         "value":false
+                         "name":"dark",
+                         "type":"string",
+                         "value":"000000"
                         }],
                  "rotation":0,
                  "type":"room",
@@ -83,12 +83,6 @@
                  "height":320,
                  "id":6,
                  "name":"room_start",
-                 "properties":[
-                        {
-                         "name":"visited",
-                         "type":"bool",
-                         "value":false
-                        }],
                  "rotation":0,
                  "type":"room",
                  "visible":true,

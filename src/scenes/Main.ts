@@ -1,7 +1,9 @@
-import { Player } from 'Entities/Player';
-import { ControllerKey } from 'Miscellaneous/Controller';
 import { MapScene } from 'Scenes/MapScene';
+import { ControllerKey } from 'Miscellaneous/Controller';
+import { Player } from 'Entities/Player';
+
 import { TILE_SIZE } from 'Config/tiles';
+import { DEFAULT_LIGHT } from 'Config/lights';
 
 export class Main extends MapScene {
   private hero!: Player;
@@ -73,21 +75,8 @@ export class Main extends MapScene {
 
     const x: number = this.spawnPoint.x || 0;
     const y: number = this.spawnPoint.y || 0;
-    let roomNumber = 0;
 
-    // Loop through rooms in this level
-    this.rooms
-      .forEach((room: Phaser.Types.Tilemaps.TiledObject, index: number) => {
-        const roomLeft = room.x || 0;
-        const roomRight = roomLeft + (room.width || 0);
-        const roomTop = room.y || 0;
-        const roomBottom = roomTop + (room.height || 0);
-
-        // Player is within the boundaries of this room
-        if (x > roomLeft && x < roomRight && y > roomTop && y < roomBottom) {
-          roomNumber = index;
-        }
-      });
+    const roomNumber: number = this.setCurrentRoom(x, y);
 
     this.hero = new Player(this, x, y, roomNumber);
 
@@ -104,22 +93,22 @@ export class Main extends MapScene {
       .setPipeline('Light2D');
 
     this.updateCollisionGraphic(this.physics.world.drawDebug);
+    this.lights.enable().setAmbientColor(DEFAULT_LIGHT);
 
+    const currentRoom: Phaser.Types.Tilemaps.TiledObject = this.rooms[roomNumber];
     this.cameras.main
       .setZoom(2)
       // The user must have a pretty deadzone to see incoming enemies
       .setDeadzone(TILE_SIZE * 5, TILE_SIZE * 2)
       .startFollow(this.hero)
       .setBounds(
-        this.rooms[roomNumber].x || 0,
-        this.rooms[roomNumber].y || 0,
-        this.rooms[roomNumber].width || 0,
-        this.rooms[roomNumber].height || 0,
+        currentRoom.x || 0,
+        currentRoom.y || 0,
+        currentRoom.width || 0,
+        currentRoom.height || 0,
         true
       )
       .fadeIn(2000, 0, 0, 0);
-
-    this.lights.enable().setAmbientColor(0x000000);
   }
 
   public update(time: any, delta: number): void {
@@ -128,7 +117,7 @@ export class Main extends MapScene {
     this.hero.update(time, delta);
     // this.cameras.main.centerOnY(this.hero.y - TILE_SIZE * 4.5);
 
-    if (this.hero.roomChange && this.rooms.length > 0) {
+    if (this.isChangingRoom && this.rooms.length > 0) {
       this.boundsCamera(this.hero.currentRoom);
     }
 
@@ -144,13 +133,13 @@ export class Main extends MapScene {
   protected boundsCamera(room: number): void {
     // Start a fadeOut animation before change room
     this.cameras.main
-      .fadeOut(250, 0, 0, 0, (camera: Phaser.Cameras.Scene2D.Camera, progress: number) => {
+      .fadeOut(250, 0, 0, 0, (cameraIn: Phaser.Cameras.Scene2D.Camera, progressIn: number) => {
         // Prevent Player to do anything
         this.hero.canInteract = false;
         // Pause all the physics events
         this.physics.pause();
 
-        if (progress === 1) {
+        if (progressIn === 1) {
           // Change camera boundaries when fade out complete
           this.cameras.main.setBounds(
             this.rooms[room].x || 0,
@@ -162,8 +151,8 @@ export class Main extends MapScene {
 
           // Fade back in with new boundareis
           this.cameras.main
-            .fadeIn(500, 0, 0, 0, (camera: Phaser.Cameras.Scene2D.Camera, progress: number) => {
-              if (progress === 1) {
+            .fadeIn(500, 0, 0, 0, (cameraOut: Phaser.Cameras.Scene2D.Camera, progressOut: number) => {
+              if (progressOut === 1) {
                 // The Player can now interact
                 this.hero.canInteract = true;
                 // Resume all the physics events

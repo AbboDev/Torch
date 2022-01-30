@@ -16,7 +16,7 @@ import { SpriteCollidable } from 'Entities/WorldCollidable';
 
 import { MapScene } from 'Scenes/MapScene';
 
-import { UpdateStatusObject } from 'Miscellaneous/UpdateStatusObject';
+import { RoomProperty } from 'Miscellaneous/RoomProperty';
 
 import { PLAYER_DEPTH } from 'Config/depths';
 import { TILE_SIZE } from 'Config/tiles';
@@ -418,13 +418,6 @@ export class Player extends SpriteCollidable {
    * @type {number | null}
    */
   public previousRoom: number | null = null;
-
-  /**
-   * Check if the Player overlap room bounds for start transition
-   *
-   * @type {boolean}
-   */
-  public roomChange = false;
 
   /**
    * Check if the user can interact with Player
@@ -921,52 +914,16 @@ export class Player extends SpriteCollidable {
   public preUpdate(time: any, delta: number): void {
     super.preUpdate(time, delta);
 
-    this.getRoom();
-  }
+    const bounds = this.getBodyBounds();
+    const roomNumber = this.scene.setCurrentRoom(bounds.centerX, bounds.centerY);
 
-  /**
-   * Returns player's current and previous room, flags rooms player has entered
-   */
-  public getRoom(): void {
-    if (this.scene.rooms.length > 1) {
-      let roomNumber: number | null = null;
-
-      const bounds = this.getBodyBounds();
-
-      // Test all the rooms in the map
-      this.scene.rooms.forEach((room, id) => {
-        const roomLeft = room.x || 0;
-        const roomRight = roomLeft + (room.width || 0);
-        const roomTop = room.y || 0;
-        const roomBottom = roomTop + (room.height || 0);
-
-        // Player is within the boundaries of this room
-        if (bounds.centerX > roomLeft
-          && bounds.centerX < roomRight
-          && bounds.centerY > roomTop
-          && bounds.centerY < roomBottom
-        ) {
-          roomNumber = id;
-
-          // Set this room as visited by Player
-          if (room.properties) {
-            const visited = room.properties.find(function(property: any) {
-              return property.name === 'visited';
-            });
-
-            visited.value = true;
-          }
-        }
-      });
-
-      // Update player room variables
-      if (roomNumber !== null && roomNumber !== this.currentRoom) {
-        this.previousRoom = this.currentRoom;
-        this.currentRoom = roomNumber;
-        this.roomChange = true;
-      } else {
-        this.roomChange = false;
-      }
+    // Update player room variables
+    if (roomNumber !== null && roomNumber !== this.currentRoom) {
+      this.previousRoom = this.currentRoom;
+      this.currentRoom = roomNumber;
+      this.scene.isChangingRoom = true;
+    } else {
+      this.scene.isChangingRoom = false;
     }
   }
 
