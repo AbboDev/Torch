@@ -1,5 +1,4 @@
 import { DataScene } from 'Scenes/DataScene';
-import { UpdateStatusObject } from 'Miscellaneous/UpdateStatusObject';
 import { TILE_SIZE } from 'Config/tiles';
 
 export class HUD extends DataScene {
@@ -94,7 +93,7 @@ export class HUD extends DataScene {
   protected updateData(
     parent: Phaser.Game,
     key: string,
-    data: string | number | UpdateStatusObject
+    data: string | number
   ): void {
     let maxAmmo = 0;
     if (this.registry.has('maxAmmo')) {
