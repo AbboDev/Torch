@@ -29,6 +29,23 @@ export class HUD extends DataScene {
       fontSize: `${TILE_SIZE}px`
     };
 
+    let life = 0;
+    if (this.registry.has('life')) {
+      life = this.registry.get('life') as number;
+    }
+    let battery = 0;
+    if (this.registry.has('battery')) {
+      battery = this.registry.get('battery') as number;
+    }
+    let ammo = 0;
+    if (this.registry.has('ammo')) {
+      ammo = this.registry.get('ammo') as number;
+    }
+    let maxAmmo = 0;
+    if (this.registry.has('maxAmmo')) {
+      maxAmmo = this.registry.get('maxAmmo') as number;
+    }
+
     let offset: number = TILE_SIZE * 0.5;
 
     this.life = this.add.image(offset, TILE_SIZE * 0.5, 'life')
@@ -38,7 +55,7 @@ export class HUD extends DataScene {
 
     offset += TILE_SIZE * 1.5;
 
-    this.lifeCounter = this.add.text(offset, TILE_SIZE * 0.5, '99', style)
+    this.lifeCounter = this.add.text(offset, TILE_SIZE * 0.5, life.toString(), style)
       .setAlign('center')
       .setOrigin(0);
 
@@ -51,7 +68,7 @@ export class HUD extends DataScene {
 
     offset += TILE_SIZE * 1.5;
 
-    this.batteryCounter = this.add.text(offset, TILE_SIZE * 0.5, '99', style)
+    this.batteryCounter = this.add.text(offset, TILE_SIZE * 0.5, battery.toString(), style)
       .setAlign('center')
       .setOrigin(0);
 
@@ -67,7 +84,7 @@ export class HUD extends DataScene {
     this.ammoCounter = this.add.text(
       (this.game.scale.width) - TILE_SIZE,
       TILE_SIZE * 0.5,
-      '99 / 99',
+      `${ammo.toString()} / ${maxAmmo.toString()}`,
       style
     )
       .setAlign('right')
@@ -80,7 +97,7 @@ export class HUD extends DataScene {
     data: string | number | UpdateStatusObject
   ): void {
     let maxAmmo = 0;
-    if (this.registry.get('maxAmmo')) {
+    if (this.registry.has('maxAmmo')) {
       maxAmmo = this.registry.get('maxAmmo') as number;
     }
 

@@ -638,12 +638,6 @@ export class Player extends SpriteCollidable {
     }
 
     ++this.battery;
-
-    const status: UpdateStatusObject = {
-      current: this.battery,
-      max: this.maxBattery
-    };
-    this.scene.events.emit('changeBattery', status);
   }
 
   public static preload(scene: Phaser.Scene): void {
@@ -1290,12 +1284,6 @@ export class Player extends SpriteCollidable {
         this.setVelocityX(this.getDashSpeed() * facing);
 
         --this.battery;
-
-        const status: UpdateStatusObject = {
-          current: this.battery,
-          max: this.maxBattery
-        };
-        this.scene.events.emit('changeBattery', status);
       } else {
         this.setMaxVelocity(
           this.isStandingJumping
