@@ -1,8 +1,8 @@
 import { ControllerKey } from 'Miscellaneous/Controller';
-import { ControlScene } from 'Scenes/ControlScene';
+import { DataScene } from 'Scenes/DataScene';
 import { TILE_SIZE } from 'Config/tiles';
 
-export class Inventory extends ControlScene {
+export class Inventory extends DataScene {
   private mainScene!: Phaser.Scene;
 
   public constructor() {

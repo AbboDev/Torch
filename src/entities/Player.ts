@@ -34,42 +34,42 @@ export class Player extends SpriteCollidable {
    *
    * @type {Number}
    */
-  public life = 99;
+  private _life = 99;
 
   /**
    * Maximum health points
    *
    * @type {Number}
    */
-  public maxLife = 99;
+  private _maxLife = 99;
 
   /**
    * Current ammo
    *
    * @type {Number}
    */
-  public ammo = 30;
+  private _ammo = 30;
 
   /**
    * Maximum ammo
    *
    * @type {Number}
    */
-  public maxAmmo = 30;
+  private _maxAmmo = 30;
 
   /**
    * Current battery level
    *
    * @type {Number}
    */
-  public battery = 0;
+  private _battery = 0;
 
   /**
    * Maximum battery level
    *
    * @type {Number}
    */
-  public maxBattery = 99;
+  private _maxBattery = 99;
 
   /**
    * Maximum battery level
@@ -546,6 +546,68 @@ export class Player extends SpriteCollidable {
       callback: this.timer.bind(this),
       loop: true
     });
+
+    this.scene.registry
+      .set('ammo', this.ammo)
+      .set('maxAmmo', this.maxAmmo)
+      .set('life', this.life)
+      .set('maxLife', this.maxLife)
+      .set('battery', this.battery)
+      .set('maxBattery', this.maxBattery);
+  }
+
+  public get life(): number {
+    return this._life;
+  }
+
+  public set life(value: number) {
+    this._life = value;
+    this.scene.registry.set('life', this._life);
+  }
+
+  public get maxLife(): number {
+    return this._maxLife;
+  }
+
+  public set maxLife(value: number) {
+    this._maxLife = value;
+    this.scene.registry.set('maxLife', this._maxLife);
+  }
+
+  public get ammo(): number {
+    return this._ammo;
+  }
+
+  public set ammo(value: number) {
+    this._ammo = value;
+    this.scene.registry.set('ammo', this._ammo);
+  }
+
+  public get maxAmmo(): number {
+    return this._maxAmmo;
+  }
+
+  public set maxAmmo(value: number) {
+    this._maxAmmo = value;
+    this.scene.registry.set('maxAmmo', this._maxAmmo);
+  }
+
+  public get battery(): number {
+    return this._battery;
+  }
+
+  public set battery(value: number) {
+    this._battery = value;
+    this.scene.registry.set('battery', this._battery);
+  }
+
+  public get maxBattery(): number {
+    return this._maxBattery;
+  }
+
+  public set maxBattery(value: number) {
+    this._maxBattery = value;
+    this.scene.registry.set('maxBattery', this._maxBattery);
   }
 
   public timer(): void {
@@ -1407,11 +1469,6 @@ export class Player extends SpriteCollidable {
 
         if (wasFired) {
           --this.ammo;
-          const status: UpdateStatusObject = {
-            current: this.ammo,
-            max: this.maxAmmo
-          };
-          this.scene.events.emit('changeAmmo', status);
         }
       }
     }

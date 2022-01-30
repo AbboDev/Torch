@@ -1,9 +1,8 @@
-import { ControlScene } from 'Scenes/ControlScene';
+import { DataScene } from 'Scenes/DataScene';
+import { UpdateStatusObject } from 'Miscellaneous/UpdateStatusObject';
 import { TILE_SIZE } from 'Config/tiles';
 
-import { UpdateStatusObject } from 'Miscellaneous/UpdateStatusObject';
-
-export class HUD extends ControlScene {
+export class HUD extends DataScene {
   private life!: Phaser.GameObjects.Image;
   private lifeCounter!: Phaser.GameObjects.Text;
 
@@ -73,17 +72,31 @@ export class HUD extends ControlScene {
     )
       .setAlign('right')
       .setOrigin(1, 0);
+  }
 
-    this.mainScene = this.scene.get('main');
-    this.mainScene.events
-      .on('changeAmmo', (data: UpdateStatusObject) => {
-        this.ammoCounter.setText(`${data.current} / ${data.max}`);
-      })
-      .on('changeLife', (data: UpdateStatusObject) => {
-        this.lifeCounter.setText(data.current.toString());
-      })
-      .on('changeBattery', (data: UpdateStatusObject) => {
-        this.batteryCounter.setText(data.current.toString());
-      });
+  protected updateData(
+    parent: Phaser.Game,
+    key: string,
+    data: string | number | UpdateStatusObject
+  ): void {
+    let maxAmmo = 0;
+    if (this.registry.get('maxAmmo')) {
+      maxAmmo = this.registry.get('maxAmmo') as number;
+    }
+
+    switch (key) {
+      case 'ammo':
+      case 'maxAmmo':
+        this.ammoCounter.setText(`${data.toString()} / ${maxAmmo.toString()}`);
+        break;
+      case 'life':
+      case 'maxLife':
+        this.lifeCounter.setText(data.toString());
+        break;
+      case 'battery':
+      case 'maxBattery':
+        this.batteryCounter.setText(data.toString());
+        break;
+    }
   }
 }
