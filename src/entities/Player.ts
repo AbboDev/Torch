@@ -1384,7 +1384,7 @@ export class Player extends SpriteCollidable {
         .isKeyPressed(ControllerKey.UP);
 
       if (isDownPressed && !this.isCrouch) {
-        if (this.isAimingDiagonal && this.previousFacing.y === this.facing.y) {
+        if (!this.isAimingDiagonal || this.previousFacing.y === this.facing.y) {
           this.isCrouch = true;
         }
       } else if (isUpPressed && this.isCrouch) {
