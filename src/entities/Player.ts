@@ -74,9 +74,16 @@ export class Player extends SpriteCollidable {
   /**
    * Maximum battery level
    *
-   * @type {Number}
+   * @type {Phaser.Time.TimerEvent}
    */
   private batteryRechargeTimer: Phaser.Time.TimerEvent;
+
+  /**
+   * The light emitted by Player
+   *
+   * @type {Phaser.GameObjects.Light}
+   */
+  private torchLight: Phaser.GameObjects.Light;
 
   /**
    * The Gun associated to Player
@@ -208,6 +215,13 @@ export class Player extends SpriteCollidable {
    * @type {Boolean}
    */
   private isPressingDash = false;
+
+  /**
+   * The Player has the torch
+   *
+   * @type {Boolean}
+   */
+  private hasTorchAbility = true;
 
   /**
    * The Player has the ability to do the double jump
@@ -547,6 +561,14 @@ export class Player extends SpriteCollidable {
       loop: true
     });
 
+    this.torchLight = this.scene.lights
+      .addLight(bounds.centerX, bounds.centerY, TILE_SIZE * 8)
+      .setIntensity(this.hasTorchAbility ? 3 : 0)
+      .setColor(0xffffdd);
+
+    // TODO: activate after create normal maps for sprite
+    // this.setPipeline('Light2D');
+
     this.scene.registry
       .set('ammo', this.ammo)
       .set('maxAmmo', this.maxAmmo)
@@ -630,6 +652,7 @@ export class Player extends SpriteCollidable {
       frameHeight: TILE_SIZE * 3
     };
 
+    // TODO: assemble everythings into a Sprite Atlas
     scene.load
       .spritesheet(
         'hero_idle_center',
@@ -1569,6 +1592,8 @@ export class Player extends SpriteCollidable {
       bounds.right + Player.WALL_DETECTION_DISTANCE / 2 + 1,
       bounds.top + Player.WALL_DETECTION_DISTANCE / 2 + 1
     );
+
+    this.torchLight.setPosition(bounds.centerX, bounds.centerY);
   }
 
   /**

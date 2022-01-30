@@ -12,7 +12,7 @@ console.clear();
 
 const config: Phaser.Types.Core.GameConfig = {
   title: 'Torch',
-  type: Phaser.AUTO,
+  type: Phaser.WEBGL,
   parent: 'canvas',
   backgroundColor: '#000000',
   version: 'Dev',

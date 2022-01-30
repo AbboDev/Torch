@@ -15,9 +15,16 @@ export class Main extends MapScene {
   }
 
   public preload(): void {
-    this.load.image('big', '/assets/sprites/tilemap.png');
-    this.load.image('chozodia_tiles', '/assets/tilesets/chozodia.png');
-    this.load.tilemapTiledJSON('chozodia_map', '../assets/maps/chozodia.json');
+    this.load
+      .image('background', [
+        '/assets/sprites/tilemap.png',
+        '/assets/sprites/tilemap_n.png',
+      ])
+      .image('chozodia_tiles', [
+        '/assets/tilesets/chozodia.png',
+        '/assets/tilesets/chozodia_n.png',
+      ])
+      .tilemapTiledJSON('chozodia_map', '../assets/maps/chozodia.json');
   }
 
   public create(): void {
@@ -46,12 +53,15 @@ export class Main extends MapScene {
     const tileset = this.map.addTilesetImage('chozodia', 'chozodia_tiles');
 
     this.belowLayer = this.map.createStaticLayer('background', tileset, 0, 0)
-      .setDepth(1);
+      .setDepth(1)
+      .setPipeline('Light2D');
     this.aboveLayer = this.map.createStaticLayer('frontground', tileset, 0, 0)
-      .setDepth(1000);
+      .setDepth(1000)
+      .setPipeline('Light2D');
 
     this.worldLayer = this.map.createDynamicLayer('collision', tileset, 0, 0)
       .setDepth(999)
+      .setPipeline('Light2D')
       .setCollisionByProperty({ collides: true })
       .renderDebug(this.collisionDebugGraphics, {
         tileColor: null,
@@ -80,16 +90,18 @@ export class Main extends MapScene {
       });
 
     this.hero = new Player(this, x, y, roomNumber);
+
     this.background = this.add.tileSprite(
       0,
       0,
       this.map.widthInPixels,
       this.map.widthInPixels,
-      'big'
+      'background'
     )
       .setOrigin(0, 0)
       .setAlpha(0.5)
-      .setDepth(-1);
+      .setDepth(-1)
+      .setPipeline('Light2D');
 
     this.updateCollisionGraphic(this.physics.world.drawDebug);
 
@@ -106,6 +118,8 @@ export class Main extends MapScene {
         true
       )
       .fadeIn(2000, 0, 0, 0);
+
+    this.lights.enable().setAmbientColor(0x000000);
   }
 
   public update(time: any, delta: number): void {
