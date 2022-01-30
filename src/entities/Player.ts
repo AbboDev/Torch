@@ -855,7 +855,7 @@ export class Player extends SpriteCollidable {
       const bounds = this.getBodyBounds();
 
       // Test all the rooms in the map
-      this.scene.rooms.forEach((room, roomNumber) => {
+      this.scene.rooms.forEach((room, id) => {
         const roomLeft = room.x || 0;
         const roomRight = roomLeft + (room.width || 0);
         const roomTop = room.y || 0;
@@ -867,6 +867,8 @@ export class Player extends SpriteCollidable {
           && bounds.centerY > roomTop
           && bounds.centerY < roomBottom
         ) {
+          roomNumber = id;
+
           // Set this room as visited by Player
           if (room.properties) {
             const visited = room.properties.find(function(property: any) {
