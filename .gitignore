@@ -62,7 +62,3 @@ typings/
 
 # build directory
 build
-
-# fake build
-src/**/*.js
-src/**/*.map
