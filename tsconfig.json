@@ -7,16 +7,19 @@
     "sourceMap": true,
 
     "typeRoots": [
+      "./src/@types",
       "./node_modules/@types",
-      "./node_modules/phaser/types"
+      "./node_modules/phaser/types",
     ],
     "types": [
-      "Phaser"
+      "Phaser",
+      "node"
     ],
 
     "baseUrl": "./src",
     "paths": {
       "Config/*": ["./config/*"],
+      "Plugins/*": ["./plugins/*"],
       "Entities/Bullets/*": ["./entities/bullets/*"],
       "Entities/Hitboxes/*": ["./entities/hitboxes/*"],
       "Entities/Liquids/*": ["./entities/liquids/*"],

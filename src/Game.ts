@@ -7,6 +7,8 @@ import { Inventory } from 'Scenes/Inventory';
 
 import { TILE_SIZE } from 'Config/tiles';
 
+import * as AnimatedTiles from 'phaser-animated-tiles/dist/AnimatedTiles.min.js';
+
 // eslint-disable-next-line no-console
 console.clear();
 
@@ -29,6 +31,17 @@ const config: Phaser.Types.Core.GameConfig = {
     HUD,
     Inventory
   ],
+
+  plugins: {
+    scene: [
+      {
+        key: 'AnimatedTiles',
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        plugin: AnimatedTiles,
+        mapping: 'animatedTiles'
+      }
+    ]
+  },
 
   scale: {
     parent: 'canvas',

@@ -69,6 +69,8 @@ export class Main extends MapScene {
 
     const tileset = this.map.addTilesetImage('chozodia', 'chozodia_tiles');
 
+    this.animatedTiles.init(this.map);
+
     this.belowLayer = this.map.createStaticLayer('background', tileset, 0, 0)
       .setDepth(BELOW_LAYER_DEPTH)
       .setPipeline('Light2D');

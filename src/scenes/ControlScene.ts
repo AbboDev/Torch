@@ -1,6 +1,7 @@
 import { Controller } from 'Miscellaneous/Controller';
+import { AnimatedTilesScene } from 'Scenes/AnimatedTilesScene';
 
-export abstract class ControlScene extends Phaser.Scene {
+export abstract class ControlScene extends AnimatedTilesScene {
   /**
    * The Controller for handle all the user inputs
    *
