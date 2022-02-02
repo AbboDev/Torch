@@ -1,9 +1,24 @@
 import { MapScene } from 'Scenes/MapScene';
+
 import { ControllerKey } from 'Miscellaneous/Controller';
+import { TiledObject } from 'Miscellaneous/TiledObject';
 import { Player } from 'Entities/Player';
 
-import { TILE_SIZE } from 'Config/tiles';
+import { Liquid } from 'Entities/Liquids/Liquid';
+import { Water } from 'Entities/Liquids/Water';
+import { Lava } from 'Entities/Liquids/Lava';
+import { Acid } from 'Entities/Liquids/Acid';
+import { Jelly } from 'Entities/Liquids/Jelly';
+
+import {
+  BACKGROUND_DEPTH,
+  BELOW_LAYER_DEPTH,
+  ABOVE_LAYER_DEPTH,
+  WORLD_LAYER_DEPTH,
+  GLOBAL_ABOVE_LAYER_DEPTH
+} from 'Config/depths';
 import { DEFAULT_LIGHT } from 'Config/lights';
+import { TILE_SIZE } from 'Config/tiles';
 
 export class Main extends MapScene {
   private hero!: Player;
@@ -37,7 +52,7 @@ export class Main extends MapScene {
     // Get the objects layer of the current loaded map for found
     // the main spawn point and rooms
     this.map.getObjectLayer('objects').objects
-      .forEach((object: Phaser.Types.Tilemaps.TiledObject) => {
+      .forEach((object: TiledObject) => {
         if (object.type === 'room') {
           this.rooms.push(object);
         }
@@ -55,14 +70,19 @@ export class Main extends MapScene {
     const tileset = this.map.addTilesetImage('chozodia', 'chozodia_tiles');
 
     this.belowLayer = this.map.createStaticLayer('background', tileset, 0, 0)
-      .setDepth(1)
+      .setDepth(BELOW_LAYER_DEPTH)
       .setPipeline('Light2D');
+
     this.aboveLayer = this.map.createStaticLayer('frontground', tileset, 0, 0)
-      .setDepth(1000)
+      .setDepth(ABOVE_LAYER_DEPTH)
+      .setPipeline('Light2D');
+
+    this.frontLayer = this.map.createStaticLayer('global_frontground', tileset, 0, 0)
+      .setDepth(GLOBAL_ABOVE_LAYER_DEPTH)
       .setPipeline('Light2D');
 
     this.worldLayer = this.map.createDynamicLayer('collision', tileset, 0, 0)
-      .setDepth(999)
+      .setDepth(WORLD_LAYER_DEPTH)
       .setPipeline('Light2D')
       .setCollisionByProperty({ collides: true })
       .renderDebug(this.collisionDebugGraphics, {
@@ -89,13 +109,13 @@ export class Main extends MapScene {
     )
       .setOrigin(0, 0)
       .setAlpha(0.5)
-      .setDepth(-1)
+      .setDepth(BACKGROUND_DEPTH)
       .setPipeline('Light2D');
 
     this.updateCollisionGraphic(this.physics.world.drawDebug);
     this.lights.enable().setAmbientColor(DEFAULT_LIGHT);
 
-    const currentRoom: Phaser.Types.Tilemaps.TiledObject = this.rooms[roomNumber];
+    const currentRoom = this.rooms[roomNumber];
     this.cameras.main
       .setZoom(2)
       // The user must have a pretty deadzone to see incoming enemies
@@ -109,12 +129,17 @@ export class Main extends MapScene {
         true
       )
       .fadeIn(2000, 0, 0, 0);
+
+    const liquids: TiledObject[] = this.map.getObjectLayer('liquids').objects;
+
+    this.fetchLiquids(liquids);
   }
 
   public update(time: any, delta: number): void {
     super.update(time, delta);
 
     this.hero.update(time, delta);
+    // this.liquids.update(time, delta);
     // this.cameras.main.centerOnY(this.hero.y - TILE_SIZE * 4.5);
 
     if (this.isChangingRoom && this.rooms.length > 0) {
@@ -151,6 +176,7 @@ export class Main extends MapScene {
 
           // Fade back in with new boundareis
           this.cameras.main
+            // eslint-disable-next-line max-len
             .fadeIn(500, 0, 0, 0, (cameraOut: Phaser.Cameras.Scene2D.Camera, progressOut: number) => {
               if (progressOut === 1) {
                 // The Player can now interact
@@ -161,5 +187,38 @@ export class Main extends MapScene {
             }, this);
         }
       }, this);
+  }
+
+  protected fetchLiquids(liquids: TiledObject[]): Main {
+    liquids.forEach((object: TiledObject) => {
+      let liquid: Liquid | null = null;
+      const x: number = object.x || 0;
+      const y: number = object.y || 0;
+      const width: number = object.width || 0;
+      const height: number = object.height || 0;
+
+      switch (object.type) {
+        case 'water':
+          liquid = new Water(this, x, y, width, height);
+          break;
+        case 'lava':
+          liquid = new Lava(this, x, y, width, height);
+          break;
+        case 'acid':
+          liquid = new Acid(this, x, y, width, height);
+          break;
+        case 'jelly':
+          liquid = new Jelly(this, x, y, width, height);
+          break;
+      }
+
+      if (!(liquid instanceof Liquid)) {
+        throw 'Wrong liquid';
+      }
+
+      this.liquids.push(liquid);
+    });
+
+    return this;
   }
 }

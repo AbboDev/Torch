@@ -1,6 +1,7 @@
 import { ControlScene } from 'Scenes/ControlScene';
+import { Liquid } from 'Entities/Liquids/Liquid';
 import { ControllerKey } from 'Miscellaneous/Controller';
-import { RoomProperty } from 'Miscellaneous/RoomProperty';
+import { TiledObject, TiledObjectProperty } from 'Miscellaneous/TiledObject';
 
 import { DEFAULT_LIGHT } from 'Config/lights';
 
@@ -34,6 +35,13 @@ export abstract class MapScene extends ControlScene {
   public aboveLayer!: Phaser.Tilemaps.StaticTilemapLayer;
 
   /**
+   * The tilesmap layer above all the elements and liquids
+   *
+   * @type {Phaser.Tilemaps.StaticTilemapLayer}
+   */
+  public frontLayer!: Phaser.Tilemaps.StaticTilemapLayer;
+
+  /**
    * The graphic which will render the tiles collision debug
    *
    * @type {Phaser.GameObjects.Graphics}
@@ -50,9 +58,16 @@ export abstract class MapScene extends ControlScene {
   /**
    * The current group of rooms
    *
-   * @type {Array<Phaser.Types.Tilemaps.TiledObject>}
+   * @type {TiledObject[]}
    */
-  public rooms!: Phaser.Types.Tilemaps.TiledObject[];
+  public rooms!: TiledObject[];
+
+  /**
+   * The current group of liquids
+   *
+   * @type {Liquid[]}
+   */
+  public liquids!: Liquid[];
 
   /**
    * The current map stored
@@ -75,7 +90,8 @@ export abstract class MapScene extends ControlScene {
       .setAlpha(0.75)
       .setDepth(10000);
 
-    this.rooms = Array<Phaser.Types.Tilemaps.TiledObject>();
+    this.rooms = Array<TiledObject>();
+    this.liquids = Array<Liquid>();
   }
 
   public update(time: any, delta: number): void {
@@ -121,7 +137,7 @@ export abstract class MapScene extends ControlScene {
       currentRoom.properties = [];
     }
 
-    const properties: RoomProperty[] = currentRoom.properties as RoomProperty[];
+    const properties = currentRoom.properties;
 
     if (properties.length > 0) {
       let hasVisited = false;
@@ -143,7 +159,7 @@ export abstract class MapScene extends ControlScene {
       }
 
       if (!hasVisited) {
-        const visited: RoomProperty = {
+        const visited: TiledObjectProperty = {
           name: 'visited',
           type: 'boolean',
           value: true

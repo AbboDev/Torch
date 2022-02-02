@@ -18,8 +18,9 @@
     "paths": {
       "Config/*": ["./config/*"],
       "Entities/Bullets/*": ["./entities/bullets/*"],
-      "Entities/Weapons/*": ["./entities/weapons/*"],
       "Entities/Hitboxes/*": ["./entities/hitboxes/*"],
+      "Entities/Liquids/*": ["./entities/liquids/*"],
+      "Entities/Weapons/*": ["./entities/weapons/*"],
       "Entities/*": ["./entities/*"],
       "Miscellaneous/*": ["./miscellaneous/*"],
       "Scenes/*": ["./scenes/*"]

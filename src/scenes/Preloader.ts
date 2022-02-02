@@ -3,8 +3,13 @@ import { Bullet } from 'Entities/Bullets/Bullet';
 import { BowArrow } from 'Entities/Bullets/BowArrow';
 import { RifleBullet } from 'Entities/Bullets/RifleBullet';
 
+import { Water } from 'Entities/Liquids/Water';
+import { Lava } from 'Entities/Liquids/Lava';
+import { Acid } from 'Entities/Liquids/Acid';
+import { Jelly } from 'Entities/Liquids/Jelly';
+
 export class Preloader extends Phaser.Scene {
-  constructor() {
+  public constructor() {
     super({
       key: 'preloader',
       pack: {
@@ -16,7 +21,7 @@ export class Preloader extends Phaser.Scene {
     });
   }
 
-  preload(): void {
+  public preload(): void {
     // add the loading bar to use as a display for
     // the loading progress of the remainder of the assets
     this.add.image(
@@ -56,10 +61,20 @@ export class Preloader extends Phaser.Scene {
     Bullet.preload(this);
     BowArrow.preload(this);
     RifleBullet.preload(this);
+
+    Water.preload(this);
+    Lava.preload(this);
+    Acid.preload(this);
+    Jelly.preload(this);
   }
 
-  create(): void {
+  public create(): void {
     Player.create(this);
+
+    Water.create(this);
+    Lava.create(this);
+    Acid.create(this);
+    Jelly.create(this);
 
     this.scene.launch('main').launch('hud').stop();
   }

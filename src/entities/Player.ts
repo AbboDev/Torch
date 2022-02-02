@@ -16,8 +16,6 @@ import { SpriteCollidable } from 'Entities/WorldCollidable';
 
 import { MapScene } from 'Scenes/MapScene';
 
-import { RoomProperty } from 'Miscellaneous/RoomProperty';
-
 import { PLAYER_DEPTH } from 'Config/depths';
 import { TILE_SIZE } from 'Config/tiles';
 
@@ -252,6 +250,13 @@ export class Player extends SpriteCollidable {
   private hasBoostedRunAbility = false;
 
   /**
+   * The Player has the ability to move normally into liquid
+   *
+   * @type {Boolean}
+   */
+  private hasSwimAbility = false;
+
+  /**
    * The Player has the ability to hang to cliffs
    *
    * @type {Boolean}
@@ -327,6 +332,13 @@ export class Player extends SpriteCollidable {
    * @type {Number}
    */
   static BOOSTED_RUN_SPEED_MULTIPLIER = 1.5;
+
+  /**
+   * Multiplier of swim speed when not active the dedicated powerup
+   *
+   * @type {Number}
+   */
+  static SLOW_SWIM_SPEED_MULTIPLIER = 0.5;
 
   /**
    * The max distance from wall where the player can yet perform a wall jump
@@ -455,16 +467,23 @@ export class Player extends SpriteCollidable {
   public isHanging = false;
 
   /**
+   * Determinate if Player is swimming in a liquid
+   *
+   * @type {boolean}
+   */
+  public isSwimming = false;
+
+  /**
    * Create the Player
    *
    * @param {MapScene} scene - scene creating the player.
    * @param {number} x - Start location x value.
    * @param {number} y - Start location y value.
    */
-  constructor(
+  public constructor(
     public scene: MapScene,
-    public x: number,
-    public y: number,
+    x: number,
+    y: number,
     currentRoom = 0
   ) {
     super(scene, x, y, 'hero_idle_center');
@@ -940,6 +959,8 @@ export class Player extends SpriteCollidable {
       // Handles all the movement along the x axis
       this.tiltAim();
 
+      this.swim();
+
       // Prevent jump when is facing forward
       if (this.facing.x !== DirectionAxisX.CENTER) {
         // Handles all the movement along the y axis
@@ -1026,6 +1047,23 @@ export class Player extends SpriteCollidable {
     }
 
     this.isAimingDiagonal = isAimPress || isAimingWhileMoving;
+  }
+
+  /**
+   * Handles all the events inside liquids
+   */
+  protected swim(): void {
+    let liquidName: string;
+
+    this.isSwimming = this.scene.physics
+      .overlap(this, this.scene.liquids, (hero, liquid) => {
+        liquidName = liquid.name;
+      });
+
+    if (this.isSwimming) {
+      // const swimVelocity = this.getSwimSpeed();
+      // this.setMaxVelocity(swimVelocity.x, swimVelocity.y);
+    }
   }
 
   /**
@@ -1561,6 +1599,10 @@ export class Player extends SpriteCollidable {
   }
 
   protected getJumpSpeedMultiplier(): number {
+    if (!this.hasSwimAbility && this.isSwimming) {
+      return Player.SLOW_SWIM_SPEED_MULTIPLIER;
+    }
+
     if (this.hasWallJumpAbility && this.canWallJump) {
       return Player.WALL_JUMP_SPEED_MULTIPLIER;
     }
@@ -1582,6 +1624,13 @@ export class Player extends SpriteCollidable {
 
   public getRunSpeed(): number {
     return this.baseSpeed * 2;
+  }
+
+  public getSwimSpeed(): Phaser.Math.Vector2 {
+    return new Phaser.Math.Vector2(
+      this.baseSpeed * Player.SLOW_SWIM_SPEED_MULTIPLIER,
+      this.getJumpSpeed(true)
+    );
   }
 
   public getStandingRunSpeed(): number {
@@ -1606,10 +1655,10 @@ export class Player extends SpriteCollidable {
    * Detect if the required Hitbox is overlapping at least one tile
    *
    * @param  {DirectionAxisX} direction The direction where to test
-   *                                    the overlapping. If not specified,
-   *                                    both direction are tested
+   * the overlapping. If not specified, both direction are tested
    *
-   * @return {boolean|boolean[]}        True if a least one tile per direction is overlapped
+   * @return {boolean|boolean[]} True if a least one tile
+   * per direction is overlapped
    */
   public isTouchingWalls(direction?: DirectionAxisX): boolean | boolean[] {
     let hitbox: Hitbox;
@@ -1637,7 +1686,10 @@ export class Player extends SpriteCollidable {
    *
    * @return {number} The calculated Y coordinate
    */
-  private setNewPosition(x: number | Phaser.Math.Vector2 | null, y?: number): void {
+  private setNewPosition(
+    x: number | Phaser.Math.Vector2 | null,
+    y?: number
+  ): void {
     if (x instanceof Phaser.Math.Vector2) {
       this.adjustTo = x;
     } else {
