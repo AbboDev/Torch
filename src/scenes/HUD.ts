@@ -11,6 +11,8 @@ export class HUD extends DataScene {
   private ammo!: Phaser.GameObjects.Image;
   private ammoCounter!: Phaser.GameObjects.Text;
 
+  private debugger!: Phaser.GameObjects.Text;
+
   private mainScene!: Phaser.Scene;
 
   public constructor() {
@@ -88,6 +90,27 @@ export class HUD extends DataScene {
     )
       .setAlign('right')
       .setOrigin(1, 0);
+
+    this.debugger = this.add.text(
+      TILE_SIZE / 2,
+      (this.game.scale.height) - TILE_SIZE,
+      'x: 0 | y: 0 | Vx: 0 | Vy : 0',
+      {
+        fontSize: 10
+      }
+    )
+      .setAlign('left')
+      .setOrigin(0);
+
+    this.mainScene = this.scene.get('main');
+    this.mainScene.events.addListener('debugPlayer', (data: any) => {
+      const x = data.position.x.toFixed(3);
+      const y = data.position.y.toFixed(3);
+      const Vx = data.velocity.x.toFixed(3);
+      const Vy = data.velocity.y.toFixed(3);
+
+      this.debugger.setText(`x: ${x} | y: ${y} | Vx: ${Vx} | Vy: ${Vy}`);
+    });
   }
 
   protected updateData(
