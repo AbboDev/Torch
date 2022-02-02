@@ -47,6 +47,7 @@ module.exports = {
     alias: {
       Config: path.resolve(__dirname, 'src/config/'),
       Entities: path.resolve(__dirname, 'src/entities/'),
+      Liquids: path.resolve(__dirname, 'src/entities/liquids'),
       Bullets: path.resolve(__dirname, 'src/entities/bullets'),
       Weapons: path.resolve(__dirname, 'src/entities/weapons'),
       Hitboxes: path.resolve(__dirname, 'src/entities/hitboxes'),
