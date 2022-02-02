@@ -334,11 +334,18 @@ export class Player extends SpriteCollidable {
   static BOOSTED_RUN_SPEED_MULTIPLIER = 1.5;
 
   /**
-   * Multiplier of swim speed when not active the dedicated powerup
+   * Multiplier of swim x speed when not active the dedicated powerup
    *
    * @type {Number}
    */
-  static SLOW_SWIM_SPEED_MULTIPLIER = 0.5;
+  static SWIM_X_SPEED_MULTIPLIER = 0.5;
+
+  /**
+   * Multiplier of swim y speed when not active the dedicated powerup
+   *
+   * @type {Number}
+   */
+  static SWIM_Y_SPEED_MULTIPLIER = 1;
 
   /**
    * The max distance from wall where the player can yet perform a wall jump
@@ -1061,8 +1068,7 @@ export class Player extends SpriteCollidable {
       });
 
     if (this.isSwimming) {
-      // const swimVelocity = this.getSwimSpeed();
-      // this.setMaxVelocity(swimVelocity.x, swimVelocity.y);
+      // this.setMaxVelocity(this.getSwimSpeed(), this.getJumpSpeed());
     }
   }
 
@@ -1602,8 +1608,8 @@ export class Player extends SpriteCollidable {
   }
 
   protected getJumpSpeedMultiplier(): number {
-    if (!this.hasSwimAbility && this.isSwimming) {
-      return Player.SLOW_SWIM_SPEED_MULTIPLIER;
+    if (this.isSwimming && !this.hasSwimAbility) {
+      return Player.SWIM_Y_SPEED_MULTIPLIER;
     }
 
     if (this.hasWallJumpAbility && this.canWallJump) {
@@ -1626,14 +1632,9 @@ export class Player extends SpriteCollidable {
   }
 
   public getRunSpeed(): number {
-    return this.baseSpeed * 2;
-  }
-
-  public getSwimSpeed(): Phaser.Math.Vector2 {
-    return new Phaser.Math.Vector2(
-      this.baseSpeed * Player.SLOW_SWIM_SPEED_MULTIPLIER,
-      this.getJumpSpeed(true)
-    );
+    return (this.isSwimming && !this.hasSwimAbility)
+      ? this.baseSpeed * Player.SWIM_X_SPEED_MULTIPLIER
+      : this.baseSpeed * 2;
   }
 
   public getStandingRunSpeed(): number {
@@ -1649,9 +1650,15 @@ export class Player extends SpriteCollidable {
   }
 
   public getRunSpeedMultiplier(): number {
-    return this.hasBoostedRunAbility
-      ? Player.BOOSTED_RUN_SPEED_MULTIPLIER
-      : Player.RUN_SPEED_MULTIPLIER;
+    if (this.isSwimming && !this.hasSwimAbility) {
+      return Player.SWIM_X_SPEED_MULTIPLIER;
+    }
+
+    if (this.hasBoostedRunAbility) {
+      return Player.BOOSTED_RUN_SPEED_MULTIPLIER;
+    }
+
+    return Player.RUN_SPEED_MULTIPLIER;
   }
 
   /**
