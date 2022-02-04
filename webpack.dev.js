@@ -48,7 +48,6 @@ module.exports = {
       Config: path.resolve(__dirname, 'src/config/'),
       Plugins: path.resolve(__dirname, 'src/plugins/'),
       Entities: path.resolve(__dirname, 'src/entities/'),
-      Liquids: path.resolve(__dirname, 'src/entities/liquids'),
       Bullets: path.resolve(__dirname, 'src/entities/bullets'),
       Weapons: path.resolve(__dirname, 'src/entities/weapons'),
       Hitboxes: path.resolve(__dirname, 'src/entities/hitboxes'),

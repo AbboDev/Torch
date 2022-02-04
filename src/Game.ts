@@ -7,7 +7,7 @@ import { Inventory } from 'Scenes/Inventory';
 
 import { TILE_SIZE } from 'Config/tiles';
 
-import * as AnimatedTiles from 'phaser-animated-tiles/dist/AnimatedTiles.min.js';
+import * as AnimatedTiles from 'phaser-animated-tiles/dist/AnimatedTiles.js';
 
 // eslint-disable-next-line no-console
 console.clear();

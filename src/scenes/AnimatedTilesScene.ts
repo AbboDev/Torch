@@ -1,4 +1,4 @@
-import * as AnimatedTiles from 'phaser-animated-tiles/dist/AnimatedTiles.min.js';
+import * as AnimatedTiles from 'phaser-animated-tiles/dist/AnimatedTiles.js';
 
 interface AnimatedTilesSceneSystem extends Phaser.Scenes.Systems {
   animatedTiles: AnimatedTiles

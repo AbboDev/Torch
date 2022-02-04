@@ -4,12 +4,6 @@ import { ControllerKey } from 'Miscellaneous/Controller';
 import { TiledObject } from 'Miscellaneous/TiledObject';
 import { Player } from 'Entities/Player';
 
-import { Liquid } from 'Entities/Liquids/Liquid';
-import { Water } from 'Entities/Liquids/Water';
-import { Lava } from 'Entities/Liquids/Lava';
-import { Acid } from 'Entities/Liquids/Acid';
-import { Jelly } from 'Entities/Liquids/Jelly';
-
 import {
   BACKGROUND_DEPTH,
   BELOW_LAYER_DEPTH,
@@ -41,11 +35,22 @@ export class Main extends MapScene {
         '/assets/tilesets/chozodia.png',
         '/assets/tilesets/chozodia_n.png',
       ])
+      .image('liquid_tiles', '/assets/tilesets/liquids.png')
+      .image('full_liquid_tiles', '/assets/tilesets/full_liquids.png')
       .tilemapTiledJSON('chozodia_map', '../assets/maps/chozodia.json');
   }
 
   public create(): void {
     super.create();
+
+    const config: Phaser.Types.Animations.Animation = {
+      key: 'chozodia_tiles_anim',
+      frameRate: 10,
+      frames: this.anims.generateFrameNumbers('chozodia_tiles', {
+        frames: [54, 70]
+      })
+    };
+    this.anims.create(config);
 
     this.map = this.make.tilemap({ key: 'chozodia_map' });
 
@@ -68,8 +73,8 @@ export class Main extends MapScene {
     }
 
     const tileset = this.map.addTilesetImage('chozodia', 'chozodia_tiles');
-
-    this.animatedTiles.init(this.map);
+    const liquid_tileset = this.map.addTilesetImage('liquids', 'liquid_tiles');
+    const full_liquid_tileset = this.map.addTilesetImage('full_liquids', 'full_liquid_tiles');
 
     this.belowLayer = this.map.createStaticLayer('background', tileset, 0, 0)
       .setDepth(BELOW_LAYER_DEPTH)
@@ -82,6 +87,10 @@ export class Main extends MapScene {
     this.frontLayer = this.map.createStaticLayer('global_frontground', tileset, 0, 0)
       .setDepth(GLOBAL_ABOVE_LAYER_DEPTH)
       .setPipeline('Light2D');
+
+    this.liquidsLayer = this.map.createDynamicLayer('liquids', [liquid_tileset, full_liquid_tileset], 0, 0)
+      .setDepth(WORLD_LAYER_DEPTH)
+      .setAlpha(0.7)
 
     this.worldLayer = this.map.createDynamicLayer('collision', tileset, 0, 0)
       .setDepth(WORLD_LAYER_DEPTH)
@@ -132,9 +141,7 @@ export class Main extends MapScene {
       )
       .fadeIn(2000, 0, 0, 0);
 
-    const liquids: TiledObject[] = this.map.getObjectLayer('liquids').objects;
-
-    this.fetchLiquids(liquids);
+    this.sys.animatedTiles.init(this.map);
   }
 
   public update(time: any, delta: number): void {
@@ -189,38 +196,5 @@ export class Main extends MapScene {
             }, this);
         }
       }, this);
-  }
-
-  protected fetchLiquids(liquids: TiledObject[]): Main {
-    liquids.forEach((object: TiledObject) => {
-      let liquid: Liquid | null = null;
-      const x: number = object.x || 0;
-      const y: number = object.y || 0;
-      const width: number = object.width || 0;
-      const height: number = object.height || 0;
-
-      switch (object.type) {
-        case 'water':
-          liquid = new Water(this, x, y, width, height);
-          break;
-        case 'lava':
-          liquid = new Lava(this, x, y, width, height);
-          break;
-        case 'acid':
-          liquid = new Acid(this, x, y, width, height);
-          break;
-        case 'jelly':
-          liquid = new Jelly(this, x, y, width, height);
-          break;
-      }
-
-      if (!(liquid instanceof Liquid)) {
-        throw 'Wrong liquid';
-      }
-
-      this.liquids.push(liquid);
-    });
-
-    return this;
   }
 }

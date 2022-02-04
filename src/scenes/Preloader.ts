@@ -3,11 +3,6 @@ import { Bullet } from 'Entities/Bullets/Bullet';
 import { BowArrow } from 'Entities/Bullets/BowArrow';
 import { RifleBullet } from 'Entities/Bullets/RifleBullet';
 
-import { Water } from 'Entities/Liquids/Water';
-import { Lava } from 'Entities/Liquids/Lava';
-import { Acid } from 'Entities/Liquids/Acid';
-import { Jelly } from 'Entities/Liquids/Jelly';
-
 export class Preloader extends Phaser.Scene {
   public constructor() {
     super({
@@ -61,20 +56,10 @@ export class Preloader extends Phaser.Scene {
     Bullet.preload(this);
     BowArrow.preload(this);
     RifleBullet.preload(this);
-
-    Water.preload(this);
-    Lava.preload(this);
-    Acid.preload(this);
-    Jelly.preload(this);
   }
 
   public create(): void {
     Player.create(this);
-
-    Water.create(this);
-    Lava.create(this);
-    Acid.create(this);
-    Jelly.create(this);
 
     this.scene.launch('main').launch('hud').stop();
   }

@@ -22,7 +22,6 @@
       "Plugins/*": ["./plugins/*"],
       "Entities/Bullets/*": ["./entities/bullets/*"],
       "Entities/Hitboxes/*": ["./entities/hitboxes/*"],
-      "Entities/Liquids/*": ["./entities/liquids/*"],
       "Entities/Weapons/*": ["./entities/weapons/*"],
       "Entities/*": ["./entities/*"],
       "Miscellaneous/*": ["./miscellaneous/*"],

@@ -1,5 +1,4 @@
 import { ControlScene } from 'Scenes/ControlScene';
-import { Liquid } from 'Entities/Liquids/Liquid';
 import { ControllerKey } from 'Miscellaneous/Controller';
 import { TiledObject, TiledObjectProperty } from 'Miscellaneous/TiledObject';
 
@@ -19,6 +18,13 @@ export abstract class MapScene extends ControlScene {
    * @type {Phaser.Tilemaps.DynamicTilemapLayer}
    */
   public worldLayer!: Phaser.Tilemaps.DynamicTilemapLayer;
+
+  /**
+   * The tilesmap layer where all the liquids will be implemented
+   *
+   * @type {Phaser.Tilemaps.DynamicTilemapLayer}
+   */
+  public liquidsLayer!: Phaser.Tilemaps.DynamicTilemapLayer;
 
   /**
    * The tilesmap layer just before the background
@@ -63,13 +69,6 @@ export abstract class MapScene extends ControlScene {
   public rooms!: TiledObject[];
 
   /**
-   * The current group of liquids
-   *
-   * @type {Liquid[]}
-   */
-  public liquids!: Liquid[];
-
-  /**
    * The current map stored
    *
    * @type {Phaser.Tilemaps.Tilemap}
@@ -91,7 +90,6 @@ export abstract class MapScene extends ControlScene {
       .setDepth(10000);
 
     this.rooms = Array<TiledObject>();
-    this.liquids = Array<Liquid>();
   }
 
   public update(time: any, delta: number): void {

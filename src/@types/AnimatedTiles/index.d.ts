@@ -1,4 +1,4 @@
-declare module 'phaser-animated-tiles/dist/AnimatedTiles.min.js';
+declare module 'phaser-animated-tiles/dist/AnimatedTiles.js';
 
 declare class AnimatedTiles {
   constructor(scene: any, pluginManager: any);

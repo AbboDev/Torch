@@ -1060,12 +1060,20 @@ export class Player extends SpriteCollidable {
    * Handles all the events inside liquids
    */
   protected swim(): void {
-    let liquidName: string;
+    let liquidName: string | null = null;
 
     this.isSwimming = this.scene.physics
-      .overlap(this, this.scene.liquids, (hero, liquid) => {
-        liquidName = liquid.name;
+      .overlap(this, this.scene.liquidsLayer, undefined, (hero, object: unknown) => {
+        const liquid = object as Phaser.Tilemaps.Tile;
+        if (liquid.index > -1) {
+          liquidName = liquid.properties.liquid;
+          return true;
+        }
+
+        return false;
       });
+
+    console.debug(liquidName);
 
     if (this.isSwimming) {
       // this.setMaxVelocity(this.getSwimSpeed(), this.getJumpSpeed());
