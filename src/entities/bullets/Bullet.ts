@@ -3,6 +3,7 @@ import { Facing, getSign } from 'Miscellaneous/Direction';
 import { ControlScene } from 'Scenes/ControlScene';
 
 import { BULLET_DEPTH } from 'Config/depths';
+import { DEFAULT_BULLET_LIGHT } from 'Config/lights';
 import { TILE_SIZE } from 'Config/tiles';
 
 export interface BulletConfig {
@@ -24,26 +25,62 @@ export class Bullet extends Phaser.Physics.Arcade.Sprite {
    *
    * @type {Number}
    */
-  protected speed = 64;
+  private _speed = 64;
 
   /**
-   * The baseSpeed of the bullet
+   * If true, the bullet will slowly fall down
    *
    * @type {Number}
    */
   protected allowGravity = false;
 
+  /**
+   * If true, the bullet will emit light
+   *
+   * @type {Number}
+   */
+  protected hasLight = false;
+
+  /**
+   * If hasLight is true, determine the light radius
+   *
+   * @type {Number}
+   */
+  protected lightRadius: null | number = null;
+
+  /**
+   * If hasLight is true, determine the light intensity
+   *
+   * @type {Number}
+   */
+  protected lightIntensity: null | number = null;
+
+  /**
+   * If hasLight is true, determine the light color
+   *
+   * @type {Number}
+   */
+  protected lightColor: null | number = null;
+
+  /**
+   * The physic light emitted by the bullet
+   *
+   * @type {Phaser.GameObjects.Light}
+   */
+  private torchLight!: Phaser.GameObjects.Light | null;
+
   public constructor(
     public scene: ControlScene,
-    public x: number,
-    public y: number,
-    public sprite: string
+    x: number,
+    y: number,
+    sprite: string
   ) {
     super(scene, x, y, sprite);
 
     this.scene.physics.world.enable(this);
 
     this
+      // .setPipeline('Light2D');
       .setDepth(BULLET_DEPTH)
       .setOrigin(0.5, 0)
       .setBounce(0);
@@ -51,19 +88,8 @@ export class Bullet extends Phaser.Physics.Arcade.Sprite {
     this.body.onWorldBounds = true;
   }
 
-  public static preload(scene: Phaser.Scene): void {
-    const spriteSize: Phaser.Types.Loader.FileTypes.ImageFrameConfig = {
-      frameWidth: 4,
-      frameHeight: 4
-    };
-
-    scene.load
-      .spritesheet(
-        'bullet',
-        '/assets/sprites/bullet.png',
-        spriteSize
-      );
-  }
+  // eslint-disable-next-line
+  public static preload(scene: Phaser.Scene): void {}
 
   public fire(config: BulletConfig): void {
     this.scene.add.existing(this);
@@ -73,6 +99,15 @@ export class Bullet extends Phaser.Physics.Arcade.Sprite {
       .setAllowGravity(this.allowGravity)
       // The bullet have to collide with world bounds too
       .setCollideWorldBounds(true);
+
+    if (this.hasLight) {
+      const center = this.getCenter();
+
+      this.torchLight = this.scene.lights
+        .addLight(center.x, center.y, this.lightRadius || TILE_SIZE * 4)
+        .setIntensity(this.lightIntensity || 3)
+        .setColor(this.lightColor || DEFAULT_BULLET_LIGHT);
+    }
 
     if (this.allowGravity) {
       this.setGravityY(-TILE_SIZE * 10);
@@ -107,6 +142,11 @@ export class Bullet extends Phaser.Physics.Arcade.Sprite {
   public update(time: any, delta: number): void {
     super.update(time, delta);
 
+    if (this.torchLight) {
+      const center = this.getCenter();
+      this.torchLight.setPosition(center.x, center.y);
+    }
+
     // If the bullet is touching anything, then start impact
     if (!this.body.touching.none) {
       this.impact();
@@ -117,6 +157,10 @@ export class Bullet extends Phaser.Physics.Arcade.Sprite {
    * Stop physics and render updates for this object
    */
   public impact(): void {
+    if (this.torchLight) {
+      this.scene.lights.removeLight(this.torchLight);
+    }
+
     this
       .setActive(false)
       .setVisible(false)
@@ -126,14 +170,14 @@ export class Bullet extends Phaser.Physics.Arcade.Sprite {
   /**
    * Return the current bullet's speed
    */
-  public getSpeed() {
-    return this.speed;
+  public get speed(): number {
+    return this._speed;
   }
 
   /**
    * Set a new bullet's speed
    */
-  public setSpeed(speed: number) {
-    this.speed = speed;
+  public set speed(speed: number) {
+    this._speed = speed;
   }
 }

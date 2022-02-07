@@ -1,10 +1,38 @@
+import { TILE_SIZE } from 'Config/tiles';
+
+import { ControlScene } from 'Scenes/ControlScene';
+
 import { Bullet } from 'Entities/Bullets/Bullet';
 
 export class GunBullet extends Bullet {
-  protected speed = 64;
-
   protected allowGravity = false;
 
+  protected hasLight = true;
+
+  public constructor(
+    public scene: ControlScene,
+    x: number,
+    y: number,
+    sprite: string
+  ) {
+    super(scene, x, y, sprite);
+
+    this.speed = TILE_SIZE * 4;
+  }
+
   public static preload(scene: Phaser.Scene): void {
+    super.preload(scene);
+
+    const spriteSize: Phaser.Types.Loader.FileTypes.ImageFrameConfig = {
+      frameWidth: 4,
+      frameHeight: 4
+    };
+
+    scene.load
+      .spritesheet(
+        'bullet',
+        '/assets/sprites/bullet.png',
+        spriteSize
+      );
   }
 }

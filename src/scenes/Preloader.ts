@@ -1,5 +1,5 @@
 import { Player } from 'Entities/Player';
-import { Bullet } from 'Entities/Bullets/Bullet';
+import { GunBullet } from 'Entities/Bullets/GunBullet';
 import { BowArrow } from 'Entities/Bullets/BowArrow';
 import { RifleBullet } from 'Entities/Bullets/RifleBullet';
 
@@ -53,7 +53,7 @@ export class Preloader extends Phaser.Scene {
     this.load.image('battery', '/assets/sprites/battery.png');
 
     Player.preload(this);
-    Bullet.preload(this);
+    GunBullet.preload(this);
     BowArrow.preload(this);
     RifleBullet.preload(this);
   }
