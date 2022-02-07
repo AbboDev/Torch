@@ -63,6 +63,13 @@ export class Player extends SpriteCollidable {
   private _battery = 0;
 
   /**
+   * Last battery level
+   *
+   * @type {Number}
+   */
+  public lastBattery = 0;
+
+  /**
    * Maximum battery level
    *
    * @type {Number}
@@ -70,11 +77,18 @@ export class Player extends SpriteCollidable {
   private _maxBattery = 99;
 
   /**
-   * Maximum battery level
+   * The timeout after which the battery start recharging
    *
    * @type {Phaser.Time.TimerEvent}
    */
-  private batteryRechargeTimer: Phaser.Time.TimerEvent;
+  private batteryTimeoutTimer!: Phaser.Time.TimerEvent;
+
+  /**
+   * The timer which fill up the battery
+   *
+   * @type {Phaser.Time.TimerEvent}
+   */
+  private batteryRechargeTimer!: Phaser.Time.TimerEvent;
 
   /**
    * The light emitted by Player
@@ -123,7 +137,7 @@ export class Player extends SpriteCollidable {
    *
    * @type {Facing}
    */
-  private previousFacing: Facing;
+  private previousFacing!: Facing;
 
   /**
    * If the Player is aim diagonally
@@ -220,6 +234,13 @@ export class Player extends SpriteCollidable {
    * @type {Boolean}
    */
   private hasTorchAbility = true;
+
+  /**
+   * The Player has obtained the battery
+   *
+   * @type {Boolean}
+   */
+  private hasBattery = true;
 
   /**
    * The Player has the ability to do the double jump
@@ -502,8 +523,6 @@ export class Player extends SpriteCollidable {
       x: DirectionAxisX.CENTER,
     };
 
-    this.previousFacing = this.facing;
-
     this.baseSpeed = this.scene.getWorldGravity().y / 2;
 
     this.scene.add.existing(this);
@@ -571,15 +590,6 @@ export class Player extends SpriteCollidable {
       Player.WALL_DETECTION_DISTANCE
     );
 
-    // TODO:
-    // console.debug(this.scene.data);
-
-    this.batteryRechargeTimer = this.scene.time.addEvent({
-      delay: 200,
-      callback: this.timer.bind(this),
-      loop: true
-    });
-
     this.torchLight = this.scene.lights
       .addLight(bounds.centerX, bounds.centerY, TILE_SIZE * 8)
       .setIntensity(this.hasTorchAbility ? 3 : 0)
@@ -638,6 +648,7 @@ export class Player extends SpriteCollidable {
   }
 
   public set battery(value: number) {
+    // this.lastBattery = this._battery;
     this._battery = value;
     this.scene.registry.set('battery', this._battery);
   }
@@ -651,14 +662,6 @@ export class Player extends SpriteCollidable {
     this.scene.registry.set('maxBattery', this._maxBattery);
   }
 
-  public timer(): void {
-    if (this.battery === this.maxBattery) {
-      this.batteryRechargeTimer.remove();
-    }
-
-    ++this.battery;
-  }
-
   public static preload(scene: Phaser.Scene): void {
     const spriteSize: Phaser.Types.Loader.FileTypes.ImageFrameConfig = {
       frameWidth: TILE_SIZE * 2,
@@ -667,111 +670,111 @@ export class Player extends SpriteCollidable {
 
     // TODO: assemble everythings into a Sprite Atlas
     scene.load
-    .spritesheet(
-      'hero_idle_center',
-      '/assets/sprites/hero_idle_center.png',
-      spriteSize
-    )
-    .spritesheet(
-      'hero_idle_left',
-      '/assets/sprites/hero_idle_left.png',
-      spriteSize
-    )
-    .spritesheet(
-      'hero_idle_right',
-      '/assets/sprites/hero_idle_right.png',
-      spriteSize
-    )
-    .spritesheet(
-      'hero_walk_left',
-      '/assets/sprites/hero_walk_left.png',
-      spriteSize
-    )
-    .spritesheet(
-      'hero_walk_right',
-      '/assets/sprites/hero_walk_right.png',
-      spriteSize
-    )
-    .spritesheet(
-      'hero_jump_idle_left',
-      '/assets/sprites/hero_jump_idle_left.png',
-      spriteSize
-    )
-    .spritesheet(
-      'hero_jump_idle_right',
-      '/assets/sprites/hero_jump_idle_right.png',
-      spriteSize
-    )
-    .spritesheet(
-      'hero_hang_left',
-      '/assets/sprites/hero_hang_left.png',
-      spriteSize
-    )
-    .spritesheet(
-      'hero_hang_right',
-      '/assets/sprites/hero_hang_right.png',
-      spriteSize
-    )
-    .spritesheet(
-      'hero_aim_up_left',
-      '/assets/sprites/hero_aim_up_left.png',
-      spriteSize
-    )
-    .spritesheet(
-      'hero_aim_up_right',
-      '/assets/sprites/hero_aim_up_right.png',
-      spriteSize
-    )
-    .spritesheet(
-      'hero_aim_up_diagonal_left',
-      '/assets/sprites/hero_aim_up_diagonal_left.png',
-      spriteSize
-    )
-    .spritesheet(
-      'hero_aim_up_diagonal_right',
-      '/assets/sprites/hero_aim_up_diagonal_right.png',
-      spriteSize
-    )
-    .spritesheet(
-      'hero_aim_down_diagonal_left',
-      '/assets/sprites/hero_aim_down_diagonal_left.png',
-      spriteSize
-    )
-    .spritesheet(
-      'hero_aim_down_diagonal_right',
-      '/assets/sprites/hero_aim_down_diagonal_right.png',
-      spriteSize
-    )
-    .spritesheet(
-      'hero_jump_left',
-      '/assets/sprites/hero_jump_left.png',
-      spriteSize
-    )
-    .spritesheet(
-      'hero_jump_right',
-      '/assets/sprites/hero_jump_right.png',
-      spriteSize
-    )
-    .spritesheet(
-      'hero_jump_left_start',
-      '/assets/sprites/hero_jump_left_start.png',
-      spriteSize
-    )
-    .spritesheet(
-      'hero_jump_right_start',
-      '/assets/sprites/hero_jump_right_start.png',
-      spriteSize
-    )
-    .spritesheet(
-      'hero_crouch_idle_left',
-      '/assets/sprites/hero_crouch_idle_left.png',
-      spriteSize
-    )
-    .spritesheet(
-      'hero_crouch_idle_right',
-      '/assets/sprites/hero_crouch_idle_right.png',
-      spriteSize
-    );
+      .spritesheet(
+        'hero_idle_center',
+        '/assets/sprites/hero_idle_center.png',
+        spriteSize
+      )
+      .spritesheet(
+        'hero_idle_left',
+        '/assets/sprites/hero_idle_left.png',
+        spriteSize
+      )
+      .spritesheet(
+        'hero_idle_right',
+        '/assets/sprites/hero_idle_right.png',
+        spriteSize
+      )
+      .spritesheet(
+        'hero_walk_left',
+        '/assets/sprites/hero_walk_left.png',
+        spriteSize
+      )
+      .spritesheet(
+        'hero_walk_right',
+        '/assets/sprites/hero_walk_right.png',
+        spriteSize
+      )
+      .spritesheet(
+        'hero_jump_idle_left',
+        '/assets/sprites/hero_jump_idle_left.png',
+        spriteSize
+      )
+      .spritesheet(
+        'hero_jump_idle_right',
+        '/assets/sprites/hero_jump_idle_right.png',
+        spriteSize
+      )
+      .spritesheet(
+        'hero_hang_left',
+        '/assets/sprites/hero_hang_left.png',
+        spriteSize
+      )
+      .spritesheet(
+        'hero_hang_right',
+        '/assets/sprites/hero_hang_right.png',
+        spriteSize
+      )
+      .spritesheet(
+        'hero_aim_up_left',
+        '/assets/sprites/hero_aim_up_left.png',
+        spriteSize
+      )
+      .spritesheet(
+        'hero_aim_up_right',
+        '/assets/sprites/hero_aim_up_right.png',
+        spriteSize
+      )
+      .spritesheet(
+        'hero_aim_up_diagonal_left',
+        '/assets/sprites/hero_aim_up_diagonal_left.png',
+        spriteSize
+      )
+      .spritesheet(
+        'hero_aim_up_diagonal_right',
+        '/assets/sprites/hero_aim_up_diagonal_right.png',
+        spriteSize
+      )
+      .spritesheet(
+        'hero_aim_down_diagonal_left',
+        '/assets/sprites/hero_aim_down_diagonal_left.png',
+        spriteSize
+      )
+      .spritesheet(
+        'hero_aim_down_diagonal_right',
+        '/assets/sprites/hero_aim_down_diagonal_right.png',
+        spriteSize
+      )
+      .spritesheet(
+        'hero_jump_left',
+        '/assets/sprites/hero_jump_left.png',
+        spriteSize
+      )
+      .spritesheet(
+        'hero_jump_right',
+        '/assets/sprites/hero_jump_right.png',
+        spriteSize
+      )
+      .spritesheet(
+        'hero_jump_left_start',
+        '/assets/sprites/hero_jump_left_start.png',
+        spriteSize
+      )
+      .spritesheet(
+        'hero_jump_right_start',
+        '/assets/sprites/hero_jump_right_start.png',
+        spriteSize
+      )
+      .spritesheet(
+        'hero_crouch_idle_left',
+        '/assets/sprites/hero_crouch_idle_left.png',
+        spriteSize
+      )
+      .spritesheet(
+        'hero_crouch_idle_right',
+        '/assets/sprites/hero_crouch_idle_right.png',
+        spriteSize
+      );
   }
 
   public static create(scene: Phaser.Scene): void {
@@ -961,6 +964,7 @@ export class Player extends SpriteCollidable {
     super.update();
 
     this.previousFacing = {...this.facing};
+    this.lastBattery = this.battery;
 
     if (this.canInteract) {
       // Handle current aim direction based on facing
@@ -1000,6 +1004,9 @@ export class Player extends SpriteCollidable {
       }
     }
 
+    // Handle the battery recharge process
+    this.updateBattery();
+
     // Change the current animation based on previous operations
     this.adjustPosition();
 
@@ -1016,7 +1023,74 @@ export class Player extends SpriteCollidable {
   }
 
   /**
-   * Handle all the movement along the y axis
+   * Handle the battery recharge process
+   */
+  protected updateBattery(): void {
+    // The Player should have at least the battery powerup
+    if (!this.hasBattery) {
+      return;
+    }
+
+    // If the battery is already at full capacity, skip reload
+    if (this.battery >= this.maxBattery) {
+      return;
+    }
+
+    // Check if the timeout was not init
+    let canTimeoutStarts: boolean = typeof this.batteryTimeoutTimer === 'undefined';
+    if (!canTimeoutStarts) {
+      // If the timeout was init, test if is completed
+      canTimeoutStarts = this.batteryTimeoutTimer.getProgress() === 1;
+    }
+
+    // Check if the timer was not init
+    let canTimerStarts: boolean = typeof this.batteryRechargeTimer === 'undefined';
+    if (!canTimerStarts) {
+      // If the timer was init, test if is completed
+      canTimerStarts = this.batteryRechargeTimer.getProgress() === 1;
+    }
+
+    // If the Player use the battery, restart the timeout
+    const restartTimer: boolean = this.battery < this.lastBattery;
+
+    if (restartTimer) {
+      // Restart timeout if init
+      if (this.batteryTimeoutTimer) {
+        this.batteryTimeoutTimer.destroy();
+        this.batteryTimeoutTimer.remove();
+      }
+
+      // Restart timer if init
+      if (this.batteryRechargeTimer) {
+        this.batteryRechargeTimer.destroy();
+        this.batteryRechargeTimer.remove();
+      }
+    }
+
+    if ((canTimeoutStarts && canTimerStarts) || restartTimer) {
+      this.batteryTimeoutTimer = this.scene.time.delayedCall(5000, () => {
+        const config: Phaser.Types.Time.TimerEventConfig = {
+          delay: 100,
+          loop: true,
+          callback: () => {
+            ++this.battery;
+
+            // Stop recharging if reached the max level
+            if (this.battery === this.maxBattery) {
+              this.batteryRechargeTimer.destroy();
+              this.batteryRechargeTimer.remove();
+            }
+          },
+        };
+
+        // Start the timer only after a certain amount of time
+        this.batteryRechargeTimer = this.scene.time.addEvent(config);
+      });
+    }
+  }
+
+  /**
+   * Handle current aim direction based on facing
    */
   protected tiltAim(): void {
     const isAimPress: boolean = this.scene
@@ -1074,7 +1148,7 @@ export class Player extends SpriteCollidable {
         return false;
       });
 
-    console.debug(liquidName);
+    // console.debug(liquidName);
 
     if (this.isSwimming) {
       // this.setMaxVelocity(this.getSwimSpeed(), this.getJumpSpeed());
