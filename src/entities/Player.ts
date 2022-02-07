@@ -667,111 +667,111 @@ export class Player extends SpriteCollidable {
 
     // TODO: assemble everythings into a Sprite Atlas
     scene.load
-      .spritesheet(
-        'hero_idle_center',
-        '/assets/sprites/hero_idle_center.png',
-        spriteSize
-      )
-      .spritesheet(
-        'hero_idle_left',
-        '/assets/sprites/hero_idle_left.png',
-        spriteSize
-      )
-      .spritesheet(
-        'hero_idle_right',
-        '/assets/sprites/hero_idle_right.png',
-        spriteSize
-      )
-      .spritesheet(
-        'hero_walk_left',
-        '/assets/sprites/hero_walk_left.png',
-        spriteSize
-      )
-      .spritesheet(
-        'hero_walk_right',
-        '/assets/sprites/hero_walk_right.png',
-        spriteSize
-      )
-      .spritesheet(
-        'hero_jump_idle_left',
-        '/assets/sprites/hero_jump_idle_left.png',
-        spriteSize
-      )
-      .spritesheet(
-        'hero_jump_idle_right',
-        '/assets/sprites/hero_jump_idle_right.png',
-        spriteSize
-      )
-      .spritesheet(
-        'hero_hang_left',
-        '/assets/sprites/hero_hang_left.png',
-        spriteSize
-      )
-      .spritesheet(
-        'hero_hang_right',
-        '/assets/sprites/hero_hang_right.png',
-        spriteSize
-      )
-      .spritesheet(
-        'hero_aim_up_left',
-        '/assets/sprites/hero_aim_up_left.png',
-        spriteSize
-      )
-      .spritesheet(
-        'hero_aim_up_right',
-        '/assets/sprites/hero_aim_up_right.png',
-        spriteSize
-      )
-      .spritesheet(
-        'hero_aim_up_diagonal_left',
-        '/assets/sprites/hero_aim_up_diagonal_left.png',
-        spriteSize
-      )
-      .spritesheet(
-        'hero_aim_up_diagonal_right',
-        '/assets/sprites/hero_aim_up_diagonal_right.png',
-        spriteSize
-      )
-      .spritesheet(
-        'hero_aim_down_diagonal_left',
-        '/assets/sprites/hero_aim_down_diagonal_left.png',
-        spriteSize
-      )
-      .spritesheet(
-        'hero_aim_down_diagonal_right',
-        '/assets/sprites/hero_aim_down_diagonal_right.png',
-        spriteSize
-      )
-      .spritesheet(
-        'hero_jump_left',
-        '/assets/sprites/hero_jump_left.png',
-        spriteSize
-      )
-      .spritesheet(
-        'hero_jump_right',
-        '/assets/sprites/hero_jump_right.png',
-        spriteSize
-      )
-      .spritesheet(
-        'hero_jump_left_start',
-        '/assets/sprites/hero_jump_left_start.png',
-        spriteSize
-      )
-      .spritesheet(
-        'hero_jump_right_start',
-        '/assets/sprites/hero_jump_right_start.png',
-        spriteSize
-      )
-      .spritesheet(
-        'hero_crouch_idle_left',
-        '/assets/sprites/hero_crouch_idle_left.png',
-        spriteSize
-      )
-      .spritesheet(
-        'hero_crouch_idle_right',
-        '/assets/sprites/hero_crouch_idle_right.png',
-        spriteSize
-      );
+    .spritesheet(
+      'hero_idle_center',
+      '/assets/sprites/hero_idle_center.png',
+      spriteSize
+    )
+    .spritesheet(
+      'hero_idle_left',
+      '/assets/sprites/hero_idle_left.png',
+      spriteSize
+    )
+    .spritesheet(
+      'hero_idle_right',
+      '/assets/sprites/hero_idle_right.png',
+      spriteSize
+    )
+    .spritesheet(
+      'hero_walk_left',
+      '/assets/sprites/hero_walk_left.png',
+      spriteSize
+    )
+    .spritesheet(
+      'hero_walk_right',
+      '/assets/sprites/hero_walk_right.png',
+      spriteSize
+    )
+    .spritesheet(
+      'hero_jump_idle_left',
+      '/assets/sprites/hero_jump_idle_left.png',
+      spriteSize
+    )
+    .spritesheet(
+      'hero_jump_idle_right',
+      '/assets/sprites/hero_jump_idle_right.png',
+      spriteSize
+    )
+    .spritesheet(
+      'hero_hang_left',
+      '/assets/sprites/hero_hang_left.png',
+      spriteSize
+    )
+    .spritesheet(
+      'hero_hang_right',
+      '/assets/sprites/hero_hang_right.png',
+      spriteSize
+    )
+    .spritesheet(
+      'hero_aim_up_left',
+      '/assets/sprites/hero_aim_up_left.png',
+      spriteSize
+    )
+    .spritesheet(
+      'hero_aim_up_right',
+      '/assets/sprites/hero_aim_up_right.png',
+      spriteSize
+    )
+    .spritesheet(
+      'hero_aim_up_diagonal_left',
+      '/assets/sprites/hero_aim_up_diagonal_left.png',
+      spriteSize
+    )
+    .spritesheet(
+      'hero_aim_up_diagonal_right',
+      '/assets/sprites/hero_aim_up_diagonal_right.png',
+      spriteSize
+    )
+    .spritesheet(
+      'hero_aim_down_diagonal_left',
+      '/assets/sprites/hero_aim_down_diagonal_left.png',
+      spriteSize
+    )
+    .spritesheet(
+      'hero_aim_down_diagonal_right',
+      '/assets/sprites/hero_aim_down_diagonal_right.png',
+      spriteSize
+    )
+    .spritesheet(
+      'hero_jump_left',
+      '/assets/sprites/hero_jump_left.png',
+      spriteSize
+    )
+    .spritesheet(
+      'hero_jump_right',
+      '/assets/sprites/hero_jump_right.png',
+      spriteSize
+    )
+    .spritesheet(
+      'hero_jump_left_start',
+      '/assets/sprites/hero_jump_left_start.png',
+      spriteSize
+    )
+    .spritesheet(
+      'hero_jump_right_start',
+      '/assets/sprites/hero_jump_right_start.png',
+      spriteSize
+    )
+    .spritesheet(
+      'hero_crouch_idle_left',
+      '/assets/sprites/hero_crouch_idle_left.png',
+      spriteSize
+    )
+    .spritesheet(
+      'hero_crouch_idle_right',
+      '/assets/sprites/hero_crouch_idle_right.png',
+      spriteSize
+    );
   }
 
   public static create(scene: Phaser.Scene): void {
@@ -963,38 +963,39 @@ export class Player extends SpriteCollidable {
     this.previousFacing = {...this.facing};
 
     if (this.canInteract) {
-      // Handles all the movement along the x axis
+      // Handle current aim direction based on facing
       this.tiltAim();
 
+      // Handle logic when the player is in a liquid
       this.swim();
 
       // Prevent jump when is facing forward
       if (this.facing.x !== DirectionAxisX.CENTER) {
-        // Handles all the movement along the y axis
+        // Handle all the movement along the y axis
         this.jump();
       }
 
-      // Handles all the movement along the x axis
+      // Handle all the movement along the x axis
       this.walk();
 
-      // Handles all the movement along the x axis
+      // Handle all the movement along the x axis
       this.dash();
 
-      // Handles the hang action
+      // Handle the hang action
       this.hang();
 
-      // Handles the hang action
+      // Handle the hang action
       this.resizeBody();
 
       // Prevent crouch when is facing forward
       if (this.facing.x !== DirectionAxisX.CENTER) {
-        // Handles the crouch action
+        // Handle the crouch action
         this.crouch();
       }
 
       // The user can shoot only if the Player has at least one range weapon
       if (this.hasAtLeastOneRangeWeapon()) {
-        // Handles all the ranged combat actions
+        // Handle all the ranged combat actions
         this.shoot(time);
       }
     }
@@ -1015,7 +1016,7 @@ export class Player extends SpriteCollidable {
   }
 
   /**
-   * Handles all the movement along the y axis
+   * Handle all the movement along the y axis
    */
   protected tiltAim(): void {
     const isAimPress: boolean = this.scene
@@ -1039,7 +1040,7 @@ export class Player extends SpriteCollidable {
       .isKeyPressed(ControllerKey.RIGHT);
 
     const isAimingWhileMoving = (isLeftPressed || isRightPressed)
-      && (isUpPressed || isDownPressed);
+    && (isUpPressed || isDownPressed);
 
     this.hasAimingDiagonal = this.isAimingDiagonal;
 
@@ -1057,7 +1058,7 @@ export class Player extends SpriteCollidable {
   }
 
   /**
-   * Handles all the events inside liquids
+   * Handle all the events inside liquids
    */
   protected swim(): void {
     let liquidName: string | null = null;
@@ -1081,7 +1082,7 @@ export class Player extends SpriteCollidable {
   }
 
   /**
-   * Handles all the movement along the y axis
+   * Handle all the movement along the y axis
    */
   protected jump(): void {
     // Test if the user is pressing the button 'A'
@@ -1231,7 +1232,7 @@ export class Player extends SpriteCollidable {
   }
 
   /**
-   * Handles all the movement along the x axis
+   * Handle all the movement along the x axis
    */
   protected walk(): void {
     const isRightPress: boolean = this.scene
@@ -1267,7 +1268,7 @@ export class Player extends SpriteCollidable {
   }
 
   /**
-   * Handles the dash action
+   * Handle the dash action
    */
   protected dash(): void {
     const isDashPress: boolean = this.scene
@@ -1307,7 +1308,7 @@ export class Player extends SpriteCollidable {
   }
 
   /**
-   * Handles the hang action
+   * Handle the hang action
    */
   protected hang(): void {
     if (this.hasHangAbility) {
@@ -1330,8 +1331,7 @@ export class Player extends SpriteCollidable {
           if (isTouchingTiles) {
             // If the Player is touching a tile test which tiles
             // are inside the hitbox area
-            const tiles = this.scene
-              .map
+            const tiles = this.scene.map
               .getTilesWithinShape(hitbox.getBounds())
               .filter((tile) => {
                 // Filter the void tile
@@ -1367,7 +1367,7 @@ export class Player extends SpriteCollidable {
   }
 
   /**
-   * Handles the crouch action
+   * Handle the crouch action
    */
   protected crouch(): void {
     // Test if the Player can crouch in the current state and position
@@ -1393,7 +1393,7 @@ export class Player extends SpriteCollidable {
   }
 
   /**
-   * Handles all the Player body resizing based on current state
+   * Handle all the Player body resizing based on current state
    */
   protected resizeBody(): void {
     // Check if the Player is in mid air, but with an sufficient x speed
@@ -1447,7 +1447,7 @@ export class Player extends SpriteCollidable {
   }
 
   /**
-   * Handles all the ranged combat actions
+   * Handle all the ranged combat actions
    */
   protected shoot(time: any): void {
     if (!this.isPressingShot) {
@@ -1612,7 +1612,7 @@ export class Player extends SpriteCollidable {
 
   public getJumpSpeed(applyMultlipier = true): number {
     return -this.baseSpeed
-      * (applyMultlipier ? this.getJumpSpeedMultiplier() : 1);
+    * (applyMultlipier ? this.getJumpSpeedMultiplier() : 1);
   }
 
   protected getJumpSpeedMultiplier(): number {
@@ -1682,18 +1682,18 @@ export class Player extends SpriteCollidable {
     let hitbox: Hitbox;
 
     switch (direction) {
-    case DirectionAxisX.LEFT:
-      hitbox = this.leftWallHitbox;
-      break;
-    case DirectionAxisX.RIGHT:
-      hitbox = this.rightWallHitbox;
-      break;
+      case DirectionAxisX.LEFT:
+        hitbox = this.leftWallHitbox;
+        break;
+      case DirectionAxisX.RIGHT:
+        hitbox = this.rightWallHitbox;
+        break;
 
-    default:
-      return [
-        this.isTouchingWalls(DirectionAxisX.LEFT) as boolean,
-        this.isTouchingWalls(DirectionAxisX.RIGHT) as boolean
-      ];
+      default:
+        return [
+          this.isTouchingWalls(DirectionAxisX.LEFT) as boolean,
+          this.isTouchingWalls(DirectionAxisX.RIGHT) as boolean
+        ];
     }
 
     return hitbox.overlapTiles();
@@ -1743,8 +1743,8 @@ export class Player extends SpriteCollidable {
    */
   public hasAtLeastOneRangeWeapon(): boolean {
     return this.hasGunAbility
-      || this.hasRifleAbility
-      || this.hasBowAbility;
+    || this.hasRifleAbility
+    || this.hasBowAbility;
 
     // TODO: add all other weapons into the function
   }
