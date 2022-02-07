@@ -134,12 +134,12 @@ export class Player extends SpriteCollidable {
   private isAimingDiagonal = false;
 
   /**
-   * If the Player has aimed diagonally
+   * If the Player was aiming diagonally
    *
    *
    * @type {Boolean}
    */
-  private hasAimingDiagonal = false;
+  private wasAimingDiagonal = false;
 
   /**
    * The Player is jumping
@@ -1042,7 +1042,7 @@ export class Player extends SpriteCollidable {
     const isAimingWhileMoving = (isLeftPressed || isRightPressed)
     && (isUpPressed || isDownPressed);
 
-    this.hasAimingDiagonal = this.isAimingDiagonal;
+    this.wasAimingDiagonal = this.isAimingDiagonal;
 
     if (isUpPressed || (isAimPress && !this.isAimingDiagonal)) {
       this.facing.y = DirectionAxisY.UP;
@@ -1534,7 +1534,7 @@ export class Player extends SpriteCollidable {
         action = `aim_${this.facing.y}_diagonal`;
       } else if (this.facing.y === DirectionAxisY.UP
         // Avoid going from diagonal to up while leaving aim
-        && !this.hasAimingDiagonal
+        && !this.wasAimingDiagonal
       ) {
         action = `aim_${this.facing.y}`;
       } else {
