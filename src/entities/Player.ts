@@ -502,6 +502,13 @@ export class Player extends SpriteCollidable {
   public isSwimming = false;
 
   /**
+   * The timer which apply damage from liquids
+   *
+   * @type {Phaser.Time.TimerEvent}
+   */
+  private liquidDamageTimer!: Phaser.Time.TimerEvent;
+
+  /**
    * Create the Player
    *
    * @param {MapScene} scene - scene creating the player.
@@ -612,7 +619,12 @@ export class Player extends SpriteCollidable {
   }
 
   public set life(value: number) {
-    this._life = value;
+    let newValue: number = value;
+    if (newValue < 0) {
+      newValue = 0;
+    }
+
+    this._life = newValue;
     this.scene.registry.set('life', this._life);
   }
 
@@ -648,8 +660,12 @@ export class Player extends SpriteCollidable {
   }
 
   public set battery(value: number) {
-    // this.lastBattery = this._battery;
-    this._battery = value;
+    let newValue: number = value;
+    if (newValue < 0) {
+      newValue = 0;
+    }
+
+    this._battery = newValue;
     this.scene.registry.set('battery', this._battery);
   }
 
@@ -1148,10 +1164,35 @@ export class Player extends SpriteCollidable {
         return false;
       });
 
-    // console.debug(liquidName);
+    if (this.isSwimming && liquidName) {
+      if (liquidName === 'acid' || liquidName === 'lava') {
+        const config: Phaser.Types.Time.TimerEventConfig = {
+          startAt: 0,
+          delay: 200,
+          loop: true,
+          args: [
+            liquidName
+          ],
+          callback: (liquid: any) => {
+            if (liquid === 'acid') {
+              --this.battery;
+            }
 
-    if (this.isSwimming) {
-      // this.setMaxVelocity(this.getSwimSpeed(), this.getJumpSpeed());
+            --this.life;
+          }
+        };
+
+        if (!this.liquidDamageTimer) {
+          this.liquidDamageTimer = this.scene.time.addEvent(config);
+        } else if (this.liquidDamageTimer.paused) {
+          this.liquidDamageTimer.reset(config);
+          this.liquidDamageTimer.paused = false;
+        }
+      }
+    } else {
+      if (this.liquidDamageTimer) {
+        this.liquidDamageTimer.paused = true;
+      }
     }
   }
 
