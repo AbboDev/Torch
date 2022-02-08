@@ -27,10 +27,45 @@ export class Main extends MapScene {
 
   public preload(): void {
     this.load
-      .image('background', [
-        '/assets/sprites/tilemap.png',
-        '/assets/sprites/tilemap_n.png',
-      ])
+      .image(
+        'mountain-sky',
+        [
+          '/assets/images/backgrounds/surface/sky.png',
+          '/assets/images/backgrounds/surface/sky_n.png'
+        ]
+      )
+      .image(
+        'mountain-foreground_trees',
+        [
+          '/assets/images/backgrounds/surface/foreground-trees.png',
+          '/assets/images/backgrounds/surface/foreground-trees_n.png'
+        ]
+      )
+      .image(
+        'mountain-montain_far',
+        [
+          '/assets/images/backgrounds/surface/montain-far.png',
+          '/assets/images/backgrounds/surface/montain-far_n.png'
+        ]
+      )
+      .image(
+        'mountain-mountains',
+        [
+          '/assets/images/backgrounds/surface/mountains.png',
+          '/assets/images/backgrounds/surface/mountains_n.png'
+        ]
+      )
+      .image(
+        'mountain-trees',
+        [
+          '/assets/images/backgrounds/surface/trees.png',
+          '/assets/images/backgrounds/surface/trees_n.png'
+        ]
+      )
+      // .image('background', [
+      //   '/assets/sprites/tilemap.png',
+      //   '/assets/sprites/tilemap_n.png',
+      // ])
       .image('chozodia_tiles', [
         '/assets/tilesets/chozodia.png',
         '/assets/tilesets/chozodia_n.png',
@@ -73,8 +108,8 @@ export class Main extends MapScene {
     }
 
     const tileset = this.map.addTilesetImage('chozodia', 'chozodia_tiles');
-    const liquid_tileset = this.map.addTilesetImage('liquids', 'liquid_tiles');
-    const full_liquid_tileset = this.map.addTilesetImage('full_liquids', 'full_liquid_tiles');
+    const liquidTileset = this.map.addTilesetImage('liquids', 'liquid_tiles');
+    const fullLiquidTileset = this.map.addTilesetImage('full_liquids', 'full_liquid_tiles');
 
     this.belowLayer = this.map.createStaticLayer('background', tileset, 0, 0)
       .setDepth(BELOW_LAYER_DEPTH)
@@ -88,9 +123,9 @@ export class Main extends MapScene {
       .setDepth(GLOBAL_ABOVE_LAYER_DEPTH)
       .setPipeline('Light2D');
 
-    this.liquidsLayer = this.map.createDynamicLayer('liquids', [liquid_tileset, full_liquid_tileset], 0, 0)
+    this.liquidsLayer = this.map.createDynamicLayer('liquids', [liquidTileset, fullLiquidTileset], 0, 0)
       .setDepth(WORLD_LAYER_DEPTH)
-      .setAlpha(0.7)
+      .setAlpha(0.7);
 
     this.worldLayer = this.map.createDynamicLayer('collision', tileset, 0, 0)
       .setDepth(WORLD_LAYER_DEPTH)
@@ -111,35 +146,17 @@ export class Main extends MapScene {
 
     this.hero = new Player(this, x, y, roomNumber);
 
-    this.background = this.add.tileSprite(
-      0,
-      0,
-      this.map.widthInPixels,
-      this.map.widthInPixels,
-      'background'
-    )
-      .setOrigin(0, 0)
-      .setAlpha(0.5)
-      .setDepth(BACKGROUND_DEPTH)
-      .setPipeline('Light2D');
-
     this.updateCollisionGraphic(this.physics.world.drawDebug);
     this.lights.enable().setAmbientColor(DEFAULT_LIGHT);
 
-    const currentRoom = this.rooms[roomNumber];
     this.cameras.main
       .setZoom(2)
       // The user must have a pretty deadzone to see incoming enemies
       .setDeadzone(TILE_SIZE * 5, TILE_SIZE * 2)
       .startFollow(this.hero)
-      .setBounds(
-        currentRoom.x || 0,
-        currentRoom.y || 0,
-        currentRoom.width || 0,
-        currentRoom.height || 0,
-        true
-      )
       .fadeIn(2000, 0, 0, 0);
+
+    this.setupRoom(this.rooms[roomNumber]);
 
     this.sys.animatedTiles.init(this.map);
   }
@@ -148,7 +165,6 @@ export class Main extends MapScene {
     super.update(time, delta);
 
     this.hero.update(time, delta);
-    // this.liquids.update(time, delta);
     // this.cameras.main.centerOnY(this.hero.y - TILE_SIZE * 4.5);
 
     if (this.isChangingRoom && this.rooms.length > 0) {
@@ -175,13 +191,7 @@ export class Main extends MapScene {
 
         if (progressIn === 1) {
           // Change camera boundaries when fade out complete
-          this.cameras.main.setBounds(
-            this.rooms[room].x || 0,
-            this.rooms[room].y || 0,
-            this.rooms[room].width || 0,
-            this.rooms[room].height || 0,
-            true
-          );
+          this.setupRoom(this.rooms[room]);
 
           // Fade back in with new boundareis
           this.cameras.main
@@ -196,5 +206,54 @@ export class Main extends MapScene {
             }, this);
         }
       }, this);
+  }
+
+  protected setupRoom(room: TiledObject): void {
+    const roomX: number = room.x || 0;
+    const roomY: number = room.y || 0;
+    const roomWidth: number = room.width || 0;
+    const roomHeight: number = room.height || 0;
+
+    this.cameras.main.setBounds(roomX, roomY, roomWidth, roomHeight, true);
+
+    const parallaxes = [
+      'mountain-sky',
+      'mountain-montain_far',
+      'mountain-mountains',
+      'mountain-trees',
+      'mountain-foreground_trees',
+    ];
+
+    let index = 0;
+    for (const parallax of parallaxes) {
+      if (index === 0) {
+        const background: Phaser.GameObjects.Image = this.add.image(
+          this.scale.width / 2,
+          this.scale.height / 2,
+          parallax
+        );
+
+        background
+          .setPipeline('Light2D')
+          .setScrollFactor(0)
+          .setDepth(BACKGROUND_DEPTH - (parallaxes.length - index));
+      } else {
+        const background: Phaser.GameObjects.TileSprite = this.add.tileSprite(
+          this.scale.width / 2,
+          this.scale.height / 2,
+          roomWidth,
+          this.textures.get(parallax).getSourceImage().height,
+          parallax
+        );
+
+        background
+          .setPipeline('Light2D')
+          .setScrollFactor(index / parallaxes.length, 0)
+          .setOrigin(0.5, 0.5)
+          .setDepth(BACKGROUND_DEPTH - (parallaxes.length - index));
+      }
+
+      index++;
+    }
   }
 }
