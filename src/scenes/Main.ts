@@ -25,49 +25,6 @@ export class Main extends MapScene {
     });
   }
 
-  public preload(): void {
-    this.load
-      .image('laboratory-back', [
-        '/assets/images/backgrounds/laboratory/back.png',
-        '/assets/images/backgrounds/laboratory/back_n.png'
-      ])
-      .image('laboratory-middle', [
-        '/assets/images/backgrounds/laboratory/middle.png',
-        '/assets/images/backgrounds/laboratory/middle_n.png'
-      ])
-      .image('laboratory-front', [
-        '/assets/images/backgrounds/laboratory/front.png',
-        '/assets/images/backgrounds/laboratory/front_n.png'
-      ])
-      .image('mountains-sky', [
-        '/assets/images/backgrounds/mountains/sky.png',
-        '/assets/images/backgrounds/mountains/sky_n.png'
-      ])
-      .image('mountains-montain_far', [
-        '/assets/images/backgrounds/mountains/montain-far.png',
-        '/assets/images/backgrounds/mountains/montain-far_n.png'
-      ])
-      .image('mountains-mountains', [
-        '/assets/images/backgrounds/mountains/mountains.png',
-        '/assets/images/backgrounds/mountains/mountains_n.png'
-      ])
-      .image('mountains-trees', [
-        '/assets/images/backgrounds/mountains/trees.png',
-        '/assets/images/backgrounds/mountains/trees_n.png'
-      ])
-      .image('mountains-foreground_trees', [
-        '/assets/images/backgrounds/mountains/foreground-trees.png',
-        '/assets/images/backgrounds/mountains/foreground-trees_n.png'
-      ])
-      .image('chozodia_tiles', [
-        '/assets/tilesets/chozodia.png',
-        '/assets/tilesets/chozodia_n.png',
-      ])
-      .image('liquid_tiles', '/assets/tilesets/liquids.png')
-      .image('full_liquid_tiles', '/assets/tilesets/full_liquids.png')
-      .tilemapTiledJSON('chozodia_map', '../assets/maps/chozodia.json');
-  }
-
   public create(): void {
     super.create();
 
