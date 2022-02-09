@@ -32,6 +32,11 @@
                  "name":"room_bottom",
                  "properties":[
                         {
+                         "name":"background",
+                         "type":"string",
+                         "value":"laboratory"
+                        }, 
+                        {
                          "name":"dark",
                          "type":"string",
                          "value":"000000"
@@ -47,6 +52,12 @@
                  "height":320,
                  "id":6,
                  "name":"room_start",
+                 "properties":[
+                        {
+                         "name":"background",
+                         "type":"string",
+                         "value":"mountains"
+                        }],
                  "rotation":0,
                  "type":"room",
                  "visible":true,

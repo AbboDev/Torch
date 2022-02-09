@@ -6,13 +6,6 @@ import { DEFAULT_LIGHT } from 'Config/lights';
 
 export abstract class MapScene extends ControlScene {
   /**
-   * The current static background
-   *
-   * @type {Phaser.GameObjects.TileSprite}
-   */
-  public background!: Phaser.GameObjects.TileSprite;
-
-  /**
    * The main tilesmap layer where all the collision will be implemented
    *
    * @type {Phaser.Tilemaps.DynamicTilemapLayer}
@@ -74,6 +67,20 @@ export abstract class MapScene extends ControlScene {
    * @type {Phaser.Tilemaps.Tilemap}
    */
   public map!: Phaser.Tilemaps.Tilemap;
+
+  /**
+   * The current map background
+   *
+   * @type {Phaser.GameObjects.Image}
+   */
+  protected background!: Phaser.GameObjects.Image;
+
+  /**
+   * The current map background parallex
+   *
+   * @type {Phaser.GameObjects.TileSprite}
+   */
+  protected parallaxes: Phaser.GameObjects.TileSprite[] = [];
 
   /**
    * Check if the Player overlap room bounds for start transition

@@ -27,45 +27,38 @@ export class Main extends MapScene {
 
   public preload(): void {
     this.load
-      .image(
-        'mountain-sky',
-        [
-          '/assets/images/backgrounds/surface/sky.png',
-          '/assets/images/backgrounds/surface/sky_n.png'
-        ]
-      )
-      .image(
-        'mountain-foreground_trees',
-        [
-          '/assets/images/backgrounds/surface/foreground-trees.png',
-          '/assets/images/backgrounds/surface/foreground-trees_n.png'
-        ]
-      )
-      .image(
-        'mountain-montain_far',
-        [
-          '/assets/images/backgrounds/surface/montain-far.png',
-          '/assets/images/backgrounds/surface/montain-far_n.png'
-        ]
-      )
-      .image(
-        'mountain-mountains',
-        [
-          '/assets/images/backgrounds/surface/mountains.png',
-          '/assets/images/backgrounds/surface/mountains_n.png'
-        ]
-      )
-      .image(
-        'mountain-trees',
-        [
-          '/assets/images/backgrounds/surface/trees.png',
-          '/assets/images/backgrounds/surface/trees_n.png'
-        ]
-      )
-      // .image('background', [
-      //   '/assets/sprites/tilemap.png',
-      //   '/assets/sprites/tilemap_n.png',
-      // ])
+      .image('laboratory-back', [
+        '/assets/images/backgrounds/laboratory/back.png',
+        '/assets/images/backgrounds/laboratory/back_n.png'
+      ])
+      .image('laboratory-middle', [
+        '/assets/images/backgrounds/laboratory/middle.png',
+        '/assets/images/backgrounds/laboratory/middle_n.png'
+      ])
+      .image('laboratory-front', [
+        '/assets/images/backgrounds/laboratory/front.png',
+        '/assets/images/backgrounds/laboratory/front_n.png'
+      ])
+      .image('mountains-sky', [
+        '/assets/images/backgrounds/mountains/sky.png',
+        '/assets/images/backgrounds/mountains/sky_n.png'
+      ])
+      .image('mountains-montain_far', [
+        '/assets/images/backgrounds/mountains/montain-far.png',
+        '/assets/images/backgrounds/mountains/montain-far_n.png'
+      ])
+      .image('mountains-mountains', [
+        '/assets/images/backgrounds/mountains/mountains.png',
+        '/assets/images/backgrounds/mountains/mountains_n.png'
+      ])
+      .image('mountains-trees', [
+        '/assets/images/backgrounds/mountains/trees.png',
+        '/assets/images/backgrounds/mountains/trees_n.png'
+      ])
+      .image('mountains-foreground_trees', [
+        '/assets/images/backgrounds/mountains/foreground-trees.png',
+        '/assets/images/backgrounds/mountains/foreground-trees_n.png'
+      ])
       .image('chozodia_tiles', [
         '/assets/tilesets/chozodia.png',
         '/assets/tilesets/chozodia_n.png',
@@ -216,44 +209,62 @@ export class Main extends MapScene {
 
     this.cameras.main.setBounds(roomX, roomY, roomWidth, roomHeight, true);
 
-    const parallaxes = [
-      'mountain-sky',
-      'mountain-montain_far',
-      'mountain-mountains',
-      'mountain-trees',
-      'mountain-foreground_trees',
-    ];
-
-    let index = 0;
-    for (const parallax of parallaxes) {
-      if (index === 0) {
-        const background: Phaser.GameObjects.Image = this.add.image(
-          this.scale.width / 2,
-          this.scale.height / 2,
-          parallax
-        );
-
-        background
-          .setPipeline('Light2D')
-          .setScrollFactor(0)
-          .setDepth(BACKGROUND_DEPTH - (parallaxes.length - index));
-      } else {
-        const background: Phaser.GameObjects.TileSprite = this.add.tileSprite(
-          this.scale.width / 2,
-          this.scale.height / 2,
-          roomWidth,
-          this.textures.get(parallax).getSourceImage().height,
-          parallax
-        );
-
-        background
-          .setPipeline('Light2D')
-          .setScrollFactor(index / parallaxes.length, 0)
-          .setOrigin(0.5, 0.5)
-          .setDepth(BACKGROUND_DEPTH - (parallaxes.length - index));
+    let textures: string[] = [];
+    if (room.properties) {
+      for (const property of room.properties) {
+        if (property.name === 'background') {
+          textures = this.textures
+            .getTextureKeys()
+            .filter((item) => {
+              return item.indexOf(property.value as string) !== -1;
+            });
+        }
       }
+    }
 
-      index++;
+    if (textures.length > 0) {
+      this.parallaxes.forEach((item) => {
+        item.destroy();
+      });
+      this.parallaxes = [];
+
+      let index = 0;
+      for (const texture of textures) {
+        if (index === 0) {
+          if (this.background) {
+            this.background.setTexture(texture);
+          } else {
+            this.background = this.add.image(
+              this.scale.width / 2,
+              this.scale.height / 2,
+              texture
+            );
+
+            this.background
+              .setPipeline('Light2D')
+              .setScrollFactor(0)
+              .setDepth(BACKGROUND_DEPTH - (textures.length - index));
+          }
+        } else {
+          const background: Phaser.GameObjects.TileSprite = this.add.tileSprite(
+            this.scale.width / 2,
+            this.scale.height / 2,
+            roomWidth,
+            this.textures.get(texture).getSourceImage().height,
+            texture
+          );
+
+          background
+            .setPipeline('Light2D')
+            .setScrollFactor(index / textures.length, 0)
+            .setOrigin(0.5, 0.5)
+            .setDepth(BACKGROUND_DEPTH - (textures.length - index));
+
+          this.parallaxes.push(background);
+        }
+
+        index++;
+      }
     }
   }
 }
