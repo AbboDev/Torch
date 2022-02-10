@@ -1,11 +1,4 @@
 { "compressionlevel":-1,
- "editorsettings":
-    {
-     "export":
-        {
-         "target":"."
-        }
-    },
  "height":31,
  "infinite":false,
  "layers":[
@@ -143,11 +136,11 @@
          "x":0,
          "y":0
         }],
- "nextlayerid":11,
- "nextobjectid":13,
+ "nextlayerid":14,
+ "nextobjectid":16,
  "orientation":"orthogonal",
  "renderorder":"right-down",
- "tiledversion":"1.4.2",
+ "tiledversion":"1.8.0",
  "tileheight":16,
  "tilesets":[
         {
@@ -4353,6 +4346,6 @@
         }],
  "tilewidth":16,
  "type":"map",
- "version":1.4,
+ "version":"1.8",
  "width":80
 }
