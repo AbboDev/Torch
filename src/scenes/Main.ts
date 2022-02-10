@@ -77,13 +77,23 @@ export class Main extends MapScene {
       .setDepth(WORLD_LAYER_DEPTH)
       .setAlpha(0.7);
 
-    this.worldLayer = this.map.createDynamicLayer('collision', tileset, 0, 0)
+    this.collisionsLayer = this.map.createDynamicLayer('collision', tileset, 0, 0)
       .setDepth(WORLD_LAYER_DEPTH)
       .setPipeline('Light2D')
       .setCollisionByProperty({ collides: true })
       .renderDebug(this.collisionDebugGraphics, {
         tileColor: null,
         collidingTileColor: new Phaser.Display.Color(243, 134, 48, 255),
+        faceColor: new Phaser.Display.Color(40, 39, 37, 255)
+      });
+
+    this.breakablesLayer = this.map.createDynamicLayer('breakables', tileset, 0, 0)
+      .setDepth(WORLD_LAYER_DEPTH)
+      .setPipeline('Light2D')
+      .setCollisionByProperty({ collides: true })
+      .renderDebug(this.collisionDebugGraphics, {
+        tileColor: null,
+        collidingTileColor: new Phaser.Display.Color(134, 243, 48, 255),
         faceColor: new Phaser.Display.Color(40, 39, 37, 255)
       });
 

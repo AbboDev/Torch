@@ -1,6 +1,6 @@
 import { TILE_SIZE } from 'Config/tiles';
 
-import { ControlScene } from 'Scenes/ControlScene';
+import { MapScene } from 'Scenes/MapScene';
 
 import { Bullet } from 'Entities/Bullets/Bullet';
 
@@ -10,7 +10,7 @@ export class BowArrow extends Bullet {
   protected hasLight = true;
 
   public constructor(
-    public scene: ControlScene,
+    public scene: MapScene,
     x: number,
     y: number,
     sprite: string

@@ -1446,18 +1446,38 @@ export class Player extends SpriteCollidable {
           if (isTouchingTiles) {
             // If the Player is touching a tile test which tiles
             // are inside the hitbox area
-            const tiles = this.scene.map
-              .getTilesWithinShape(hitbox.getBounds())
-              .filter((tile) => {
-                // Filter the void tile
-                return tile.index > -1;
-              });
+
+            let tiles: Phaser.Tilemaps.Tile[] = [];
+
+            let layers: Phaser.Tilemaps.DynamicTilemapLayer[] = this.scene.worldLayer;
+            if (!Array.isArray(layers)) {
+              layers = [layers];
+            }
+
+            let lastLayer!: Phaser.Tilemaps.DynamicTilemapLayer;
+            for (const layer of layers) {
+              if (tiles.length > 0) {
+                break;
+              }
+
+              tiles = this.scene.map
+                .getTilesWithinShape(
+                  hitbox.getBounds(),
+                  {
+                    isNotEmpty: true
+                  },
+                  undefined,
+                  layer
+                );
+
+              lastLayer = layer;
+            }
 
             if (tiles.length === 1) {
               currentTile = tiles[0];
               // Check if there is a tile upper the current one
               const upperTile = this.scene.map
-                .getTileAt(currentTile.x, currentTile.y - 1);
+                .getTileAt(currentTile.x, currentTile.y - 1, undefined, lastLayer);
               hasTileOnHand = upperTile === null;
             }
           }

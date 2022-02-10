@@ -1,11 +1,7 @@
-import { Facing } from 'Miscellaneous/Direction';
 import { Bullet, BulletConfig } from 'Entities/Bullets/Bullet';
-
-import { GroupCollidable } from 'Entities/WorldCollidable';
-
 import { MapScene } from 'Scenes/MapScene';
 
-export class Weapon extends GroupCollidable {
+export class Weapon extends Phaser.Physics.Arcade.Group {
   /**
    * The time when the last bullet had been shot
    *
@@ -33,7 +29,7 @@ export class Weapon extends GroupCollidable {
   public constructor(
     public scene: MapScene
   ) {
-    super(scene, {
+    super(scene.physics.world, scene, {
       runChildUpdate: true,
       classType: Bullet
     });
@@ -47,7 +43,7 @@ export class Weapon extends GroupCollidable {
         || !this.hasAlreayShoot);
 
     if (canShoot) {
-      const bullet = this.get() as Bullet;
+      const bullet = this.get(config.position.x, config.position.y) as Bullet;
 
       if (bullet) {
         bullet.fire(config);
@@ -64,12 +60,5 @@ export class Weapon extends GroupCollidable {
 
   public canShoot(): void {
     this.hasAlreayShoot = false;
-  }
-
-  protected postChildCollision(
-    bullet: Bullet,
-    tile: Phaser.GameObjects.GameObject
-  ): void {
-    bullet.impact();
   }
 }

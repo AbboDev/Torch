@@ -1,6 +1,6 @@
 import { Facing, getSign } from 'Miscellaneous/Direction';
 
-import { ControlScene } from 'Scenes/ControlScene';
+import { MapScene } from 'Scenes/MapScene';
 
 import { BULLET_DEPTH } from 'Config/depths';
 import { DEFAULT_BULLET_LIGHT } from 'Config/lights';
@@ -70,7 +70,7 @@ export class Bullet extends Phaser.Physics.Arcade.Sprite {
   private torchLight!: Phaser.GameObjects.Light | null;
 
   public constructor(
-    public scene: ControlScene,
+    public scene: MapScene,
     x: number,
     y: number,
     sprite: string
@@ -92,7 +92,21 @@ export class Bullet extends Phaser.Physics.Arcade.Sprite {
   public static preload(scene: Phaser.Scene): void {}
 
   public fire(config: BulletConfig): void {
-    this.scene.add.existing(this);
+    const sign = getSign(config.facing);
+    // Test if the bullet should be shot diagonally or vertically
+    if (!config.diagonal && sign.y !== 0) {
+      sign.x = 0;
+    }
+
+    this
+      .setPosition(config.position.x, config.position.y)
+      .setVelocity(
+        this.speed * 5 * sign.x,
+        this.speed * 5 * sign.y
+      )
+      .setScale(sign.x || 1, sign.y || 1)
+      .setActive(true)
+      .setVisible(true);
 
     this.body
       // The bullet should not fall
@@ -113,22 +127,6 @@ export class Bullet extends Phaser.Physics.Arcade.Sprite {
       this.setGravityY(-TILE_SIZE * 10);
     }
 
-    const sign = getSign(config.facing);
-    // Test if the bullet should be shot diagonally or vertically
-    if (!config.diagonal && sign.y !== 0) {
-      sign.x = 0;
-    }
-
-    this
-      .setPosition(config.position.x, config.position.y)
-      .setVelocity(
-        this.speed * 5 * sign.x,
-        this.speed * 5 * sign.y
-      )
-      .setScale(sign.x || 1, sign.y || 1)
-      .setActive(true)
-      .setVisible(true);
-
     // Detect if the bullet if touching the world's bound
     this.body.world.on('worldbounds', (body: Phaser.Physics.Arcade.Body) => {
       // Check if the body's game object is the sprite you are listening for
@@ -137,6 +135,31 @@ export class Bullet extends Phaser.Physics.Arcade.Sprite {
         this.impact();
       }
     });
+
+    let layers: Phaser.Tilemaps.DynamicTilemapLayer[] = this.scene.worldLayer;
+    if (!Array.isArray(layers)) {
+      layers = [layers];
+    }
+
+    for (const layer of layers) {
+    // If the bullet is touching anything, then start impact
+      this.scene.physics.add.collider(
+        this,
+        layer,
+        (bullet, tile: unknown) => {
+          if (tile instanceof Phaser.Tilemaps.Tile && bullet.active) {
+            if (tile.index > -1) {
+              // is the tile destructible?
+              if (tile.layer.name === 'breakables') {
+                this.scene.map.removeTileAt(tile.x, tile.y);
+              }
+
+              this.impact();
+            }
+          }
+        }
+      );
+    }
   }
 
   public update(time: any, delta: number): void {
@@ -145,11 +168,6 @@ export class Bullet extends Phaser.Physics.Arcade.Sprite {
     if (this.torchLight) {
       const center = this.getCenter();
       this.torchLight.setPosition(center.x, center.y);
-    }
-
-    // If the bullet is touching anything, then start impact
-    if (!this.body.touching.none) {
-      this.impact();
     }
   }
 
@@ -162,6 +180,7 @@ export class Bullet extends Phaser.Physics.Arcade.Sprite {
     }
 
     this
+      .setVelocity(0, 0)
       .setActive(false)
       .setVisible(false)
       .destroy();

@@ -10,7 +10,14 @@ export abstract class MapScene extends ControlScene {
    *
    * @type {Phaser.Tilemaps.DynamicTilemapLayer}
    */
-  public worldLayer!: Phaser.Tilemaps.DynamicTilemapLayer;
+  public collisionsLayer!: Phaser.Tilemaps.DynamicTilemapLayer;
+
+  /**
+   * The tilesmap layer where all the liquids will be implemented
+   *
+   * @type {Phaser.Tilemaps.DynamicTilemapLayer}
+   */
+  public breakablesLayer!: Phaser.Tilemaps.DynamicTilemapLayer;
 
   /**
    * The tilesmap layer where all the liquids will be implemented
@@ -194,5 +201,12 @@ export abstract class MapScene extends ControlScene {
     }
 
     return false;
+  }
+
+  public get worldLayer(): Phaser.Tilemaps.DynamicTilemapLayer[] {
+    return [
+      this.collisionsLayer,
+      this.breakablesLayer
+    ];
   }
 }

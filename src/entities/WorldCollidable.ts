@@ -17,7 +17,14 @@ export abstract class SpriteCollidable extends Phaser.Physics.Arcade.Sprite {
   ) {
     super(scene, x, y, texture);
 
-    scene.physics.add.collider(this, scene.worldLayer, this.postCollision);
+    let layers: Phaser.Tilemaps.DynamicTilemapLayer[] = scene.worldLayer;
+    if (!Array.isArray(layers)) {
+      layers = [layers];
+    }
+
+    for (const layer of layers) {
+      scene.physics.add.collider(this, layer, this.postCollision);
+    }
   }
 
   /**
@@ -45,7 +52,14 @@ export abstract class GroupCollidable extends Phaser.Physics.Arcade.Group {
   ) {
     super(scene.physics.world, scene, config);
 
-    scene.physics.add.collider(this, scene.worldLayer, this.postChildCollision);
+    let layers: Phaser.Tilemaps.DynamicTilemapLayer[] = scene.worldLayer;
+    if (!Array.isArray(layers)) {
+      layers = [layers];
+    }
+
+    for (const layer of layers) {
+      scene.physics.add.collider(this, layer, this.postChildCollision);
+    }
   }
 
   /**

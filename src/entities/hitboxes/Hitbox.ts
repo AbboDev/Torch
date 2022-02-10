@@ -89,96 +89,119 @@ export class Hitbox extends Phaser.GameObjects.Rectangle {
   }
 
   public overlapTiles(): boolean {
-    return this.scene.physics.overlap(
-      this,
-      this.scene.worldLayer,
-      undefined,
-      (hitbox, tile: unknown) => {
-        if ((tile as Phaser.Tilemaps.Tile).index > -1) {
-          return true;
-        }
+    let layers: Phaser.Tilemaps.DynamicTilemapLayer[] = this.scene.worldLayer;
+    if (!Array.isArray(layers)) {
+      layers = [layers];
+    }
 
-        return false;
+    for (const layer of layers) {
+      const overlap = this.scene.physics.overlap(
+        this,
+        layer,
+        undefined,
+        (hitbox, tile: unknown) => {
+          return ((tile as Phaser.Tilemaps.Tile).index > -1);
+        }
+      );
+
+      if (overlap) {
+        return true;
       }
-    );
+    }
+
+    return false;
   }
 
   /**
    * Detect if the hitbox is inside a specified area
+   *
    * @param  {AreaPosition} area The portion of a tile to consider
    * @return {boolean}           True if the hitbox is perfectly inside the area
    */
   public overlapTilesArea(area: AreaPosition): boolean {
-    return this.scene.physics.overlap(
-      this,
-      this.scene.worldLayer,
-      undefined,
-      (hitbox, tile: unknown) => {
-        if ((tile as Phaser.Tilemaps.Tile).index > -1) {
-          const hitboxBounds: Phaser.Geom.Rectangle = this.getBounds();
-          const tileBounds: Phaser.Geom.Rectangle = (tile as Phaser.Tilemaps.Tile).getBounds() as Phaser.Geom.Rectangle;
+    let layers: Phaser.Tilemaps.DynamicTilemapLayer[] = this.scene.worldLayer;
+    if (!Array.isArray(layers)) {
+      layers = [layers];
+    }
 
-          let x: number = tileBounds.x;
-          let y: number = tileBounds.y;
-          let width: number = tileBounds.width;
-          let height: number = tileBounds.height;
+    for (const layer of layers) {
+      const overlap = this.scene.physics.overlap(
+        this,
+        layer,
+        undefined,
+        (hitbox, tile: unknown) => {
+          if ((tile as Phaser.Tilemaps.Tile).index > -1) {
+            const hitboxBounds: Phaser.Geom.Rectangle = this.getBounds();
+            const tileBounds: Phaser.Geom.Rectangle = (tile as Phaser.Tilemaps.Tile).getBounds() as Phaser.Geom.Rectangle;
 
-          switch (area) {
-            case AreaPosition.TOP_HALF:
-              x = tileBounds.left;
-              y = tileBounds.top;
-              height = tileBounds.height / 2;
-              break;
-            case AreaPosition.BOTTOM_HALF:
-              x = tileBounds.left;
-              y = tileBounds.centerY;
-              height = tileBounds.height / 2;
-              break;
+            let x: number = tileBounds.x;
+            let y: number = tileBounds.y;
+            let width: number = tileBounds.width;
+            let height: number = tileBounds.height;
 
-            case AreaPosition.LEFT_HALF:
-              x = tileBounds.left;
-              y = tileBounds.top;
-              width = tileBounds.width / 2;
-              break;
-            case AreaPosition.RIGHT_HALF:
-              x = tileBounds.centerX;
-              y = tileBounds.top;
-              width = tileBounds.width / 2;
-              break;
+            switch (area) {
+              case AreaPosition.TOP_HALF:
+                x = tileBounds.left;
+                y = tileBounds.top;
+                height = tileBounds.height / 2;
+                break;
+              case AreaPosition.BOTTOM_HALF:
+                x = tileBounds.left;
+                y = tileBounds.centerY;
+                height = tileBounds.height / 2;
+                break;
 
-            case AreaPosition.LEFT_TOP_QUARTER:
-              x = tileBounds.left;
-              y = tileBounds.top;
-              width = tileBounds.width / 2;
-              height = tileBounds.height / 2;
-              break;
-            case AreaPosition.LEFT_BOTTOM_QUARTER:
-              x = tileBounds.left;
-              y = tileBounds.centerY;
-              width = tileBounds.width / 2;
-              height = tileBounds.height / 2;
-              break;
-            case AreaPosition.RIGHT_TOP_QUARTER:
-              x = tileBounds.centerX;
-              y = tileBounds.top;
-              width = tileBounds.width / 2;
-              height = tileBounds.height / 2;
-              break;
-            case AreaPosition.RIGHT_BOTTOM_QUARTER:
-              x = tileBounds.centerX;
-              y = tileBounds.centerY;
-              width = tileBounds.width / 2;
-              height = tileBounds.height / 2;
-              break;
+              case AreaPosition.LEFT_HALF:
+                x = tileBounds.left;
+                y = tileBounds.top;
+                width = tileBounds.width / 2;
+                break;
+              case AreaPosition.RIGHT_HALF:
+                x = tileBounds.centerX;
+                y = tileBounds.top;
+                width = tileBounds.width / 2;
+                break;
+
+              case AreaPosition.LEFT_TOP_QUARTER:
+                x = tileBounds.left;
+                y = tileBounds.top;
+                width = tileBounds.width / 2;
+                height = tileBounds.height / 2;
+                break;
+              case AreaPosition.LEFT_BOTTOM_QUARTER:
+                x = tileBounds.left;
+                y = tileBounds.centerY;
+                width = tileBounds.width / 2;
+                height = tileBounds.height / 2;
+                break;
+              case AreaPosition.RIGHT_TOP_QUARTER:
+                x = tileBounds.centerX;
+                y = tileBounds.top;
+                width = tileBounds.width / 2;
+                height = tileBounds.height / 2;
+                break;
+              case AreaPosition.RIGHT_BOTTOM_QUARTER:
+                x = tileBounds.centerX;
+                y = tileBounds.centerY;
+                width = tileBounds.width / 2;
+                height = tileBounds.height / 2;
+                break;
+            }
+
+            const rectangle = new Phaser.Geom.Rectangle(x, y, width, height);
+
+            return Phaser.Geom.Rectangle.ContainsRect(rectangle, hitboxBounds);
           }
 
-          const rectangle = new Phaser.Geom.Rectangle(x, y, width, height);
-
-          return Phaser.Geom.Rectangle.ContainsRect(rectangle, hitboxBounds);
+          return false;
         }
+      );
 
-        return false;
+      if (overlap) {
+        return true;
       }
-    );
+    }
+
+    return false;
   }
 }
