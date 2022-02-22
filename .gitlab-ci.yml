@@ -46,7 +46,7 @@ deploy-game-job:
     - git config git-ftp.url "ftp://$FTP_HOST/$FTP_PATH"
     - git config git-ftp.user $FTP_USER
     - git config git-ftp.password $FTP_PASSWD
-    - git ftp catchup --verbose
+    - git ftp init --verbose
     - git ftp push --verbose
 
 build-demo-job:
@@ -68,5 +68,5 @@ deploy-demo-job:
     - git config git-ftp.url "ftp://$FTP_HOST/$FTP_PATH"
     - git config git-ftp.user $FTP_USER
     - git config git-ftp.password $FTP_PASSWD
-    - git ftp catchup --verbose
+    - git ftp init --verbose
     - git ftp push --verbose
