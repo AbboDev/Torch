@@ -44,8 +44,8 @@ deploy-game-job:
   image: mwienk/docker-git-ftp
   script:
     - git config git-ftp.url "ftp://$FTP_HOST/$FTP_PATH"
-    - git config git-ftp.user $FTP_USER
-    - git config git-ftp.password $FTP_PASSWD
+    - git config git-ftp.user "$FTP_USER"
+    - git config git-ftp.password "$FTP_PASSWD"
     - git ftp init --verbose
     - git ftp push --verbose
 
@@ -66,7 +66,7 @@ deploy-demo-job:
   image: mwienk/docker-git-ftp
   script:
     - git config git-ftp.url "ftp://$FTP_HOST/$FTP_PATH"
-    - git config git-ftp.user $FTP_USER
-    - git config git-ftp.password $FTP_PASSWD
+    - git config git-ftp.user "$FTP_USER"
+    - git config git-ftp.password "$FTP_PASSWD"
     - git ftp init --verbose
     - git ftp push --verbose
