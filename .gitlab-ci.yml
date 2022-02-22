@@ -25,22 +25,44 @@ cache:
 debug-job:
   stage: debug
   script:
-    - echo "branch $CI_COMMIT_BRANCH"
+    - echo "CURRENT BRANCH = $CI_COMMIT_BRANCH"
 
-build-job:       # This job runs in the build stage, which runs first.
+build-game-job:
   stage: build
   only:
     - master
   image: node:16
   script:
     - npm install
-    - npm run build:dev
+    - npm run build:prod
 
-deploy-job:      # This job runs in the deploy stage.
-  stage: deploy  # It only runs when *both* jobs in the test stage complete successfully.
+deploy-game-job:
+  stage: deploy
   environment: production
   only:
     - master
+  image: mwienk/docker-git-ftp
+  script:
+    - git config git-ftp.url "ftp://$FTP_HOST/$FTP_PATH"
+    - git config git-ftp.user $FTP_USER
+    - git config git-ftp.password $FTP_PASSWD
+    - git ftp catchup --verbose
+    - git ftp push --verbose
+
+build-demo-job:
+  stage: build
+  only:
+    - demo
+  image: node:16
+  script:
+    - npm install
+    - npm run build:dev
+
+deploy-demo-job:
+  stage: deploy
+  environment: staging
+  only:
+    - demo
   image: mwienk/docker-git-ftp
   script:
     - git config git-ftp.url "ftp://$FTP_HOST/$FTP_PATH"
