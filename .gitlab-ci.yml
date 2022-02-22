@@ -49,6 +49,15 @@ deploy-game-job:
     - git ftp init --verbose
     - git ftp push --verbose
 
+deploy-game-build-job:
+  stage: deploy
+  environment: production
+  only:
+    - master
+  image: mwienk/docker-lftp:latest
+  script:
+    - lftp -e "set ftp:ssl-allow false; mirror -eRnv $FTP_PATH/build build; exit;" -u $FTP_USER,$FTP_PASSWD $FTP_HOST
+
 build-demo-job:
   stage: build
   only:
@@ -65,11 +74,17 @@ deploy-demo-job:
     - demo
   image: mwienk/docker-git-ftp
   script:
-    - echo "ftp://$FTP_HOST/$FTP_PATH"
     - git config git-ftp.url "ftp://$FTP_HOST/$FTP_PATH"
-    - echo $FTP_USER
     - git config git-ftp.user $FTP_USER
-    - echo $FTP_PASSWD
     - git config git-ftp.password $FTP_PASSWD
     - git ftp init --verbose
     - git ftp push --verbose
+
+deploy-demo-build-job:
+  stage: deploy
+  environment: staging
+  only:
+    - demo
+  image: mwienk/docker-lftp:latest
+  script:
+    - lftp -e "set ftp:ssl-allow false; mirror -eRnv $FTP_PATH/build build; exit;" -u $FTP_USER,$FTP_PASSWD $FTP_HOST
