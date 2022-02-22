@@ -16,12 +16,24 @@
 image: mwienk/docker-git-ftp
 
 stages:          # List of stages for jobs, and their order of execution
+  - preview
   - build
   - deploy
 
 cache:
   paths:
     - node_modules/
+
+preview-job:       # This job runs in the build stage, which runs first.
+  stage: preview
+  only:
+    - master
+  script:
+    - echo "branch $CI_COMMIT_BRANCH"
+    - ls
+    - apt-get update -qq
+    - node -v
+    - npm -v
 
 build-job:       # This job runs in the build stage, which runs first.
   stage: build
@@ -32,8 +44,8 @@ build-job:       # This job runs in the build stage, which runs first.
   script:
     - echo "branch $CI_COMMIT_BRANCH"
     - ls
-    - apt-get update -qq
-    - apt-get install -y -qq node npm
+    - apt update -qq
+    - apt install -y -qq node npm
     - npm install
     - npm run build:dev
 
