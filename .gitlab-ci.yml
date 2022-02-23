@@ -12,6 +12,7 @@ cache:
 
 build-game-job:
   stage: build
+  image: node:16
   only:
     - master
   script:
@@ -23,6 +24,7 @@ build-game-job:
 
 build-demo-job:
   stage: build
+  image: node:16
   only:
     - demo
   script:
