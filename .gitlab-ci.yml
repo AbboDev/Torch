@@ -35,6 +35,9 @@ build-game-job:
   script:
     - npm install
     - npm run build:prod
+  artifacts:
+    paths:
+      - build/
 
 deploy-game-job:
   stage: deploy
@@ -56,7 +59,7 @@ deploy-game-build-job:
     - master
   image: mwienk/docker-lftp:latest
   script:
-    - lftp -e "set ftp:ssl-allow false; mirror -eRnv $FTP_PATH/build build; exit;" -u $FTP_USER,$FTP_PASSWD $FTP_HOST
+    - lftp -e "set ftp:ssl-allow false; mirror -eRnv build $FTP_PATH/build; exit;" -u $FTP_USER,$FTP_PASSWD $FTP_HOST
 
 build-demo-job:
   stage: build
