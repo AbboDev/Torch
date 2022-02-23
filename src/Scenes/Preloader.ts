@@ -20,6 +20,7 @@ export class Preloader extends Phaser.Scene {
     // load assets declared in the preload config
 
     this.load
+      .setBaseURL(window.location.href)
       .image('life', '/assets/sprites/life.png')
       .image('ammo', '/assets/sprites/ammo.png')
       .image('battery', '/assets/sprites/battery.png')
