@@ -1,5 +1,3 @@
-image: node:16
-
 stages:
   - build
   - deploy
@@ -12,18 +10,12 @@ cache:
   paths:
     - .npm/
 
-before_script:
-  - npm ci --cache .npm --prefer-offline
-
-#
-
 build-game-job:
   stage: build
   only:
     - master
-  # image: node:16
   script:
-    # - npm install
+    - npm ci --cache .npm --prefer-offline
     - npm run build:prod
   artifacts:
     paths:
@@ -33,9 +25,8 @@ build-demo-job:
   stage: build
   only:
     - demo
-  # image: node:16
   script:
-    # - npm install
+    - npm ci --cache .npm --prefer-offline
     - npm run build:dev
   artifacts:
     paths:
