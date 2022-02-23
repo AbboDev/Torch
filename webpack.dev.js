@@ -43,7 +43,17 @@ module.exports = {
     }
   },
   resolve: {
-    extensions: [ '.tsx', '.ts', '.js' ]
+    extensions: [ '.tsx', '.ts', '.js' ],
+    alias: {
+      Config: path.resolve(__dirname, 'src/config/'),
+      Plugins: path.resolve(__dirname, 'src/plugins/'),
+      Entities: path.resolve(__dirname, 'src/entities/'),
+      Bullets: path.resolve(__dirname, 'src/entities/bullets'),
+      Weapons: path.resolve(__dirname, 'src/entities/weapons'),
+      Hitboxes: path.resolve(__dirname, 'src/entities/hitboxes'),
+      Miscellaneous: path.resolve(__dirname, 'src/miscellaneous/'),
+      Scenes: path.resolve(__dirname, 'src/scenes/')
+    }
   },
   stats: true,
   plugins: [

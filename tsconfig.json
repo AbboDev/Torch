@@ -1,10 +1,32 @@
 {
   "compilerOptions": {
-    "target": "es5",
+    "target": "es2017",
     "moduleResolution": "node",
     "module": "CommonJS",
     "strict": true,
-    "sourceMap": true
+    "sourceMap": true,
+
+    "typeRoots": [
+      "./src/@types",
+      "./node_modules/@types",
+      "./node_modules/phaser/types",
+    ],
+    "types": [
+      "Phaser",
+      "node"
+    ],
+
+    "baseUrl": "./src",
+    "paths": {
+      "Config/*": ["./config/*"],
+      "Plugins/*": ["./plugins/*"],
+      "Entities/Bullets/*": ["./entities/bullets/*"],
+      "Entities/Hitboxes/*": ["./entities/hitboxes/*"],
+      "Entities/Weapons/*": ["./entities/weapons/*"],
+      "Entities/*": ["./entities/*"],
+      "Miscellaneous/*": ["./miscellaneous/*"],
+      "Scenes/*": ["./scenes/*"]
+    }
   },
   "include": [
     "./src/**/*"
