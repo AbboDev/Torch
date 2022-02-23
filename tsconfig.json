@@ -18,14 +18,13 @@
 
     "baseUrl": "./src",
     "paths": {
-      "Config/*": ["./config/*"],
-      "Plugins/*": ["./plugins/*"],
-      "Entities/Bullets/*": ["./entities/bullets/*"],
-      "Entities/Hitboxes/*": ["./entities/hitboxes/*"],
-      "Entities/Weapons/*": ["./entities/weapons/*"],
-      "Entities/*": ["./entities/*"],
-      "Miscellaneous/*": ["./miscellaneous/*"],
-      "Scenes/*": ["./scenes/*"]
+      "Config/*": ["./Config/*"],
+      "Entities/Bullets/*": ["./Entities/Bullets/*"],
+      "Entities/Hitboxes/*": ["./Entities/Hitboxes/*"],
+      "Entities/Weapons/*": ["./Entities/Weapons/*"],
+      "Entities/*": ["./Entities/*"],
+      "Miscellaneous/*": ["./Miscellaneous/*"],
+      "Scenes/*": ["./Scenes/*"]
     }
   },
   "include": [
