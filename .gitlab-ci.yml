@@ -1,3 +1,5 @@
+image: node:16
+
 stages:
   - build
   - deploy
@@ -13,17 +15,33 @@ cache:
 before_script:
   - npm ci --cache .npm --prefer-offline
 
+#
+
 build-game-job:
   stage: build
   only:
     - master
-  image: node:16
+  # image: node:16
   script:
-    - npm install
+    # - npm install
     - npm run build:prod
   artifacts:
     paths:
       - build/
+
+build-demo-job:
+  stage: build
+  only:
+    - demo
+  # image: node:16
+  script:
+    # - npm install
+    - npm run build:dev
+  artifacts:
+    paths:
+      - build/
+
+#
 
 deploy-game-job:
   stage: deploy
@@ -49,18 +67,6 @@ deploy-game-build-job:
     - build-game-job
   script:
     - lftp -e "set ftp:ssl-allow false; mirror -eRnv build $FTP_PATH/build; exit;" -u $FTP_USER,$FTP_PASSWD $FTP_HOST
-
-build-demo-job:
-  stage: build
-  only:
-    - demo
-  image: node:16
-  script:
-    - npm install
-    - npm run build:dev
-  artifacts:
-    paths:
-      - build/
 
 deploy-demo-job:
   stage: deploy
