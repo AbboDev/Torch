@@ -87,4 +87,4 @@ deploy-demo-build-job:
     - demo
   image: mwienk/docker-lftp:latest
   script:
-    - lftp -e "set ftp:ssl-allow false; mirror -eRnv build $FTP_PATH/build; exit;" -u $FTP_USER,$FTP_PASSWD $FTP_HOST
+    - lftp -e "set ftp:ssl-allow false; mirror -eRnv /$FTP_PATH/build build; exit;" -u $FTP_USER,$FTP_PASSWD $FTP_HOST
