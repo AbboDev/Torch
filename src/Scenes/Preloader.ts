@@ -97,6 +97,10 @@ export class Preloader extends Phaser.Scene {
   public create(): void {
     Player.create(this);
 
-    this.scene.launch('main').launch('hud').stop();
+    this.scene
+      .launch('controller')
+      .launch('main')
+      .launch('hud')
+      .stop();
   }
 }

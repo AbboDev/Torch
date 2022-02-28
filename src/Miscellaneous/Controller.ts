@@ -193,9 +193,9 @@ export class Controller {
         .input
         .keyboard
         .checkDown(input as Phaser.Input.Keyboard.Key, duration);
-    } else {
-      return (input as Phaser.Input.Keyboard.Key).isDown;
     }
+
+    return (input as Phaser.Input.Keyboard.Key).isDown;
   }
 
   /**

@@ -1,6 +1,7 @@
 import * as Phaser from 'phaser';
 
 import { Preloader } from 'Scenes/Preloader';
+import { Controller } from 'Scenes/Controller';
 import { Main } from 'Scenes/Main';
 import { HUD } from 'Scenes/HUD';
 import { Inventory } from 'Scenes/Inventory';
@@ -27,6 +28,7 @@ const config: Phaser.Types.Core.GameConfig = {
 
   scene: [
     Preloader,
+    Controller,
     Main,
     HUD,
     Inventory
