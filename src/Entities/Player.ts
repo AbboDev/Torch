@@ -177,6 +177,13 @@ export class Player extends SpriteCollidable {
   private isFalling = false;
 
   /**
+   * The Player is climbing a tile
+   *
+   * @type {Boolean}
+   */
+  private isClimbing = false;
+
+  /**
    * The Player can now perform the double jump
    *
    * @type {Boolean}
@@ -1004,7 +1011,10 @@ export class Player extends SpriteCollidable {
       // Handle the hang action
       this.hang();
 
-      // Handle the hang action
+      // Handle all the movement along the x axis
+      this.climb();
+
+      // Handle the player body resizing
       this.resizeBody();
 
       // Prevent crouch when is facing forward
@@ -1328,7 +1338,7 @@ export class Player extends SpriteCollidable {
     // Detect if the Player is jumping by checking if his y speed is negative
     if (this.body.velocity.y < 0) {
       // Detect if the user is not pressing the button to jump
-      if (!isJumpPress) {
+      if (!isJumpPress && !this.isClimbing) {
         // The Player is able to perform a double jump
         this.canDoubleJump = true;
 
@@ -1498,6 +1508,66 @@ export class Player extends SpriteCollidable {
           }
         }
       }
+    }
+  }
+
+  protected climb(): void {
+    let hasFreeUpperTile!: Phaser.Tilemaps.Tile;
+    let hasTileOnFoot!: Phaser.Tilemaps.Tile;
+
+    if (this.hasHangAbility) {
+      if (this.body.velocity.y === 0
+        && (this.body.blocked.right
+          || this.body.blocked.left)
+      ) {
+        const bounds: Phaser.Geom.Rectangle = this.getBodyBounds();
+
+        const isLeft = this.body.blocked.left;
+        const x = isLeft
+          ? bounds.centerX - TILE_SIZE
+          : bounds.centerX + TILE_SIZE;
+
+        const xTile = Math.floor(x / TILE_SIZE);
+
+        let layers: Phaser.Tilemaps.DynamicTilemapLayer[] = this.scene.worldLayer;
+        if (!Array.isArray(layers)) {
+          layers = [layers];
+        }
+
+        const bottom = Math.floor((bounds.centerY - 1) / TILE_SIZE);
+
+        for (const layer of layers) {
+          if (hasFreeUpperTile) {
+            break;
+          }
+
+          hasFreeUpperTile = this.scene.map.getTileAt(
+            xTile,
+            bottom,
+            undefined,
+            layer
+          );
+        }
+
+        for (const layer of layers) {
+          if (hasTileOnFoot) {
+            break;
+          }
+
+          hasTileOnFoot = this.scene.map.getTileAt(
+            xTile,
+            bottom + 1,
+            undefined,
+            layer
+          );
+        }
+      }
+    }
+
+    this.isClimbing = (!hasFreeUpperTile && hasTileOnFoot);
+
+    if (this.isClimbing) {
+      this.setVelocityY(-TILE_SIZE * 100);
     }
   }
 
