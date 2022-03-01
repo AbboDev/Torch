@@ -111,6 +111,8 @@ export class HUD extends DataScene {
 
       this.debugger.setText(`x: ${x} | y: ${y} | Vx: ${Vx} | Vy: ${Vy}`);
     });
+
+    this.debugger.setVisible(this.physics.world.drawDebug);
   }
 
   protected updateData(
