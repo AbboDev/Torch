@@ -20,6 +20,7 @@
       "Entities/Weapons/*": ["./Entities/Weapons/*"],
       "Entities/*": ["./Entities/*"],
       "Miscellaneous/*": ["./Miscellaneous/*"],
+      "HUD/*": ["./HUD/*"],
       "Scenes/*": ["./Scenes/*"]
     }
   },

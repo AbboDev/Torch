@@ -46,6 +46,7 @@ module.exports = (env) => {
         Weapons: path.resolve(__dirname, 'src/Entities/Weapons'),
         Hitboxes: path.resolve(__dirname, 'src/Entities/Hitboxes'),
         Miscellaneous: path.resolve(__dirname, 'src/Miscellaneous/'),
+        HUD: path.resolve(__dirname, 'src/HUD/'),
         Scenes: path.resolve(__dirname, 'src/Scenes/')
       }
     },
