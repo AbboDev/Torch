@@ -135,8 +135,7 @@ export class Main extends MapScene {
       .isKeyPressedForFirstTime(ControllerKey.START);
 
     if (isStartPressed) {
-      this.scene.pause();
-      this.scene.launch('inventory');
+      this.scene.pause().wake('inventory');
     }
   }
 

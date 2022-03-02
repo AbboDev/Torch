@@ -39,8 +39,7 @@ export class Inventory extends DataScene {
       .isKeyPressedForFirstTime(ControllerKey.START);
 
     if (isStartPressed) {
-      this.scene.resume('main');
-      this.scene.stop();
+      this.scene.resume('main').sleep();
     }
   }
 }
