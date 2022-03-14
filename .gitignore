@@ -65,3 +65,6 @@ build
 
 # rawAssets directory
 rawAssets
+
+# editor config folder
+.vscode/
