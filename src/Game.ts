@@ -1,14 +1,13 @@
 import * as Phaser from 'phaser';
-
-import { Preloader } from 'Scenes/Preloader';
-import { Controller } from 'Scenes/Controller';
-import { Main } from 'Scenes/Main';
-import { HUD } from 'Scenes/HUD';
-import { Inventory } from 'Scenes/Inventory';
+import {
+  Preloader,
+  Controller,
+  Main,
+  HUD,
+  Inventory
+} from 'Scenes';
 
 import { TILE_SIZE } from 'Config/tiles';
-
-import * as AnimatedTiles from 'phaser-animated-tiles/dist/AnimatedTiles.js';
 
 // eslint-disable-next-line no-console
 console.clear();
@@ -24,7 +23,6 @@ const config: Phaser.Types.Core.GameConfig = {
   height: TILE_SIZE * 22,
 
   zoom: 1,
-  resolution: 1,
 
   scene: [
     Preloader,
@@ -38,8 +36,8 @@ const config: Phaser.Types.Core.GameConfig = {
     scene: [
       {
         key: 'AnimatedTiles',
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        plugin: AnimatedTiles,
+        // eslint-disable-next-line global-require
+        plugin: require('phaser-animated-tiles/dist/AnimatedTiles'),
         mapping: 'animatedTiles'
       }
     ]
@@ -52,7 +50,7 @@ const config: Phaser.Types.Core.GameConfig = {
 
     min: {
       width: TILE_SIZE * 20,
-      height: TILE_SIZE * 11,
+      height: TILE_SIZE * 11
     }
   },
 
@@ -61,7 +59,7 @@ const config: Phaser.Types.Core.GameConfig = {
   physics: {
     default: 'arcade',
     arcade: {
-      debug: false,
+      debug: true,
       gravity: {
         y: TILE_SIZE * 32
       }
@@ -69,4 +67,4 @@ const config: Phaser.Types.Core.GameConfig = {
   }
 };
 
-export const game = new Phaser.Game(config);
+export default new Phaser.Game(config);

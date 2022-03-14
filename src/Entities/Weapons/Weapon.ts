@@ -1,3 +1,4 @@
+import * as Phaser from 'phaser';
 import { Bullet, BulletConfig } from 'Entities/Bullets/Bullet';
 import { MapScene } from 'Scenes/MapScene';
 
@@ -47,7 +48,7 @@ export class Weapon extends Phaser.Physics.Arcade.Group {
 
       if (bullet) {
         bullet.fire(config);
-        this.lastFired = time as integer + this.rateOfFire;
+        this.lastFired = time as number + this.rateOfFire;
       }
     }
 

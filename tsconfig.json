@@ -1,18 +1,19 @@
 {
   "compilerOptions": {
-    "target": "es2017",
+    "target": "esnext",
     "moduleResolution": "node",
-    "module": "CommonJS",
+    "module": "esnext",
     "strict": true,
     "sourceMap": true,
-
+    "noEmit": false,
+    "allowJs": true,
+    "noImplicitAny": false,
+    "baseUrl": "./src",
     "typeRoots": [
       "./node_modules/phaser/types",
       "./node_modules/@types",
       "./src/@types"
     ],
-
-    "baseUrl": "./src",
     "paths": {
       "Config/*": ["./Config/*"],
       "Entities/Bullets/*": ["./Entities/Bullets/*"],

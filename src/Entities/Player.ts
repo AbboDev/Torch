@@ -1,21 +1,23 @@
+import * as Phaser from 'phaser';
 import {
   Facing,
   DirectionAxisY,
-  DirectionAxisX
-} from 'Miscellaneous/Direction';
-import { ControllerKey } from 'Miscellaneous/Controller';
-
-import { Hitbox, AreaPosition } from 'Entities/Hitboxes/Hitbox';
-
-import { Gun } from 'Entities/Weapons/Gun';
-import { Bow } from 'Entities/Weapons/Bow';
-import { Rifle } from 'Entities/Weapons/Rifle';
-import { Weapon } from 'Entities/Weapons/Weapon';
-import { BulletConfig } from 'Entities/Bullets/Bullet';
-import { SpriteCollidable } from 'Entities/WorldCollidable';
-
-import { MapScene } from 'Scenes/MapScene';
-
+  DirectionAxisX,
+  ControllerKey
+} from 'Miscellaneous';
+import {
+  Hitbox,
+  AreaPosition
+} from 'Entities/Hitboxes';
+import {
+  Gun,
+  Bow,
+  Rifle,
+  Weapon
+} from 'Entities/Weapons';
+import { BulletConfig } from 'Entities/Bullets';
+import { SpriteCollidable } from 'Entities/Collidables';
+import { MapScene } from 'Scenes';
 import { PLAYER_DEPTH } from 'Config/depths';
 import { TILE_SIZE } from 'Config/tiles';
 
@@ -25,7 +27,7 @@ export class Player extends SpriteCollidable {
    *
    * @type {Phaser.Physics.Arcade.Body}
    */
-  public body!: Phaser.Physics.Arcade.Body;
+  declare public body: Phaser.Physics.Arcade.Body;
 
   /**
    * Current health points
@@ -415,7 +417,7 @@ export class Player extends SpriteCollidable {
    *
    * @type {Number}
    */
-  static BODY_SMALL_HEIGHT = Player.BODY_HEIGHT / 4 * 3;
+  static BODY_SMALL_HEIGHT = (Player.BODY_HEIGHT / 4) * 3;
 
   /**
    * The default movement speed based on game gravity
@@ -534,7 +536,7 @@ export class Player extends SpriteCollidable {
 
     this.facing = {
       y: DirectionAxisY.MIDDLE,
-      x: DirectionAxisX.CENTER,
+      x: DirectionAxisX.CENTER
     };
 
     this.baseSpeed = this.scene.getWorldGravity().y / 2;
@@ -986,7 +988,7 @@ export class Player extends SpriteCollidable {
   public update(time: any, delta: number): void {
     super.update();
 
-    this.previousFacing = {...this.facing};
+    this.previousFacing = { ...this.facing };
     this.lastBattery = this.battery;
 
     if (this.canInteract) {
@@ -1106,7 +1108,7 @@ export class Player extends SpriteCollidable {
               this.batteryRechargeTimer.destroy();
               this.batteryRechargeTimer.remove();
             }
-          },
+          }
         };
 
         // Start the timer only after a certain amount of time
@@ -1199,10 +1201,8 @@ export class Player extends SpriteCollidable {
           this.liquidDamageTimer.paused = false;
         }
       }
-    } else {
-      if (this.liquidDamageTimer) {
-        this.liquidDamageTimer.paused = true;
-      }
+    } else if (this.liquidDamageTimer) {
+      this.liquidDamageTimer.paused = true;
     }
   }
 
@@ -1219,9 +1219,7 @@ export class Player extends SpriteCollidable {
     if (this.hasWallJumpAbility) {
       // Test if the Player is near walls
       const walls: boolean[] = this.isTouchingWalls() as boolean[];
-      const wallsCount = walls.filter((wall) => {
-        return wall;
-      });
+      const wallsCount = walls.filter((wall) => wall);
 
       // Perform wall jump only if the Player
       // is not on the ground and is touching only one wall
@@ -1484,7 +1482,7 @@ export class Player extends SpriteCollidable {
             }
 
             if (tiles.length === 1) {
-              currentTile = tiles[0];
+              [currentTile] = tiles;
               // Check if there is a tile upper the current one
               const upperTile = this.scene.map
                 .getTileAt(currentTile.x, currentTile.y - 1, undefined, lastLayer);
@@ -1615,14 +1613,12 @@ export class Player extends SpriteCollidable {
 
         updateBody = true;
       }
-    } else {
-      if (this.isBodySmall) {
-        // Reset the body to his original shape
-        offsetX = (this.width - Player.BODY_WIDTH) * (1 - this.originX);
-        offsetY = (this.height - Player.BODY_HEIGHT) * (1 - this.originY);
+    } else if (this.isBodySmall) {
+      // Reset the body to his original shape
+      offsetX = (this.width - Player.BODY_WIDTH) * (1 - this.originX);
+      offsetY = (this.height - Player.BODY_HEIGHT) * (1 - this.originY);
 
-        updateBody = true;
-      }
+      updateBody = true;
     }
 
     if (updateBody) {
@@ -1679,7 +1675,7 @@ export class Player extends SpriteCollidable {
         position: bulletPosition
       };
 
-      let equippedWeapon = null;
+      let equippedWeapon: string | null = null;
       if (this.hasGunAbility) {
         equippedWeapon = 'gun';
       } else if (this.hasRifleAbility) {
@@ -1745,16 +1741,14 @@ export class Player extends SpriteCollidable {
       } else {
         action = 'idle';
       }
+    } else if (this.isHanging) {
+      action = 'hang';
+    } else if (!this.isStandingJumping) {
+      action = 'jump';
+    } else if (this.isJumping) {
+      action = 'jump_idle';
     } else {
-      if (this.isHanging) {
-        action = 'hang';
-      } else if (!this.isStandingJumping) {
-        action = 'jump';
-      } else if (this.isJumping) {
-        action = 'jump_idle';
-      } else {
-        action = 'fall_idle';
-      }
+      action = 'fall_idle';
     }
 
     // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
@@ -1806,7 +1800,7 @@ export class Player extends SpriteCollidable {
 
     this.scene.events.emit('debugPlayer', {
       velocity: this.body.velocity,
-      position: this.body.position,
+      position: this.body.position
     });
 
     if (controller.isKeyPressedForFirstTime(ControllerKey.SELECT)) {
@@ -1915,17 +1909,15 @@ export class Player extends SpriteCollidable {
   ): void {
     if (x instanceof Phaser.Math.Vector2) {
       this.adjustTo = x;
+    } else if (!this.adjustTo) {
+      this.adjustTo = new Phaser.Math.Vector2(x || -1, y || -1);
     } else {
-      if (!this.adjustTo) {
-        this.adjustTo = new Phaser.Math.Vector2(x || -1, y || -1);
-      } else {
-        if (x) {
-          this.adjustTo.set(x, this.adjustTo.y);
-        }
+      if (x) {
+        this.adjustTo.set(x, this.adjustTo.y);
+      }
 
-        if (y) {
-          this.adjustTo.set(this.adjustTo.x, y);
-        }
+      if (y) {
+        this.adjustTo.set(this.adjustTo.x, y);
       }
     }
   }

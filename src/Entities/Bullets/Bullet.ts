@@ -1,7 +1,6 @@
-import { Facing, getSign } from 'Miscellaneous/Direction';
-
-import { MapScene } from 'Scenes/MapScene';
-
+import * as Phaser from 'phaser';
+import { Facing, getSign } from 'Miscellaneous';
+import { MapScene } from 'Scenes';
 import { BULLET_DEPTH } from 'Config/depths';
 import { DEFAULT_BULLET_LIGHT } from 'Config/lights';
 import { TILE_SIZE } from 'Config/tiles';
@@ -18,7 +17,7 @@ export class Bullet extends Phaser.Physics.Arcade.Sprite {
    *
    * @type {Phaser.Physics.Arcade.Body}
    */
-  public body!: Phaser.Physics.Arcade.Body;
+  declare public body: Phaser.Physics.Arcade.Body;
 
   /**
    * The baseSpeed of the bullet

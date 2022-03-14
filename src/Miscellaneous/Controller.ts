@@ -1,3 +1,5 @@
+import * as Phaser from 'phaser';
+
 export enum ControllerKey {
   UP = 'Up',
   DOWN = 'Down',
@@ -16,48 +18,61 @@ export enum ControllerKey {
 
 export class Controller {
   public keyUp: Phaser.Input.Keyboard.Key;
+
   public isKeyUpPress = false;
 
   public keyDown: Phaser.Input.Keyboard.Key;
+
   public isKeyDownPress = false;
 
   public keyLeft: Phaser.Input.Keyboard.Key;
+
   public isKeyLeftPress = false;
 
   public keyRight: Phaser.Input.Keyboard.Key;
+
   public isKeyRightPress = false;
 
   public keyA: Phaser.Input.Keyboard.Key;
+
   public isKeyAPress = false;
 
   public keyB: Phaser.Input.Keyboard.Key;
+
   public isKeyBPress = false;
 
   public keyX: Phaser.Input.Keyboard.Key;
+
   public isKeyXPress = false;
 
   public keyY: Phaser.Input.Keyboard.Key;
+
   public isKeyYPress = false;
 
   public keyL: Phaser.Input.Keyboard.Key;
+
   public isKeyLPress = false;
 
   public keyR: Phaser.Input.Keyboard.Key;
+
   public isKeyRPress = false;
 
   public keyStart: Phaser.Input.Keyboard.Key;
+
   public isKeyStartPress = false;
 
   public keySelect: Phaser.Input.Keyboard.Key;
+
   public isKeySelectPress = false;
 
   public keyDebug: Phaser.Input.Keyboard.Key;
+
   public isKeyDebugPress = false;
 
   private static instance: Controller;
 
   private constructor(protected scene: Phaser.Scene) {
-    const keyboard = this.scene.input.keyboard;
+    const { keyboard } = this.scene.input;
 
     this.keyUp = keyboard
       .addKey(Phaser.Input.Keyboard.KeyCodes.UP)

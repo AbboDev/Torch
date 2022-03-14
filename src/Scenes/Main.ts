@@ -1,7 +1,9 @@
-import { MapScene } from 'Scenes/MapScene';
-
-import { ControllerKey } from 'Miscellaneous/Controller';
-import { TiledObject } from 'Miscellaneous/TiledObject';
+import * as Phaser from 'phaser';
+import { MapScene } from 'Scenes';
+import {
+  ControllerKey,
+  TiledObject
+} from 'Miscellaneous';
 import { Player } from 'Entities/Player';
 
 import {
@@ -21,7 +23,7 @@ export class Main extends MapScene {
     super({
       active: false,
       visible: false,
-      key: 'main',
+      key: 'main'
     });
   }
 
@@ -53,8 +55,8 @@ export class Main extends MapScene {
       });
 
     if (!this.spawnPoint) {
+      // eslint-disable-next-line no-throw-literal
       throw 'No Spawn Point detected';
-      return;
     }
 
     const tileset = this.map.addTilesetImage('chozodia', 'chozodia_tiles');
@@ -181,9 +183,7 @@ export class Main extends MapScene {
         if (property.name === 'background') {
           textures = this.textures
             .getTextureKeys()
-            .filter((item) => {
-              return item.indexOf(property.value as string) !== -1;
-            });
+            .filter((item) => item.indexOf(property.value as string) !== -1);
         }
       }
     }

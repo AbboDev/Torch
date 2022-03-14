@@ -1,6 +1,10 @@
-import { ControlScene } from 'Scenes/ControlScene';
-import { ControllerKey } from 'Miscellaneous/Controller';
-import { TiledObject, TiledObjectProperty } from 'Miscellaneous/TiledObject';
+import * as Phaser from 'phaser';
+import { ControlScene } from 'Scenes';
+import {
+  ControllerKey,
+  TiledObject,
+  TiledObjectProperty
+} from 'Miscellaneous';
 
 import { DEFAULT_LIGHT } from 'Config/lights';
 
@@ -103,7 +107,7 @@ export abstract class MapScene extends ControlScene {
       .setAlpha(0.75)
       .setDepth(10000);
 
-    this.rooms = Array<TiledObject>();
+    this.rooms = [];
   }
 
   public update(time: any, delta: number): void {
@@ -140,6 +144,7 @@ export abstract class MapScene extends ControlScene {
     const currentRoomNumber: boolean | number = this.getCurrentRoom(x, y);
 
     if (typeof currentRoomNumber !== 'number') {
+      // eslint-disable-next-line no-throw-literal
       throw 'Missing room: player outbound';
     }
 
@@ -149,7 +154,7 @@ export abstract class MapScene extends ControlScene {
       currentRoom.properties = [];
     }
 
-    const properties = currentRoom.properties;
+    const { properties } = currentRoom;
 
     if (properties.length > 0) {
       let hasVisited = false;
@@ -166,6 +171,8 @@ export abstract class MapScene extends ControlScene {
           case 'visited':
             property.value = true;
             hasVisited = true;
+            break;
+          default:
             break;
         }
       }

@@ -1,8 +1,7 @@
+import * as Phaser from 'phaser';
+import { MapScene } from 'Scenes';
+import { Bullet } from 'Entities/Bullets';
 import { TILE_SIZE } from 'Config/tiles';
-
-import { MapScene } from 'Scenes/MapScene';
-
-import { Bullet } from 'Entities/Bullets/Bullet';
 
 export class BowArrow extends Bullet {
   protected allowGravity = true;

@@ -5,9 +5,13 @@ export abstract class DataScene extends ControlScene {
     super.create();
 
     this.registry.events
-      .on('setdata', this.updateData.bind(this))
-      .on('changedata', this.updateData.bind(this));
+      .on('setdata', (parent: any, key: string, data: any) => {
+        this.updateData(parent, key, data);
+      })
+      .on('changedata', (parent: any, key: string, data: any) => {
+        this.updateData(parent, key, data);
+      });
   }
 
-  protected updateData(parent: any, key: string, data: any): void {}
+  protected abstract updateData(parent: any, key: string, data: any): void;
 }

@@ -1,10 +1,12 @@
-import * as AnimatedTiles from 'phaser-animated-tiles/dist/AnimatedTiles.js';
+import * as Phaser from 'phaser';
+import * as AnimatedTiles from 'phaser-animated-tiles/dist/AnimatedTiles';
 
 interface AnimatedTilesSceneSystem extends Phaser.Scenes.Systems {
   animatedTiles: AnimatedTiles
 }
 
 export abstract class AnimatedTilesScene extends Phaser.Scene {
-  public sys!: AnimatedTilesSceneSystem;
+  declare public sys: AnimatedTilesSceneSystem;
+
   public animatedTiles!: AnimatedTiles;
 }

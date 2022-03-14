@@ -1,12 +1,14 @@
-import { ControllerKey } from 'Miscellaneous/Controller';
+import * as Phaser from 'phaser';
+import { ControllerKey } from 'Miscellaneous';
 import { ItemSwitch } from 'HUD/ItemSwitch';
-import { DataScene } from 'Scenes/DataScene';
+import { DataScene } from 'Scenes';
 import { TILE_SIZE } from 'Config/tiles';
 
 export class Inventory extends DataScene {
   private cursor!: Phaser.GameObjects.Triangle;
 
   private buttons: Phaser.GameObjects.Arc[] = [];
+
   private selectedButtonIndex = 0;
 
   private mainScene!: Phaser.Scene;
@@ -15,14 +17,14 @@ export class Inventory extends DataScene {
     super({
       active: false,
       visible: false,
-      key: 'inventory',
+      key: 'inventory'
     });
   }
 
   public create(): void {
     super.create();
 
-    const { width, height } = this.scale;
+    const { width } = this.scale;
 
     const style: Phaser.Types.GameObjects.Text.TextStyle = {
       fontSize: `${TILE_SIZE}px`

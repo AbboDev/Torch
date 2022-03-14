@@ -1,13 +1,14 @@
 module.exports = {
   mode: 'development',
-  devtool: 'eval-source-map',
+  devtool: 'eval-nosources-cheap-source-map',
   devServer: {
-    contentBase: './build'
+    static: './build',
+    // contentBase: './build',
   },
   output: {
     pathinfo: false,
     filename: '[name].js',
-    devtoolModuleFilenameTemplate: '../[resource-path]'
+    devtoolModuleFilenameTemplate: '../[resource-path]',
   },
   stats: true,
 };

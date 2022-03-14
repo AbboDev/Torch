@@ -1,3 +1,4 @@
+import * as Phaser from 'phaser';
 import { DataScene } from 'Scenes/DataScene';
 import { TILE_SIZE } from 'Config/tiles';
 
@@ -15,9 +16,9 @@ export class ItemSwitch extends Phaser.GameObjects.Arc {
     strokeWidth = 2,
     strokeColor = 0xffffff,
     strokeAlpha = 1,
-    startAngle?: number,
-    endAngle?: number,
-    anticlockwise?: boolean
+    startAngle: number | undefined = undefined,
+    endAngle: number | undefined = undefined,
+    anticlockwise: boolean | undefined = undefined
   ) {
     super(scene, x, y, radius, startAngle, endAngle, anticlockwise, fillColor, fillAlpha);
 

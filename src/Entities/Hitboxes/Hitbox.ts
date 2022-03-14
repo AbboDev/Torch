@@ -1,4 +1,5 @@
-import { MapScene } from 'Scenes/MapScene';
+import * as Phaser from 'phaser';
+import { MapScene } from 'Scenes';
 import { PLAYER_DEPTH } from 'Config/depths';
 
 /**
@@ -14,14 +15,14 @@ export enum AreaPosition {
   LEFT_BOTTOM_QUARTER = 'left_bottom_quarter',
   RIGHT_TOP_QUARTER = 'right_top_quarter',
   RIGHT_BOTTOM_QUARTER = 'right_bottom_quarter'
-};
+}
 
 export class Hitbox extends Phaser.GameObjects.Rectangle {
   /**
    * The Phaser body
    * @type {Phaser.Physics.Arcade.Body}
    */
-  public body!: Phaser.Physics.Arcade.Body;
+  declare public body: Phaser.Physics.Arcade.Body;
 
   public constructor(
     public scene: MapScene,
@@ -74,16 +75,19 @@ export class Hitbox extends Phaser.GameObjects.Rectangle {
     x?: number,
     y?: number
   ): void {
+    let x1 = x;
+    let y1 = y;
+
     if (typeof y === 'undefined') {
       if (typeof x === 'undefined') {
-        x = parent.body.position.x;
-        y = parent.body.position.y;
+        x1 = parent.body.position.x;
+        y1 = parent.body.position.y;
       } else {
-        y = x;
+        y1 = x;
       }
     }
 
-    this.setPosition(x, y);
+    this.setPosition(x1, y1);
 
     this.body.velocity.copy(parent.body.velocity);
   }
@@ -99,9 +103,7 @@ export class Hitbox extends Phaser.GameObjects.Rectangle {
         this,
         layer,
         undefined,
-        (hitbox, tile: unknown) => {
-          return ((tile as Phaser.Tilemaps.Tile).index > -1);
-        }
+        (hitbox, tile: unknown) => ((tile as Phaser.Tilemaps.Tile).index > -1)
       );
 
       if (overlap) {
@@ -129,15 +131,16 @@ export class Hitbox extends Phaser.GameObjects.Rectangle {
         this,
         layer,
         undefined,
-        (hitbox, tile: unknown) => {
-          if ((tile as Phaser.Tilemaps.Tile).index > -1) {
+        (hitbox, object: unknown) => {
+          const tile: Phaser.Tilemaps.Tile = object as Phaser.Tilemaps.Tile;
+          if (tile.index > -1) {
             const hitboxBounds: Phaser.Geom.Rectangle = this.getBounds();
-            const tileBounds: Phaser.Geom.Rectangle = (tile as Phaser.Tilemaps.Tile).getBounds() as Phaser.Geom.Rectangle;
+            const tileBounds: Phaser.Geom.Rectangle = tile.getBounds() as Phaser.Geom.Rectangle;
 
-            let x: number = tileBounds.x;
-            let y: number = tileBounds.y;
-            let width: number = tileBounds.width;
-            let height: number = tileBounds.height;
+            let { x } = tileBounds;
+            let { y } = tileBounds;
+            let { width } = tileBounds;
+            let { height } = tileBounds;
 
             switch (area) {
               case AreaPosition.TOP_HALF:
@@ -185,6 +188,8 @@ export class Hitbox extends Phaser.GameObjects.Rectangle {
                 y = tileBounds.centerY;
                 width = tileBounds.width / 2;
                 height = tileBounds.height / 2;
+                break;
+              default:
                 break;
             }
 

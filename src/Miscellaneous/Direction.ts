@@ -1,3 +1,5 @@
+import * as Phaser from 'phaser';
+
 /**
  * The three possible orientations along the Y axis
  */

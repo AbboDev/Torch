@@ -1,7 +1,10 @@
+import * as Phaser from 'phaser';
 import { Player } from 'Entities/Player';
-import { GunBullet } from 'Entities/Bullets/GunBullet';
-import { BowArrow } from 'Entities/Bullets/BowArrow';
-import { RifleBullet } from 'Entities/Bullets/RifleBullet';
+import {
+  GunBullet,
+  BowArrow,
+  RifleBullet
+} from 'Entities/Bullets';
 
 export class Preloader extends Phaser.Scene {
   public constructor() {
@@ -58,7 +61,7 @@ export class Preloader extends Phaser.Scene {
       ])
       .image('chozodia_tiles', [
         '/assets/tilesets/chozodia.png',
-        '/assets/tilesets/chozodia_n.png',
+        '/assets/tilesets/chozodia_n.png'
       ])
       .image('liquid_tiles', '/assets/tilesets/liquids.png')
       .image('full_liquid_tiles', '/assets/tilesets/full_liquids.png')
@@ -71,7 +74,7 @@ export class Preloader extends Phaser.Scene {
 
     // add the loading bar to use as a display for
     // the loading progress of the remainder of the assets
-    this.add.image(this.scale.width / 2, this.scale.height / 2,'barBg');
+    this.add.image(this.scale.width / 2, this.scale.height / 2, 'barBg');
 
     const bar = this.add.sprite(
       this.scale.width / 2,

@@ -1,14 +1,18 @@
-import { DataScene } from 'Scenes/DataScene';
+import * as Phaser from 'phaser';
+import { DataScene } from 'Scenes';
 import { TILE_SIZE } from 'Config/tiles';
 
 export class HUD extends DataScene {
   private life!: Phaser.GameObjects.Image;
+
   private lifeCounter!: Phaser.GameObjects.Text;
 
   private battery!: Phaser.GameObjects.Image;
+
   private batteryCounter!: Phaser.GameObjects.Text;
 
   private ammo!: Phaser.GameObjects.Image;
+
   private ammoCounter!: Phaser.GameObjects.Text;
 
   private debugger!: Phaser.GameObjects.Text;
@@ -19,7 +23,7 @@ export class HUD extends DataScene {
     super({
       active: false,
       visible: false,
-      key: 'hud',
+      key: 'hud'
     });
   }
 
@@ -96,7 +100,7 @@ export class HUD extends DataScene {
       (this.game.scale.height) - TILE_SIZE,
       'x: 0 | y: 0 | Vx: 0 | Vy : 0',
       {
-        fontSize: 10
+        fontSize: '10px'
       }
     )
       .setAlign('left')
@@ -141,6 +145,8 @@ export class HUD extends DataScene {
       case 'battery':
       case 'maxBattery':
         this.batteryCounter.setText(data.toString());
+        break;
+      default:
         break;
     }
   }

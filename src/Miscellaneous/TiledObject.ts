@@ -1,3 +1,5 @@
+import * as Phaser from 'phaser';
+
 export interface TiledObjectProperty {
   name: string,
   type: string,

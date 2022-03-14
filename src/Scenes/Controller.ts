@@ -1,11 +1,11 @@
-import { ControlScene } from 'Scenes/ControlScene';
+import { ControlScene } from 'Scenes';
 
 export class Controller extends ControlScene {
   public constructor() {
     super({
       active: false,
       visible: false,
-      key: 'controller',
+      key: 'controller'
     });
   }
 

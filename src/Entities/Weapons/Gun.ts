@@ -1,5 +1,4 @@
 import { Weapon } from 'Entities/Weapons/Weapon';
-
 import { GunBullet } from 'Entities/Bullets/GunBullet';
 
 export class Gun extends Weapon {
