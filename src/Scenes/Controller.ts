@@ -1,4 +1,4 @@
-import { ControlScene } from 'Scenes';
+import { ControlScene } from 'Scenes/ControlScene';
 
 export class Controller extends ControlScene {
   public constructor() {

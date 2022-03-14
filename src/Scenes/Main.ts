@@ -1,5 +1,5 @@
 import * as Phaser from 'phaser';
-import { MapScene } from 'Scenes';
+import { MapScene } from 'Scenes/MapScene';
 import {
   ControllerKey,
   TiledObject
