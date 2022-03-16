@@ -24,7 +24,12 @@ export abstract class SpriteCollidable extends Phaser.Physics.Arcade.Sprite {
     }
 
     for (const layer of layers) {
-      scene.physics.add.collider(this, layer, this.postCollision);
+      scene.physics.add.collider(
+        this,
+        layer,
+        this.postCollision.bind(this),
+        this.testCollision.bind(this)
+      );
     }
   }
 
@@ -38,4 +43,15 @@ export abstract class SpriteCollidable extends Phaser.Physics.Arcade.Sprite {
     self: Phaser.GameObjects.GameObject,
     tile: Phaser.GameObjects.GameObject
   ): void {}
+
+  /**
+   * The callback which is call after a collision occurs
+   *
+   * @param {SpriteCollidable}              self The current sprite
+   * @param {Phaser.GameObjects.GameObject} tile The tile on which this collide
+   */
+  protected abstract testCollision(
+    self: Phaser.GameObjects.GameObject,
+    tile: Phaser.GameObjects.GameObject
+  ): boolean;
 }

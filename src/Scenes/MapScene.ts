@@ -10,42 +10,49 @@ import { DEFAULT_LIGHT } from 'Config/lights';
 
 export abstract class MapScene extends ControlScene {
   /**
-   * The main tilesmap layer where all the collision will be implemented
+   * The main tilemap layer where all the collision will be implemented
    *
    * @type {Phaser.Tilemaps.DynamicTilemapLayer}
    */
   public collisionsLayer!: Phaser.Tilemaps.DynamicTilemapLayer;
 
   /**
-   * The tilesmap layer where all the liquids will be implemented
+   * The main tilemap layer where all the tiles with only top side collision will be implemented
+   *
+   * @type {Phaser.Tilemaps.DynamicTilemapLayer}
+   */
+  public oneWayCollisionsLayer!: Phaser.Tilemaps.DynamicTilemapLayer;
+
+  /**
+   * The tilemap layer where all the liquids will be implemented
    *
    * @type {Phaser.Tilemaps.DynamicTilemapLayer}
    */
   public breakablesLayer!: Phaser.Tilemaps.DynamicTilemapLayer;
 
   /**
-   * The tilesmap layer where all the liquids will be implemented
+   * The tilemap layer where all the liquids will be implemented
    *
    * @type {Phaser.Tilemaps.DynamicTilemapLayer}
    */
   public liquidsLayer!: Phaser.Tilemaps.DynamicTilemapLayer;
 
   /**
-   * The tilesmap layer just before the background
+   * The tilemap layer just before the background
    *
    * @type {Phaser.Tilemaps.StaticTilemapLayer}
    */
   public belowLayer!: Phaser.Tilemaps.StaticTilemapLayer;
 
   /**
-   * The tilesmap layer above all the elements
+   * The tilemap layer above all the elements
    *
    * @type {Phaser.Tilemaps.StaticTilemapLayer}
    */
   public aboveLayer!: Phaser.Tilemaps.StaticTilemapLayer;
 
   /**
-   * The tilesmap layer above all the elements and liquids
+   * The tilemap layer above all the elements and liquids
    *
    * @type {Phaser.Tilemaps.StaticTilemapLayer}
    */
@@ -87,7 +94,7 @@ export abstract class MapScene extends ControlScene {
   protected background!: Phaser.GameObjects.Image;
 
   /**
-   * The current map background parallex
+   * The current map background parallax
    *
    * @type {Phaser.GameObjects.TileSprite}
    */
@@ -129,7 +136,7 @@ export abstract class MapScene extends ControlScene {
 
       this.updateCollisionGraphic(this.physics.world.drawDebug);
 
-      // The tilesmap's collision debug graphic, instead of been clean,
+      // The tilemap's collision debug graphic, instead of been clean,
       // will be disable/enable and hide/show
     }
   }
@@ -213,6 +220,7 @@ export abstract class MapScene extends ControlScene {
   public get worldLayer(): Phaser.Tilemaps.DynamicTilemapLayer[] {
     return [
       this.collisionsLayer,
+      this.oneWayCollisionsLayer,
       this.breakablesLayer
     ];
   }

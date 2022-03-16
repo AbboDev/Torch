@@ -2020,4 +2020,27 @@ export class Player extends SpriteCollidable {
       (this.height - height) * (1 - this.originY)
     );
   }
+
+  protected testCollision(
+    self: Phaser.GameObjects.GameObject,
+    object: unknown
+  ): boolean {
+    const tile: Phaser.Tilemaps.Tile = object as Phaser.Tilemaps.Tile;
+
+    switch (tile.layer.name) {
+      case 'platforms':
+        if (tile.index >= 0) {
+          const bounds = this.getBodyBounds();
+          if (bounds.bottom - 1 < tile.pixelY) {
+            return true;
+          }
+        }
+        return false;
+
+      default:
+        break;
+    }
+
+    return tile.index >= 0;
+  }
 }

@@ -89,6 +89,16 @@ export class Main extends MapScene {
         faceColor: new Phaser.Display.Color(40, 39, 37, 255)
       });
 
+    this.oneWayCollisionsLayer = this.map.createDynamicLayer('platforms', tileset, 0, 0)
+      .setDepth(WORLD_LAYER_DEPTH)
+      .setPipeline('Light2D')
+      .setCollisionByProperty({ collides: true })
+      .renderDebug(this.collisionDebugGraphics, {
+        tileColor: null,
+        collidingTileColor: new Phaser.Display.Color(48, 48, 134, 255),
+        faceColor: new Phaser.Display.Color(40, 39, 37, 255)
+      });
+
     this.breakablesLayer = this.map.createDynamicLayer('breakables', tileset, 0, 0)
       .setDepth(WORLD_LAYER_DEPTH)
       .setPipeline('Light2D')
@@ -154,7 +164,7 @@ export class Main extends MapScene {
           // Change camera boundaries when fade out complete
           this.setupRoom(this.rooms[room]);
 
-          // Fade back in with new boundareis
+          // Fade back in with new boundaries
           this.cameras.main
             // eslint-disable-next-line max-len
             .fadeIn(500, 0, 0, 0, (cameraOut: Phaser.Cameras.Scene2D.Camera, progressOut: number) => {
