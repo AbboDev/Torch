@@ -186,6 +186,13 @@ export class Player extends SpriteCollidable {
   private isClimbing = false;
 
   /**
+   * The Player was climbing a tile
+   *
+   * @type {Boolean}
+   */
+  private wasClimbing = false;
+
+  /**
    * The Player can now perform the double jump
    *
    * @type {Boolean}
@@ -270,7 +277,7 @@ export class Player extends SpriteCollidable {
    *
    * @type {Boolean}
    */
-  private hasWallJumpAbility = true;
+  private hasWallJumpAbility = false;
 
   /**
    * The Player has the ability to run quickly
@@ -298,7 +305,7 @@ export class Player extends SpriteCollidable {
    *
    * @type {Boolean}
    */
-  private hasDashAbility = true;
+  private hasDashAbility = false;
 
   /**
    * The Player has the gun range weapon
@@ -693,7 +700,7 @@ export class Player extends SpriteCollidable {
       frameHeight: TILE_SIZE * 3
     };
 
-    // TODO: assemble everythings into a Sprite Atlas
+    // TODO: assemble everything into a Sprite Atlas
     scene.load
       .spritesheet(
         'hero_idle_center',
@@ -1007,14 +1014,11 @@ export class Player extends SpriteCollidable {
       // Handle all the movement along the x axis
       this.walk();
 
-      // Handle all the movement along the x axis
+      // Handle the dash action
       this.dash();
 
       // Handle the hang action
       this.hang();
-
-      // Handle all the movement along the x axis
-      this.climb();
 
       // Handle the player body resizing
       this.resizeBody();
@@ -1267,23 +1271,87 @@ export class Player extends SpriteCollidable {
       }
     }
 
-    // If the user is pressing jump button
-    if (isJumpPress) {
+    let isClimbing = false;
+    if (this.isHanging) {
+      if (!this.isPressingJump) {
+        const isUpPress: boolean = this.scene
+          .getController()
+          .isKeyPressed(ControllerKey.UP);
+
+        isClimbing = (isUpPress || isJumpPress);
+
+        if (isClimbing) {
+          this.climb(TILE_SIZE, TILE_SIZE * 2);
+        }
+      }
+    } else if (isJumpPress) {
       // If the Player is touching the floor and the key has been release
       if (this.body.onFloor() && !this.isPressingJump) {
-        // The Player is actually jumping
-        this.isJumping = true;
+        if (this.body.blocked.right || this.body.blocked.left) {
+          const bounds: Phaser.Geom.Rectangle = this.getBodyBounds();
+          let hasFreeUpperTile!: Phaser.Tilemaps.Tile;
+          let hasTileOnFoot!: Phaser.Tilemaps.Tile;
 
-        const velocity = Math.abs(this.body.velocity.x);
-        this.isStandingJumping = velocity <= TILE_SIZE * 2;
-        if (this.isStandingJumping) {
-          this.setMaxVelocity(
-            this.getStandingRunSpeed(),
-            this.getMaxJumpSpeed()
-          );
+          const isLeft = this.body.blocked.left;
+          const x = isLeft
+            ? bounds.centerX - TILE_SIZE
+            : bounds.centerX + TILE_SIZE;
+
+          const xTile = Math.floor(x / TILE_SIZE);
+
+          let layers: Phaser.Tilemaps.DynamicTilemapLayer[] = this.scene.worldLayer;
+          if (!Array.isArray(layers)) {
+            layers = [layers];
+          }
+
+          const bottom = Math.floor((bounds.centerY - 1) / TILE_SIZE);
+
+          for (const layer of layers) {
+            if (hasFreeUpperTile) {
+              break;
+            }
+
+            hasFreeUpperTile = this.scene.map.getTileAt(
+              xTile,
+              bottom,
+              undefined,
+              layer
+            );
+          }
+
+          for (const layer of layers) {
+            if (hasTileOnFoot) {
+              break;
+            }
+
+            hasTileOnFoot = this.scene.map.getTileAt(
+              xTile,
+              bottom + 1,
+              undefined,
+              layer
+            );
+          }
+
+          isClimbing = (!hasFreeUpperTile && hasTileOnFoot);
         }
 
-        this.setVelocityY(this.getJumpSpeed());
+        if (!isClimbing) {
+          // The Player is actually jumping
+          this.isJumping = true;
+
+          const velocity = Math.abs(this.body.velocity.x);
+          this.isStandingJumping = velocity <= TILE_SIZE * 2;
+          if (this.isStandingJumping) {
+            this.setMaxVelocity(
+              this.getStandingRunSpeed(),
+              this.getMaxJumpSpeed()
+            );
+          }
+
+          this.setVelocityY(this.getJumpSpeed());
+        } else {
+          this.climb(TILE_SIZE, TILE_SIZE);
+        }
       } else if (
         // First check if Player has unlocked double jump
         this.hasDoubleJumpAbility
@@ -1321,6 +1389,8 @@ export class Player extends SpriteCollidable {
       );
     }
 
+    this.isClimbing = isClimbing;
+
     // Check if the user is actually holding the key
     this.isPressingJump = isJumpPress;
 
@@ -1335,8 +1405,12 @@ export class Player extends SpriteCollidable {
 
     // Detect if the Player is jumping by checking if his y speed is negative
     if (this.body.velocity.y < 0) {
+      // Test if the user is pressing the button 'A'
+      const isUpPress: boolean = this.scene
+        .getController()
+        .isKeyPressed(ControllerKey.UP);
       // Detect if the user is not pressing the button to jump
-      if (!isJumpPress && !this.isClimbing) {
+      if (!isJumpPress && !this.isClimbing && !isUpPress) {
         // The Player is able to perform a double jump
         this.canDoubleJump = true;
 
@@ -1509,64 +1583,29 @@ export class Player extends SpriteCollidable {
     }
   }
 
-  protected climb(): void {
-    let hasFreeUpperTile!: Phaser.Tilemaps.Tile;
-    let hasTileOnFoot!: Phaser.Tilemaps.Tile;
+  protected climb(x: number, y?: number): void {
+    const x1: number = x;
+    let y1: number | undefined = y;
 
-    if (this.hasHangAbility) {
-      if (this.body.velocity.y === 0
-        && (this.body.blocked.right
-          || this.body.blocked.left)
-      ) {
-        const bounds: Phaser.Geom.Rectangle = this.getBodyBounds();
+    if (typeof y === 'undefined') {
+      y1 = x1;
+    }
 
-        const isLeft = this.body.blocked.left;
-        const x = isLeft
-          ? bounds.centerX - TILE_SIZE
-          : bounds.centerX + TILE_SIZE;
+    this.canInteract = false;
 
-        const xTile = Math.floor(x / TILE_SIZE);
-
-        let layers: Phaser.Tilemaps.DynamicTilemapLayer[] = this.scene.worldLayer;
-        if (!Array.isArray(layers)) {
-          layers = [layers];
-        }
-
-        const bottom = Math.floor((bounds.centerY - 1) / TILE_SIZE);
-
-        for (const layer of layers) {
-          if (hasFreeUpperTile) {
-            break;
-          }
-
-          hasFreeUpperTile = this.scene.map.getTileAt(
-            xTile,
-            bottom,
-            undefined,
-            layer
-          );
-        }
-
-        for (const layer of layers) {
-          if (hasTileOnFoot) {
-            break;
-          }
-
-          hasTileOnFoot = this.scene.map.getTileAt(
-            xTile,
-            bottom + 1,
-            undefined,
-            layer
-          );
-        }
+    const sign: string = this.facing.x === DirectionAxisX.LEFT ? '-' : '+';
+    const tween = this.scene.tweens.add({
+      targets: this,
+      ease: 'Linear',
+      duration: 150,
+      repeat: 0,
+      yoyo: false,
+      x: `${sign}=${x1}`,
+      y: `-=${y1}`,
+      onComplete: () => {
+        this.canInteract = true;
       }
-    }
-
-    this.isClimbing = (!hasFreeUpperTile && hasTileOnFoot);
-
-    if (this.isClimbing) {
-      this.setVelocityY(-TILE_SIZE * 100);
-    }
+    });
   }
 
   /**
@@ -1663,7 +1702,7 @@ export class Player extends SpriteCollidable {
 
     // The user have to press Shot button and the player should not facing front
     if (isShootPress && this.facing.x !== DirectionAxisX.CENTER) {
-      // Test which weapon the player has and if is single or with rateo
+      // Test which weapon the player has and if is single or with rate
       const bulletPosition = new Phaser.Math.Vector2(
         this.x + (this.width / 2) * (this.facing.x === DirectionAxisX.RIGHT ? 1 : -1),
         this.getShotHeight()
@@ -1809,9 +1848,9 @@ export class Player extends SpriteCollidable {
     }
   }
 
-  public getJumpSpeed(applyMultlipier = true): number {
+  public getJumpSpeed(applyMultiplier = true): number {
     return -this.baseSpeed
-    * (applyMultlipier ? this.getJumpSpeedMultiplier() : 1);
+    * (applyMultiplier ? this.getJumpSpeedMultiplier() : 1);
   }
 
   protected getJumpSpeedMultiplier(): number {
@@ -1899,7 +1938,7 @@ export class Player extends SpriteCollidable {
   }
 
   /**
-   * Calculate the y coordinate where the bullet should spaw
+   * Calculate the y coordinate where the bullet should spawn
    *
    * @return {number} The calculated Y coordinate
    */
@@ -1923,7 +1962,7 @@ export class Player extends SpriteCollidable {
   }
 
   /**
-   * Calculate the y coordinate where the bullet should spaw
+   * Calculate the y coordinate where the bullet should spawn
    *
    * @return {number} The calculated Y coordinate
    */
