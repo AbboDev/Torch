@@ -135,6 +135,13 @@ export class Player extends SpriteCollidable {
   private facing: Facing;
 
   /**
+   * Where the Player is aiming
+   *
+   * @type {Facing}
+   */
+  private facingForAim: Facing;
+
+  /**
    * Where the Player was watching
    *
    * @type {Facing}
@@ -556,6 +563,10 @@ export class Player extends SpriteCollidable {
     this.currentRoom = currentRoom;
 
     this.facing = {
+      y: DirectionAxisY.MIDDLE,
+      x: DirectionAxisX.CENTER
+    };
+    this.facingForAim = {
       y: DirectionAxisY.MIDDLE,
       x: DirectionAxisX.CENTER
     };
@@ -1010,6 +1021,7 @@ export class Player extends SpriteCollidable {
     super.update();
 
     this.previousFacing = { ...this.facing };
+
     this.lastBattery = this.battery;
 
     if (this.canInteract) {
@@ -1169,12 +1181,15 @@ export class Player extends SpriteCollidable {
 
     if (isUpPressed || (isAimPress && !this.isAimingDiagonal)) {
       this.facing.y = DirectionAxisY.UP;
+      this.facingForAim.y = DirectionAxisY.UP;
     } else if (isDownPressed
       && (this.body.velocity.y !== 0 || isAimPress || isAimingWhileMoving)
     ) {
       this.facing.y = DirectionAxisY.DOWN;
+      this.facingForAim.y = DirectionAxisY.DOWN;
     } else if (!this.isAimingDiagonal) {
       this.facing.y = DirectionAxisY.MIDDLE;
+      this.facingForAim.y = DirectionAxisY.MIDDLE;
     }
 
     this.isAimingDiagonal = isAimPress || isAimingWhileMoving;
@@ -1460,6 +1475,16 @@ export class Player extends SpriteCollidable {
     if (isRightPress || isLeftPress) {
       this.canCrouch = false;
       this.isCrouch = false;
+    }
+
+    if (isRightPress && !isLeftPress) {
+      this.facingForAim.x = DirectionAxisX.RIGHT;
+    } else if (isLeftPress && !isRightPress) {
+      this.facingForAim.x = DirectionAxisX.LEFT;
+    }
+
+    if (this.isHanging) {
+      return;
     }
 
     if (isRightPress && !isLeftPress) {
@@ -1768,15 +1793,15 @@ export class Player extends SpriteCollidable {
       .isKeyPressed(ControllerKey.B);
 
     // The user have to press Shot button and the player should not facing front
-    if (isShootPress && this.facing.x !== DirectionAxisX.CENTER) {
+    if (isShootPress && this.facingForAim.x !== DirectionAxisX.CENTER) {
       // Test which weapon the player has and if is single or with rate
       const bulletPosition = new Phaser.Math.Vector2(
-        this.x + (this.width / 2) * (this.facing.x === DirectionAxisX.RIGHT ? 1 : -1),
+        this.x + (this.width / 2) * (this.facingForAim.x === DirectionAxisX.RIGHT ? 1 : -1),
         this.getShotHeight()
       );
 
       const config: BulletConfig = {
-        facing: this.facing,
+        facing: this.facingForAim,
         diagonal: this.isAimingDiagonal,
         position: bulletPosition
       };
