@@ -24,6 +24,13 @@ export abstract class MapScene extends ControlScene {
   public oneWayCollisionsLayer!: Phaser.Tilemaps.DynamicTilemapLayer;
 
   /**
+   * The tilemap layer where all the stairs will be implemented
+   *
+   * @type {Phaser.Tilemaps.DynamicTilemapLayer}
+   */
+  public stairsLayer!: Phaser.Tilemaps.DynamicTilemapLayer;
+
+  /**
    * The tilemap layer where all the liquids will be implemented
    *
    * @type {Phaser.Tilemaps.DynamicTilemapLayer}

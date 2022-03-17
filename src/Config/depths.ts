@@ -6,3 +6,4 @@ export const BELOW_LAYER_DEPTH = 1;
 export const ABOVE_LAYER_DEPTH = 1000;
 export const GLOBAL_ABOVE_LAYER_DEPTH = 2000;
 export const WORLD_LAYER_DEPTH = 999;
+export const STAIRS_LAYER_DEPTH = 9;

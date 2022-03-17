@@ -518,6 +518,20 @@ export class Player extends SpriteCollidable {
   public isSwimming = false;
 
   /**
+   * Determinate if Player is near a ladder
+   *
+   * @type {boolean}
+   */
+  public isOnLadder = false;
+
+  /**
+   * Determinate if Player is grabbing a ladder
+   *
+   * @type {boolean}
+   */
+  public isAttachOnLadder = false;
+
+  /**
    * The timer which apply damage from liquids
    *
    * @type {Phaser.Time.TimerEvent}
@@ -1019,6 +1033,9 @@ export class Player extends SpriteCollidable {
 
       // Handle the hang action
       this.hang();
+
+      // Handle the ladders climb action
+      this.climbLadders();
 
       // Handle the player body resizing
       this.resizeBody();
@@ -1583,6 +1600,56 @@ export class Player extends SpriteCollidable {
     }
   }
 
+  protected climbLadders(): void {
+    this.isOnLadder = this.scene.physics
+      .overlap(
+        this,
+        this.scene.stairsLayer,
+        undefined,
+        (hero, object: unknown) => {
+          const ladder = object as Phaser.Tilemaps.Tile;
+
+          return ladder.index > -1;
+        }
+      );
+
+    const isDownPressed: boolean = this.scene
+      .getController()
+      .isKeyPressed(ControllerKey.DOWN);
+
+    const isUpPressed: boolean = this.scene
+      .getController()
+      .isKeyPressed(ControllerKey.UP);
+
+    if (this.isOnLadder) {
+      if (this.body.onFloor()) {
+        if (this.isAttachOnLadder) {
+          this.isAttachOnLadder = false;
+        }
+      }
+
+      if (isUpPressed || isDownPressed) {
+        const speed = isDownPressed ? 1 : -1;
+        this.setVelocityY(this.getLadderClimbSpeed() * speed);
+
+        this.isAttachOnLadder = true;
+      }
+    } else {
+      this.isAttachOnLadder = false;
+    }
+
+    if (this.isAttachOnLadder) {
+      this.setGravity(0);
+      this.body.setAllowGravity(false);
+
+      if (!isUpPressed && !isDownPressed) {
+        this.setVelocityY(0);
+      }
+    } else {
+      this.body.setAllowGravity(true);
+    }
+  }
+
   protected climb(x: number, y?: number): void {
     const x1: number = x;
     let y1: number | undefined = y;
@@ -1594,7 +1661,7 @@ export class Player extends SpriteCollidable {
     this.canInteract = false;
 
     const sign: string = this.facing.x === DirectionAxisX.LEFT ? '-' : '+';
-    const tween = this.scene.tweens.add({
+    this.scene.tweens.add({
       targets: this,
       ease: 'Linear',
       duration: 150,
@@ -1885,6 +1952,10 @@ export class Player extends SpriteCollidable {
 
   public getStandingRunSpeed(): number {
     return TILE_SIZE * 4;
+  }
+
+  public getLadderClimbSpeed(): number {
+    return TILE_SIZE * 3;
   }
 
   public getDashSpeed(): number {

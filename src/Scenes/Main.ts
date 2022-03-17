@@ -11,6 +11,7 @@ import {
   BELOW_LAYER_DEPTH,
   ABOVE_LAYER_DEPTH,
   WORLD_LAYER_DEPTH,
+  STAIRS_LAYER_DEPTH,
   GLOBAL_ABOVE_LAYER_DEPTH
 } from 'Config/depths';
 import { DEFAULT_LIGHT } from 'Config/lights';
@@ -73,6 +74,10 @@ export class Main extends MapScene {
 
     this.frontLayer = this.map.createStaticLayer('global_frontground', tileset, 0, 0)
       .setDepth(GLOBAL_ABOVE_LAYER_DEPTH)
+      .setPipeline('Light2D');
+
+    this.stairsLayer = this.map.createDynamicLayer('stairs', tileset, 0, 0)
+      .setDepth(STAIRS_LAYER_DEPTH)
       .setPipeline('Light2D');
 
     this.liquidsLayer = this.map.createDynamicLayer('liquids', [liquidTileset, fullLiquidTileset], 0, 0)
