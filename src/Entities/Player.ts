@@ -1552,6 +1552,17 @@ export class Player extends SpriteCollidable {
   protected hang(): void {
     if (this.hasHangAbility) {
       if (this.body.velocity.y !== 0 || this.isHanging) {
+        const isDownPress: boolean = this.scene
+          .getController()
+          .isKeyPressed(ControllerKey.DOWN);
+
+        // If the Player is hanging from a tile, he can jump down
+        if (isDownPress) {
+          this.isHanging = false;
+          this.body.setAllowGravity(true);
+          return;
+        }
+
         let hitbox!: Hitbox;
         let isTouchingTiles = false;
         let hasTileOnHand = false;
