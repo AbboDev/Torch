@@ -120,13 +120,28 @@ export class Hitbox extends Phaser.GameObjects.Rectangle {
    * @param  {AreaPosition} area The portion of a tile to consider
    * @return {boolean}           True if the hitbox is perfectly inside the area
    */
-  public overlapTilesArea(area: AreaPosition): boolean {
-    let layers: Phaser.Tilemaps.DynamicTilemapLayer[] = this.scene.worldLayer;
-    if (!Array.isArray(layers)) {
-      layers = [layers];
+  public overlapTilesArea(
+    area: AreaPosition,
+    layers?: Phaser.Tilemaps.DynamicTilemapLayer[] | Phaser.Tilemaps.DynamicTilemapLayer,
+    precision: boolean = true
+  ): boolean {
+    let layersToDetect: Phaser.Tilemaps.DynamicTilemapLayer[];
+
+    if (layers) {
+      if (!Array.isArray(layers)) {
+        layersToDetect = [layers];
+      } else {
+        layersToDetect = layers;
+      }
+    } else {
+      layersToDetect = this.scene.worldLayer;
     }
 
-    for (const layer of layers) {
+    if (!Array.isArray(layersToDetect)) {
+      layersToDetect = [layersToDetect];
+    }
+
+    for (const layer of layersToDetect) {
       const overlap = this.scene.physics.overlap(
         this,
         layer,
@@ -195,7 +210,11 @@ export class Hitbox extends Phaser.GameObjects.Rectangle {
 
             const rectangle = new Phaser.Geom.Rectangle(x, y, width, height);
 
-            return Phaser.Geom.Rectangle.ContainsRect(rectangle, hitboxBounds);
+            if (precision) {
+              return Phaser.Geom.Rectangle.ContainsRect(rectangle, hitboxBounds);
+            }
+
+            return Phaser.Geom.Rectangle.Overlaps(rectangle, hitboxBounds);
           }
 
           return false;

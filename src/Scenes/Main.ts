@@ -78,7 +78,13 @@ export class Main extends MapScene {
 
     this.stairsLayer = this.map.createDynamicLayer('stairs', tileset, 0, 0)
       .setDepth(STAIRS_LAYER_DEPTH)
-      .setPipeline('Light2D');
+      .setPipeline('Light2D')
+      .setCollisionByProperty({ collides: true })
+      .renderDebug(this.collisionDebugGraphics, {
+        tileColor: null,
+        collidingTileColor: new Phaser.Display.Color(134, 243, 134, 255),
+        faceColor: new Phaser.Display.Color(40, 39, 37, 255)
+      });
 
     this.liquidsLayer = this.map.createDynamicLayer('liquids', [liquidTileset, fullLiquidTileset], 0, 0)
       .setDepth(WORLD_LAYER_DEPTH)

@@ -228,6 +228,7 @@ export abstract class MapScene extends ControlScene {
     return [
       this.collisionsLayer,
       this.oneWayCollisionsLayer,
+      this.stairsLayer,
       this.breakablesLayer
     ];
   }

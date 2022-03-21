@@ -469,6 +469,13 @@ export class Player extends SpriteCollidable {
   private rightHangHitbox: Hitbox;
 
   /**
+   * The hitbox dedicated to detect if there's a ladder under Player feet
+   *
+   * @type {Hitbox}
+   */
+  private ladderHitbox: Hitbox;
+
+  /**
    * The current room number
    *
    * @type {number}
@@ -635,6 +642,14 @@ export class Player extends SpriteCollidable {
       bounds.right + Player.WALL_DETECTION_DISTANCE / 2 + 1,
       bounds.top + Player.WALL_DETECTION_DISTANCE / 2 + 1,
       Player.WALL_DETECTION_DISTANCE,
+      Player.WALL_DETECTION_DISTANCE
+    );
+
+    this.ladderHitbox = new Hitbox(
+      this.scene,
+      bounds.centerX,
+      bounds.bottom + Player.WALL_DETECTION_DISTANCE / 2 + 1,
+      this.body.width,
       Player.WALL_DETECTION_DISTANCE
     );
 
@@ -1637,6 +1652,12 @@ export class Player extends SpriteCollidable {
   }
 
   protected climbLadders(): void {
+    const isOnTopOfLadder = this.ladderHitbox.overlapTilesArea(
+      AreaPosition.TOP_HALF,
+      this.scene.stairsLayer,
+      false
+    );
+
     this.isOnLadder = this.scene.physics
       .overlap(
         this,
@@ -1657,14 +1678,17 @@ export class Player extends SpriteCollidable {
       .getController()
       .isKeyPressed(ControllerKey.UP);
 
-    if (this.isOnLadder) {
-      if (this.body.onFloor()) {
+    if (this.isOnLadder || isOnTopOfLadder) {
+      if (this.body.onFloor() || !this.isOnLadder) {
         if (this.isAttachOnLadder) {
           this.isAttachOnLadder = false;
         }
       }
 
-      if (isUpPressed || isDownPressed) {
+      if (isDownPressed
+        || (isUpPressed
+          && this.isOnLadder)
+      ) {
         const speed = isDownPressed ? 1 : -1;
         this.setVelocityY(this.getLadderClimbSpeed() * speed);
 
@@ -1931,6 +1955,12 @@ export class Player extends SpriteCollidable {
       bounds.top + Player.WALL_DETECTION_DISTANCE / 2 + 1
     );
 
+    this.ladderHitbox.alignToParent(
+      this,
+      bounds.centerX,
+      bounds.bottom + Player.WALL_DETECTION_DISTANCE / 2 + 1
+    );
+
     this.torchLight.setPosition(bounds.centerX, bounds.centerY);
   }
 
@@ -2137,9 +2167,24 @@ export class Player extends SpriteCollidable {
     switch (tile.layer.name) {
       case 'platforms':
         if (tile.index >= 0) {
-          const bounds = this.getBodyBounds();
+          const bounds: Phaser.Geom.Rectangle = this.getBodyBounds();
           if (bounds.bottom - 1 < tile.pixelY) {
             return true;
+          }
+        }
+        return false;
+      case 'stairs':
+        if (tile.index >= 0) {
+          const isDownPressed: boolean = this.scene
+            .getController()
+            .isKeyPressed(ControllerKey.DOWN);
+
+          const bounds: Phaser.Geom.Rectangle = this.getBodyBounds();
+          const adjacentTile: Phaser.Tilemaps.Tile | null = this.scene.map
+            .getTileAt(tile.x, tile.y - 1, false, 'stairs');
+
+          if (bounds.bottom - 1 < tile.pixelY && !adjacentTile) {
+            return !isDownPressed;
           }
         }
         return false;
