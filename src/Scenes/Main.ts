@@ -1,9 +1,12 @@
 import * as Phaser from 'phaser';
 import { MapScene } from 'Scenes/MapScene';
+import { ControllerKey } from 'Miscellaneous';
 import {
-  ControllerKey,
-  TiledObject
-} from 'Miscellaneous';
+  TiledObject,
+  TiledObjectProperty,
+  Platform,
+  PlatformDirection
+} from 'Entities/Scenarios';
 import { Player } from 'Entities/Player';
 
 import {
@@ -120,6 +123,19 @@ export class Main extends MapScene {
         faceColor: new Phaser.Display.Color(40, 39, 37, 255)
       });
 
+    this.map.getObjectLayer('scenario_elements').objects
+      .forEach((object: TiledObject) => {
+        if (object.type === 'platform') {
+          const platform = new Platform(
+            this,
+            object.x!,
+            object.y!,
+            object.properties!
+          );
+          this.platforms.add(platform);
+        }
+      });
+
     this.physics.world.setBounds(0, 0, this.map.widthInPixels, this.map.heightInPixels);
 
     const x: number = this.spawnPoint.x || 0;
@@ -142,6 +158,8 @@ export class Main extends MapScene {
     this.setupRoom(this.rooms[roomNumber]);
 
     this.sys.animatedTiles.init(this.map);
+
+    this.physics.add.collider(this.hero, this.platforms);
   }
 
   public update(time: any, delta: number): void {

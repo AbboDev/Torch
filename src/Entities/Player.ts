@@ -34,49 +34,49 @@ export class Player extends SpriteCollidable {
    *
    * @type {Number}
    */
-  private _life = 99;
+  private _life: number = 99;
 
   /**
    * Maximum health points
    *
    * @type {Number}
    */
-  private _maxLife = 99;
+  private _maxLife: number = 99;
 
   /**
    * Current ammo
    *
    * @type {Number}
    */
-  private _ammo = 30;
+  private _ammo: number = 30;
 
   /**
    * Maximum ammo
    *
    * @type {Number}
    */
-  private _maxAmmo = 30;
+  private _maxAmmo: number = 30;
 
   /**
    * Current battery level
    *
    * @type {Number}
    */
-  private _battery = 0;
+  private _battery: number = 0;
 
   /**
    * Last battery level
    *
    * @type {Number}
    */
-  public lastBattery = 0;
+  public lastBattery: number = 0;
 
   /**
    * Maximum battery level
    *
    * @type {Number}
    */
-  private _maxBattery = 99;
+  private _maxBattery: number = 99;
 
   /**
    * The timeout after which the battery start recharging
@@ -154,7 +154,7 @@ export class Player extends SpriteCollidable {
    *
    * @type {Boolean}
    */
-  private isAimingDiagonal = false;
+  private isAimingDiagonal: boolean = false;
 
   /**
    * If the Player was aiming diagonally
@@ -162,70 +162,70 @@ export class Player extends SpriteCollidable {
    *
    * @type {Boolean}
    */
-  private wasAimingDiagonal = false;
+  private wasAimingDiagonal: boolean = false;
 
   /**
    * The Player is jumping
    *
    * @type {Boolean}
    */
-  private isJumping = false;
+  private isJumping: boolean = false;
 
   /**
    * The Player is jumping
    *
    * @type {Boolean}
    */
-  private isStandingJumping = false;
+  private isStandingJumping: boolean = false;
 
   /**
    * The Player is falling
    *
    * @type {Boolean}
    */
-  private isFalling = false;
+  private isFalling: boolean = false;
 
   /**
    * The Player is climbing a tile
    *
    * @type {Boolean}
    */
-  private isClimbing = false;
+  private isClimbing: boolean = false;
 
   /**
    * The Player was climbing a tile
    *
    * @type {Boolean}
    */
-  private wasClimbing = false;
+  private wasClimbing: boolean = false;
 
   /**
    * The Player can now perform the double jump
    *
    * @type {Boolean}
    */
-  private canDoubleJump = false;
+  private canDoubleJump: boolean = false;
 
   /**
    * The Player had actually performed the double jump
    *
    * @type {Boolean}
    */
-  private hasDoneDoubleJump = false;
+  private hasDoneDoubleJump: boolean = false;
 
   /**
    * The Player can now perform a wall jump
    *
    * @type {Boolean}
    */
-  private canWallJump = false;
+  private canWallJump: boolean = false;
 
   /**
    * The Player had actually performed the wall jump
    *
    * @type {Boolean}
    */
-  private hasDoneWallJump = false;
+  private hasDoneWallJump: boolean = false;
 
   /**
    * Check if the user had previously
@@ -233,7 +233,7 @@ export class Player extends SpriteCollidable {
    *
    * @type {Boolean}
    */
-  private isPressingJump = false;
+  private isPressingJump: boolean = false;
 
   /**
    * Check if the user had previously
@@ -241,7 +241,7 @@ export class Player extends SpriteCollidable {
    *
    * @type {Boolean}
    */
-  private isPressingShot = false;
+  private isPressingShot: boolean = false;
 
   /**
    * Check if the user had previously
@@ -249,189 +249,189 @@ export class Player extends SpriteCollidable {
    *
    * @type {Boolean}
    */
-  private isPressingDash = false;
+  private isPressingDash: boolean = false;
 
   /**
    * The Player has the torch
    *
    * @type {Boolean}
    */
-  private hasTorchAbility = true;
+  private hasTorchAbility: boolean = true;
 
   /**
    * The Player has obtained the battery
    *
    * @type {Boolean}
    */
-  private hasBattery = true;
+  private hasBattery: boolean = true;
 
   /**
    * The Player has the ability to do the double jump
    *
    * @type {Boolean}
    */
-  private hasDoubleJumpAbility = false;
+  private hasDoubleJumpAbility: boolean = false;
 
   /**
    * The Player has the ability to perform an high jump
    *
    * @type {Boolean}
    */
-  private hasHighJumpAbility = false;
+  private hasHighJumpAbility: boolean = false;
 
   /**
    * The Player has the ability to perform a wall jump
    *
    * @type {Boolean}
    */
-  private hasWallJumpAbility = false;
+  private hasWallJumpAbility: boolean = false;
 
   /**
    * The Player has the ability to run quickly
    *
    * @type {Boolean}
    */
-  private hasBoostedRunAbility = false;
+  private hasBoostedRunAbility: boolean = false;
 
   /**
    * The Player has the ability to move normally into liquid
    *
    * @type {Boolean}
    */
-  private hasSwimAbility = false;
+  private hasSwimAbility: boolean = false;
 
   /**
    * The Player has the ability to hang to cliffs
    *
    * @type {Boolean}
    */
-  private hasHangAbility = true;
+  private hasHangAbility: boolean = true;
 
   /**
    * The Player has the ability to make an horizontal dash
    *
    * @type {Boolean}
    */
-  private hasDashAbility = false;
+  private hasDashAbility: boolean = false;
 
   /**
    * The Player has the gun range weapon
    *
    * @type {Boolean}
    */
-  private hasGunAbility = true;
+  private hasGunAbility: boolean = true;
 
   /**
    * The Player has the rifle range weapon
    *
    * @type {Boolean}
    */
-  private hasRifleAbility = false;
+  private hasRifleAbility: boolean = false;
 
   /**
    * The Player has the bow range weapon
    *
    * @type {Boolean}
    */
-  private hasBowAbility = false;
+  private hasBowAbility: boolean = false;
 
   /**
    * Default multiplier of jump speed
    *
    * @type {Number}
    */
-  static JUMP_SPEED_MULTIPLIER = 1.25;
+  static JUMP_SPEED_MULTIPLIER: number = 1.25;
 
   /**
    * Multiplier of jump speed offers by dedicated powerup
    *
    * @type {Number}
    */
-  static WALL_JUMP_SPEED_MULTIPLIER = 1.1;
+  static WALL_JUMP_SPEED_MULTIPLIER: number = 1.1;
 
   /**
    * Multiplier of jump speed offers by dedicated powerup
    *
    * @type {Number}
    */
-  static HIGH_JUMP_SPEED_MULTIPLIER = 1.5;
+  static HIGH_JUMP_SPEED_MULTIPLIER: number = 1.5;
 
   /**
    * Default multiplier of run speed
    *
    * @type {Number}
    */
-  static RUN_SPEED_MULTIPLIER = 0.75;
+  static RUN_SPEED_MULTIPLIER: number = 0.75;
 
   /**
    * Multiplier of dash speed offers by dedicated powerup
    *
    * @type {Number}
    */
-  static DASH_SPEED_MULTIPLIER = 2;
+  static DASH_SPEED_MULTIPLIER: number = 2;
 
   /**
    * Multiplier of run speed offers by dedicated powerup
    *
    * @type {Number}
    */
-  static BOOSTED_RUN_SPEED_MULTIPLIER = 1.5;
+  static BOOSTED_RUN_SPEED_MULTIPLIER: number = 1.5;
 
   /**
    * Multiplier of swim x speed when not active the dedicated powerup
    *
    * @type {Number}
    */
-  static SWIM_X_SPEED_MULTIPLIER = 0.5;
+  static SWIM_X_SPEED_MULTIPLIER: number = 0.5;
 
   /**
    * Multiplier of swim y speed when not active the dedicated powerup
    *
    * @type {Number}
    */
-  static SWIM_Y_SPEED_MULTIPLIER = 1;
+  static SWIM_Y_SPEED_MULTIPLIER: number = 1;
 
   /**
    * The max distance from wall where the player can yet perform a wall jump
    *
    * @type {Number}
    */
-  static WALL_DETECTION_DISTANCE = TILE_SIZE / 4;
+  static WALL_DETECTION_DISTANCE: number = TILE_SIZE / 4;
 
   /**
    * The Y position to subtract from current Y to spawn bullets
    *
    * @type {Number}
    */
-  static SHOT_HEIGHT = TILE_SIZE + 2;
+  static SHOT_HEIGHT: number = TILE_SIZE + 2;
 
   /**
    * The standard body width
    *
    * @type {Number}
    */
-  static BODY_WIDTH = TILE_SIZE;
+  static BODY_WIDTH: number = TILE_SIZE;
 
   /**
    * The standard body height
    *
    * @type {Number}
    */
-  static BODY_HEIGHT = TILE_SIZE * 2;
+  static BODY_HEIGHT: number = TILE_SIZE * 2;
 
   /**
    * The body width when it's crouch or jumping
    *
    * @type {Number}
    */
-  static BODY_SMALL_WIDTH = TILE_SIZE;
+  static BODY_SMALL_WIDTH: number = TILE_SIZE;
 
   /**
    * The body height when it's crouch or jumping
    *
    * @type {Number}
    */
-  static BODY_SMALL_HEIGHT = (Player.BODY_HEIGHT / 4) * 3;
+  static BODY_SMALL_HEIGHT: number = (Player.BODY_HEIGHT / 4) * 3;
 
   /**
    * The default movement speed based on game gravity
@@ -480,7 +480,7 @@ export class Player extends SpriteCollidable {
    *
    * @type {number}
    */
-  public currentRoom = 0;
+  public currentRoom: number = 0;
 
   /**
    * The previous room number
@@ -494,56 +494,56 @@ export class Player extends SpriteCollidable {
    *
    * @type {boolean}
    */
-  public canInteract = true;
+  public canInteract: boolean = true;
 
   /**
    * Determinate if Player is crouch
    *
    * @type {boolean}
    */
-  public isCrouch = false;
+  public isCrouch: boolean = false;
 
   /**
    * Determinate if Player can crouch
    *
    * @type {boolean}
    */
-  public canCrouch = true;
+  public canCrouch: boolean = true;
 
   /**
    * Determinate if Player has smaller collision box
    *
    * @type {boolean}
    */
-  public isBodySmall = false;
+  public isBodySmall: boolean = false;
 
   /**
    * Determinate if Player is hanging on a tile
    *
    * @type {boolean}
    */
-  public isHanging = false;
+  public isHanging: boolean = false;
 
   /**
    * Determinate if Player is swimming in a liquid
    *
    * @type {boolean}
    */
-  public isSwimming = false;
+  public isSwimming: boolean = false;
 
   /**
    * Determinate if Player is near a ladder
    *
    * @type {boolean}
    */
-  public isOnLadder = false;
+  public isOnLadder: boolean = false;
 
   /**
    * Determinate if Player is grabbing a ladder
    *
    * @type {boolean}
    */
-  public isAttachOnLadder = false;
+  public isAttachOnLadder: boolean = false;
 
   /**
    * The timer which apply damage from liquids
@@ -648,9 +648,9 @@ export class Player extends SpriteCollidable {
     this.ladderHitbox = new Hitbox(
       this.scene,
       bounds.centerX,
-      bounds.bottom + Player.WALL_DETECTION_DISTANCE / 2 + 1,
+      bounds.bottom,
       this.body.width,
-      Player.WALL_DETECTION_DISTANCE
+      2
     );
 
     this.torchLight = this.scene.lights
@@ -1274,7 +1274,7 @@ export class Player extends SpriteCollidable {
 
       // Perform wall jump only if the Player
       // is not on the ground and is touching only one wall
-      this.canWallJump = (!this.body.onFloor() && wallsCount.length === 1);
+      this.canWallJump = (!this.isOnFloor() && wallsCount.length === 1);
       this.hasDoneWallJump = false;
 
       if (this.canWallJump) {
@@ -1333,7 +1333,7 @@ export class Player extends SpriteCollidable {
       }
     } else if (isJumpPress) {
       // If the Player is touching the floor and the key has been release
-      if (this.body.onFloor() && !this.isPressingJump) {
+      if (this.isOnFloor() && !this.isPressingJump) {
         if (this.body.blocked.right || this.body.blocked.left) {
           const bounds: Phaser.Geom.Rectangle = this.getBodyBounds();
           let hasFreeUpperTile!: Phaser.Tilemaps.Tile;
@@ -1416,7 +1416,7 @@ export class Player extends SpriteCollidable {
 
         this.setVelocityY(this.getJumpSpeed());
       }
-    } else if (this.body.onFloor()) {
+    } else if (this.isOnFloor()) {
       // Reset everything if the player is touching the ground
       this.isFalling = false;
       this.isJumping = false;
@@ -1425,7 +1425,7 @@ export class Player extends SpriteCollidable {
       this.hasDoneDoubleJump = false;
     }
 
-    if (this.body.velocity.y === 0 && this.body.onFloor()) {
+    if (this.body.velocity.y === 0 && this.isOnFloor()) {
       this.isStandingJumping = false;
     }
 
@@ -1679,7 +1679,7 @@ export class Player extends SpriteCollidable {
       .isKeyPressed(ControllerKey.UP);
 
     if (this.isOnLadder || isOnTopOfLadder) {
-      if (this.body.onFloor() || !this.isOnLadder) {
+      if (this.isOnFloor() || !this.isOnLadder) {
         if (this.isAttachOnLadder) {
           this.isAttachOnLadder = false;
         }
@@ -1886,7 +1886,7 @@ export class Player extends SpriteCollidable {
   protected animate(): void {
     let action = '';
 
-    if (this.body.onFloor()) {
+    if (this.isOnFloor()) {
       if (this.isCrouch) {
         action = 'crouch_idle';
       } else if (this.body.velocity.x !== 0) {
@@ -1958,7 +1958,7 @@ export class Player extends SpriteCollidable {
     this.ladderHitbox.alignToParent(
       this,
       bounds.centerX,
-      bounds.bottom + Player.WALL_DETECTION_DISTANCE / 2 + 1
+      bounds.bottom
     );
 
     this.torchLight.setPosition(bounds.centerX, bounds.centerY);
@@ -2156,6 +2156,11 @@ export class Player extends SpriteCollidable {
       (this.width - (width as number)) * (1 - this.originX),
       (this.height - height) * (1 - this.originY)
     );
+  }
+
+  public isOnFloor(): boolean {
+    return this.body.onFloor()
+      || this.scene.physics.collide(this.ladderHitbox, this.scene.platforms);
   }
 
   protected testCollision(

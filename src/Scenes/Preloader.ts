@@ -27,6 +27,7 @@ export class Preloader extends Phaser.Scene {
       .image('life', '/assets/sprites/life.png')
       .image('ammo', '/assets/sprites/ammo.png')
       .image('battery', '/assets/sprites/battery.png')
+      .image('platform', 'assets/sprites/platform.png')
       .image('laboratory-back', [
         '/assets/images/backgrounds/laboratory/back.png',
         '/assets/images/backgrounds/laboratory/back_n.png'

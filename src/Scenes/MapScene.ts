@@ -1,10 +1,11 @@
 import * as Phaser from 'phaser';
 import { ControlScene } from 'Scenes';
+import { ControllerKey } from 'Miscellaneous';
 import {
-  ControllerKey,
   TiledObject,
-  TiledObjectProperty
-} from 'Miscellaneous';
+  TiledObjectProperty,
+  Platform
+} from 'Entities/Scenarios';
 
 import { DEFAULT_LIGHT } from 'Config/lights';
 
@@ -29,6 +30,13 @@ export abstract class MapScene extends ControlScene {
    * @type {Phaser.Tilemaps.DynamicTilemapLayer}
    */
   public stairsLayer!: Phaser.Tilemaps.DynamicTilemapLayer;
+
+  /**
+   * The group where all the moving platforms will be implemented
+   *
+   * @type {Phaser.GameObjects.Group}
+   */
+  public platforms!: Phaser.GameObjects.Group;
 
   /**
    * The tilemap layer where all the liquids will be implemented
@@ -122,6 +130,13 @@ export abstract class MapScene extends ControlScene {
       .setDepth(10000);
 
     this.rooms = [];
+
+    this.platforms = this.add.group({
+      active: true,
+      maxSize: -1,
+      runChildUpdate: true,
+      classType: Platform
+    });
   }
 
   public update(time: any, delta: number): void {
