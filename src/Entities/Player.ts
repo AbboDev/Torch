@@ -25,13 +25,6 @@ import { TILE_SIZE } from 'Config/tiles';
 
 export class Player extends SpriteCollidable {
   /**
-   * The Player Phaser body
-   *
-   * @type {Phaser.Physics.Arcade.Body}
-   */
-  declare public body: Phaser.Physics.Arcade.Body;
-
-  /**
    * Current health points
    *
    * @type {Number}
@@ -193,13 +186,6 @@ export class Player extends SpriteCollidable {
    * @type {Boolean}
    */
   private isClimbing: boolean = false;
-
-  /**
-   * The Player was climbing a tile
-   *
-   * @type {Boolean}
-   */
-  private wasClimbing: boolean = false;
 
   /**
    * The Player can now perform the double jump

@@ -3,6 +3,13 @@ import { MapScene } from 'Scenes';
 
 export abstract class SpriteCollidable extends Phaser.Physics.Arcade.Sprite {
   /**
+   * The Player Phaser body
+   *
+   * @type {Phaser.Physics.Arcade.Body}
+   */
+  declare public body: Phaser.Physics.Arcade.Body;
+
+  /**
    * A Sprite which collide with the map's tilemap
    *
    * @param {MapScene} scene   The current scene with map
