@@ -4,7 +4,7 @@ import { ItemSwitch } from 'HUD/ItemSwitch';
 import { DataScene } from 'Scenes';
 import { TILE_SIZE } from 'Config/tiles';
 
-export class Inventory extends DataScene {
+export class InventoryScene extends DataScene {
   private cursor!: Phaser.GameObjects.Triangle;
 
   private buttons: Phaser.GameObjects.Arc[] = [];

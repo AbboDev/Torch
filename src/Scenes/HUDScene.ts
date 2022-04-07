@@ -2,7 +2,7 @@ import * as Phaser from 'phaser';
 import { DataScene } from 'Scenes';
 import { TILE_SIZE } from 'Config/tiles';
 
-export class HUD extends DataScene {
+export class HUDScene extends DataScene {
   private life!: Phaser.GameObjects.Image;
 
   private lifeCounter!: Phaser.GameObjects.Text;

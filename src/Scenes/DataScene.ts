@@ -1,6 +1,6 @@
-import { ControlScene } from 'Scenes/ControlScene';
+import { ContinuousScene } from 'Scenes/ContinuousScene';
 
-export abstract class DataScene extends ControlScene {
+export abstract class DataScene extends ContinuousScene {
   public create(): void {
     super.create();
 

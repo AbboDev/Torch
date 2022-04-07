@@ -1,6 +1,6 @@
-import { ControlScene } from 'Scenes/ControlScene';
+import { ContinuousScene } from 'Scenes/ContinuousScene';
 
-export class Controller extends ControlScene {
+export class HandlerScene extends ContinuousScene {
   public constructor() {
     super({
       active: false,

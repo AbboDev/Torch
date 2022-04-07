@@ -1,10 +1,10 @@
 import * as Phaser from 'phaser';
 import {
-  Preloader,
-  Controller,
-  Main,
-  HUD,
-  Inventory
+  PreloaderScene,
+  HandlerScene,
+  MainScene,
+  HUDScene,
+  InventoryScene
 } from 'Scenes';
 
 import { TILE_SIZE } from 'Config/tiles';
@@ -25,11 +25,11 @@ const config: Phaser.Types.Core.GameConfig = {
   zoom: 1,
 
   scene: [
-    Preloader,
-    Controller,
-    Main,
-    HUD,
-    Inventory
+    PreloaderScene,
+    HandlerScene,
+    MainScene,
+    HUDScene,
+    InventoryScene
   ],
 
   plugins: {

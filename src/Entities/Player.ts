@@ -3,7 +3,9 @@ import {
   Facing,
   DirectionAxisY,
   DirectionAxisX,
-  ControllerKey
+  ControllerKey,
+  PowerUps,
+  Weapons
 } from 'Miscellaneous';
 import {
   Hitbox,
@@ -250,90 +252,6 @@ export class Player extends SpriteCollidable {
    * @type {Boolean}
    */
   private isPressingDash: boolean = false;
-
-  /**
-   * The Player has the torch
-   *
-   * @type {Boolean}
-   */
-  private hasTorchAbility: boolean = true;
-
-  /**
-   * The Player has obtained the battery
-   *
-   * @type {Boolean}
-   */
-  private hasBattery: boolean = true;
-
-  /**
-   * The Player has the ability to do the double jump
-   *
-   * @type {Boolean}
-   */
-  private hasDoubleJumpAbility: boolean = false;
-
-  /**
-   * The Player has the ability to perform an high jump
-   *
-   * @type {Boolean}
-   */
-  private hasHighJumpAbility: boolean = false;
-
-  /**
-   * The Player has the ability to perform a wall jump
-   *
-   * @type {Boolean}
-   */
-  private hasWallJumpAbility: boolean = false;
-
-  /**
-   * The Player has the ability to run quickly
-   *
-   * @type {Boolean}
-   */
-  private hasBoostedRunAbility: boolean = false;
-
-  /**
-   * The Player has the ability to move normally into liquid
-   *
-   * @type {Boolean}
-   */
-  private hasSwimAbility: boolean = false;
-
-  /**
-   * The Player has the ability to hang to cliffs
-   *
-   * @type {Boolean}
-   */
-  private hasHangAbility: boolean = true;
-
-  /**
-   * The Player has the ability to make an horizontal dash
-   *
-   * @type {Boolean}
-   */
-  private hasDashAbility: boolean = false;
-
-  /**
-   * The Player has the gun range weapon
-   *
-   * @type {Boolean}
-   */
-  private hasGunAbility: boolean = true;
-
-  /**
-   * The Player has the rifle range weapon
-   *
-   * @type {Boolean}
-   */
-  private hasRifleAbility: boolean = false;
-
-  /**
-   * The Player has the bow range weapon
-   *
-   * @type {Boolean}
-   */
-  private hasBowAbility: boolean = false;
 
   /**
    * Default multiplier of jump speed
@@ -655,7 +573,7 @@ export class Player extends SpriteCollidable {
 
     this.torchLight = this.scene.lights
       .addLight(bounds.centerX, bounds.centerY, TILE_SIZE * 8)
-      .setIntensity(this.hasTorchAbility ? 3 : 0)
+      .setIntensity(this.scene.getInventory().has(PowerUps.TORCH) ? 3 : 0)
       .setColor(0xffffdd);
 
     // TODO: activate after create normal maps for sprite
@@ -1103,7 +1021,7 @@ export class Player extends SpriteCollidable {
    */
   protected updateBattery(): void {
     // The Player should have at least the battery powerup
-    if (!this.hasBattery) {
+    if (!this.scene.getInventory().hasBattery()) {
       return;
     }
 
@@ -1267,7 +1185,7 @@ export class Player extends SpriteCollidable {
       .isKeyPressed(ControllerKey.A);
 
     // First check if Player has unlocked wall jump
-    if (this.hasWallJumpAbility) {
+    if (this.scene.getInventory().has(PowerUps.GLOVE)) {
       // Test if the Player is near walls
       const walls: boolean[] = this.isTouchingWalls() as boolean[];
       const wallsCount = walls.filter((wall) => wall);
@@ -1401,7 +1319,7 @@ export class Player extends SpriteCollidable {
         }
       } else if (
         // First check if Player has unlocked double jump
-        this.hasDoubleJumpAbility
+        this.scene.getInventory().has(PowerUps.ROCKET)
         // Then check if Player had already performed the action
         && !this.hasDoneDoubleJump
         // Finally check if Player can actually perform the action at the moment
@@ -1529,7 +1447,7 @@ export class Player extends SpriteCollidable {
       .getController()
       .isKeyPressed(ControllerKey.X);
 
-    if (this.hasDashAbility) {
+    if (this.scene.getInventory().has(PowerUps.DASH)) {
       const time = this.scene.getController().getKeyDuration(ControllerKey.X);
 
       if (time < 100
@@ -1565,7 +1483,7 @@ export class Player extends SpriteCollidable {
    * Handle the hang action
    */
   protected hang(): void {
-    if (this.hasHangAbility) {
+    if (this.scene.getInventory().has(PowerUps.HOOK)) {
       if (this.body.velocity.y !== 0 || this.isHanging) {
         const isDownPress: boolean = this.scene
           .getController()
@@ -1842,11 +1760,11 @@ export class Player extends SpriteCollidable {
       };
 
       let equippedWeapon: string | null = null;
-      if (this.hasGunAbility) {
+      if (this.scene.getInventory().carry(Weapons.GUN)) {
         equippedWeapon = 'gun';
-      } else if (this.hasRifleAbility) {
+      } else if (this.scene.getInventory().carry(Weapons.RIFLE)) {
         equippedWeapon = 'rifle';
-      } else if (this.hasBowAbility) {
+      } else if (this.scene.getInventory().carry(Weapons.BOW)) {
         equippedWeapon = 'bow';
       }
 
@@ -1987,19 +1905,19 @@ export class Player extends SpriteCollidable {
   }
 
   protected getJumpSpeedMultiplier(): number {
-    if (this.isSwimming && !this.hasSwimAbility) {
+    if (this.isSwimming && !this.scene.getInventory().has(PowerUps.FAN)) {
       return Player.SWIM_Y_SPEED_MULTIPLIER;
     }
 
-    if (this.hasWallJumpAbility && this.canWallJump) {
+    if (this.scene.getInventory().has(PowerUps.GLOVE) && this.canWallJump) {
       return Player.WALL_JUMP_SPEED_MULTIPLIER;
     }
 
-    if (this.hasDoubleJumpAbility && this.canDoubleJump) {
+    if (this.scene.getInventory().has(PowerUps.ROCKET) && this.canDoubleJump) {
       return Player.JUMP_SPEED_MULTIPLIER;
     }
 
-    if (this.hasHighJumpAbility) {
+    if (this.scene.getInventory().has(PowerUps.BOOTS)) {
       return Player.HIGH_JUMP_SPEED_MULTIPLIER;
     }
 
@@ -2011,7 +1929,7 @@ export class Player extends SpriteCollidable {
   }
 
   public getRunSpeed(): number {
-    return (this.isSwimming && !this.hasSwimAbility)
+    return (this.isSwimming && !this.scene.getInventory().has(PowerUps.FAN))
       ? this.baseSpeed * Player.SWIM_X_SPEED_MULTIPLIER
       : this.baseSpeed * 2;
   }
@@ -2033,11 +1951,11 @@ export class Player extends SpriteCollidable {
   }
 
   public getRunSpeedMultiplier(): number {
-    if (this.isSwimming && !this.hasSwimAbility) {
+    if (this.isSwimming && !this.scene.getInventory().has(PowerUps.FAN)) {
       return Player.SWIM_X_SPEED_MULTIPLIER;
     }
 
-    if (this.hasBoostedRunAbility) {
+    if (this.scene.getInventory().has(PowerUps.BOOSTER)) {
       return Player.BOOSTED_RUN_SPEED_MULTIPLIER;
     }
 
@@ -2115,9 +2033,9 @@ export class Player extends SpriteCollidable {
    * @return {boolean} [description]
    */
   public hasAtLeastOneRangeWeapon(): boolean {
-    return this.hasGunAbility
-    || this.hasRifleAbility
-    || this.hasBowAbility;
+    return this.scene.getInventory().carry(Weapons.GUN)
+    || this.scene.getInventory().carry(Weapons.RIFLE)
+    || this.scene.getInventory().carry(Weapons.BOW);
 
     // TODO: add all other weapons into the function
   }

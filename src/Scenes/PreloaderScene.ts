@@ -6,7 +6,7 @@ import {
   RifleBullet
 } from 'Entities/Bullets';
 
-export class Preloader extends Phaser.Scene {
+export class PreloaderScene extends Phaser.Scene {
   public constructor() {
     super({
       key: 'preloader',

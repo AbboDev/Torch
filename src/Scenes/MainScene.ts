@@ -3,9 +3,7 @@ import { MapScene } from 'Scenes/MapScene';
 import { ControllerKey } from 'Miscellaneous';
 import {
   TiledObject,
-  TiledObjectProperty,
-  Platform,
-  PlatformDirection
+  Platform
 } from 'Entities/Scenarios';
 import { Player } from 'Entities/Player';
 
@@ -20,7 +18,7 @@ import {
 import { DEFAULT_LIGHT } from 'Config/lights';
 import { TILE_SIZE } from 'Config/tiles';
 
-export class Main extends MapScene {
+export class MainScene extends MapScene {
   private hero!: Player;
 
   public constructor() {

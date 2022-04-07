@@ -1,5 +1,5 @@
 import * as Phaser from 'phaser';
-import { ControlScene } from 'Scenes';
+import { ContinuousScene } from 'Scenes';
 import { ControllerKey } from 'Miscellaneous';
 import {
   TiledObject,
@@ -9,7 +9,7 @@ import {
 
 import { DEFAULT_LIGHT } from 'Config/lights';
 
-export abstract class MapScene extends ControlScene {
+export abstract class MapScene extends ContinuousScene {
   /**
    * The main tilemap layer where all the collision will be implemented
    *
