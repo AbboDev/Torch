@@ -168,7 +168,7 @@ export class Controller {
   }
 
   /**
-   * Retrive the key if exist from symbolic string, otherwise return false
+   * Retrieve the key if exist from symbolic string, otherwise return false
    *
    * @param  {ControllerKey} key The requested key
    *
@@ -192,7 +192,7 @@ export class Controller {
    * Test if the requested key is currently press
    *
    * @param  {ControllerKey} key      The requested key
-   * @param  {number}        duration Eventualy test the duration of press
+   * @param  {number}        duration Eventually test the duration of press
    *
    * @return {boolean}                The check if the key is press or not
    */
