@@ -1,5 +1,10 @@
 import * as Phaser from 'phaser';
-import { ControllerKey } from 'Miscellaneous';
+import {
+  ControllerKey,
+  PowerUps,
+  Weapons,
+  Switch
+} from 'Miscellaneous';
 import { ItemSwitch } from 'HUD/ItemSwitch';
 import { DataScene } from 'Scenes';
 import { TILE_SIZE } from 'Config/tiles';
@@ -7,11 +12,9 @@ import { TILE_SIZE } from 'Config/tiles';
 export class InventoryScene extends DataScene {
   private cursor!: Phaser.GameObjects.Triangle;
 
-  private buttons: Phaser.GameObjects.Arc[] = [];
+  private buttons: [PowerUps | Weapons, ItemSwitch][] = [];
 
   private selectedButtonIndex = 0;
-
-  private mainScene!: Phaser.Scene;
 
   public constructor() {
     super({
@@ -67,106 +70,33 @@ export class InventoryScene extends DataScene {
       }
     });
 
-    const gunButton = new ItemSwitch(
-      this,
-      TILE_SIZE * 3,
-      TILE_SIZE * 2,
-      'TORCH GUN',
-      TILE_SIZE / 2
-    );
+    let previousY: number = TILE_SIZE * 2;
+    for (const [powerUp, key] of Object.entries(PowerUps)) {
+      const button = new ItemSwitch(
+        this,
+        TILE_SIZE * 3,
+        previousY,
+        powerUp,
+        this.getInventory().get(key)
+      );
 
-    const rifleButton = new ItemSwitch(
-      this,
-      TILE_SIZE * 3,
-      gunButton.y + TILE_SIZE * 1.5,
-      'TORCH RIFLE',
-      TILE_SIZE / 2
-    );
+      this.buttons.push([key, button]);
+      previousY = button.y + TILE_SIZE * 1.5;
+    }
 
-    const bowButton = new ItemSwitch(
-      this,
-      TILE_SIZE * 3,
-      rifleButton.y + TILE_SIZE * 1.5,
-      'TORCH BOW',
-      TILE_SIZE / 2
-    );
+    previousY = TILE_SIZE * 2;
+    for (const [weapon, key] of Object.entries(Weapons)) {
+      const button = new ItemSwitch(
+        this,
+        TILE_SIZE * 12,
+        previousY,
+        weapon,
+        this.getInventory().get(key)
+      );
 
-    const torchButton = new ItemSwitch(
-      this,
-      TILE_SIZE * 3,
-      bowButton.y + TILE_SIZE * 1.5,
-      'TORCH LIGHT',
-      TILE_SIZE / 2
-    );
-
-    const doubleJumpButton = new ItemSwitch(
-      this,
-      TILE_SIZE * 3,
-      torchButton.y + TILE_SIZE * 1.5,
-      'DOUBLE JUMP',
-      TILE_SIZE / 2
-    );
-
-    const highJumpButton = new ItemSwitch(
-      this,
-      TILE_SIZE * 3,
-      doubleJumpButton.y + TILE_SIZE * 1.5,
-      'HIGH JUMP',
-      TILE_SIZE / 2
-    );
-
-    const wallJumpButton = new ItemSwitch(
-      this,
-      TILE_SIZE * 3,
-      highJumpButton.y + TILE_SIZE * 1.5,
-      'WALL JUMP',
-      TILE_SIZE / 2
-    );
-
-    const boostedRunButton = new ItemSwitch(
-      this,
-      TILE_SIZE * 3,
-      wallJumpButton.y + TILE_SIZE * 1.5,
-      'BOOSTED RUN',
-      TILE_SIZE / 2
-    );
-
-    const swimButton = new ItemSwitch(
-      this,
-      TILE_SIZE * 3,
-      boostedRunButton.y + TILE_SIZE * 1.5,
-      'SWIM',
-      TILE_SIZE / 2
-    );
-
-    const hangButton = new ItemSwitch(
-      this,
-      TILE_SIZE * 3,
-      swimButton.y + TILE_SIZE * 1.5,
-      'HANG',
-      TILE_SIZE / 2
-    );
-
-    const dashButton = new ItemSwitch(
-      this,
-      TILE_SIZE * 3,
-      hangButton.y + TILE_SIZE * 1.5,
-      'DASH',
-      TILE_SIZE / 2
-    );
-
-    this.buttons.push(gunButton);
-    this.buttons.push(rifleButton);
-    this.buttons.push(bowButton);
-
-    this.buttons.push(torchButton);
-    this.buttons.push(doubleJumpButton);
-    this.buttons.push(highJumpButton);
-    this.buttons.push(wallJumpButton);
-    this.buttons.push(boostedRunButton);
-    this.buttons.push(swimButton);
-    this.buttons.push(hangButton);
-    this.buttons.push(dashButton);
+      this.buttons.push([key, button]);
+      previousY = button.y + TILE_SIZE * 1.5;
+    }
 
     this.selectButton(this.selectedButtonIndex);
 
@@ -215,7 +145,7 @@ export class InventoryScene extends DataScene {
       case 'maxBattery':
         break;
       default:
-        console.debug(key, data.toString());
+        // console.debug(key, data.toString());
         break;
     }
   }
@@ -234,19 +164,31 @@ export class InventoryScene extends DataScene {
   }
 
   private selectButton(index: number): void {
-    const currentButton = this.buttons[this.selectedButtonIndex];
+    const currentTuple: [PowerUps | Weapons, ItemSwitch] = this.buttons[this.selectedButtonIndex];
 
-    // // set the current selected button to a white tint
-    currentButton.setStrokeStyle(currentButton.lineWidth, 0xffffff);
+    if (currentTuple.length !== 2) {
+      throw new Error('Invalid tuple');
+    }
 
-    const button: Phaser.GameObjects.Arc = this.buttons[index];
+    const button: ItemSwitch = currentTuple[1];
+
+    // set the current selected button to a white tint
+    button.setStrokeStyle(button.lineWidth, 0xffffff);
+
+    const nextTuple: [PowerUps | Weapons, ItemSwitch] = this.buttons[index];
+
+    if (nextTuple.length !== 2) {
+      throw new Error('Invalid tuple');
+    }
+
+    const nextButton: ItemSwitch = nextTuple[1];
 
     // set the newly selected button to a green tint
-    button.setStrokeStyle(button.lineWidth, 0xefc53f);
+    nextButton.setStrokeStyle(button.lineWidth, 0xefc53f);
 
     // move the hand cursor to the right edge
-    this.cursor.x = button.x - TILE_SIZE * 2;
-    this.cursor.y = button.y;
+    this.cursor.x = nextButton.x - TILE_SIZE * 2;
+    this.cursor.y = nextButton.y;
 
     // store the new selected index
     this.selectedButtonIndex = index;
@@ -254,9 +196,20 @@ export class InventoryScene extends DataScene {
 
   private confirmSelection(): void {
     // get the currently selected button
-    const button = this.buttons[this.selectedButtonIndex];
+    const tuple: [PowerUps | Weapons, ItemSwitch] = this.buttons[this.selectedButtonIndex];
 
-    // emit the 'selected' event
-    button.emit('selected', button);
+    if (tuple.length !== 2) {
+      throw new Error('Invalid tuple');
+    }
+
+    const item: PowerUps | Weapons = tuple[0];
+    const inventory = this.getInventory();
+
+    if (inventory.has(item)) {
+      const status: Switch = inventory.invertStatus(item);
+
+      // emit the 'selected' event
+      tuple[1].emit('selected', status);
+    }
   }
 }

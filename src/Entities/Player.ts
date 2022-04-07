@@ -559,7 +559,7 @@ export class Player extends SpriteCollidable {
 
     this.torchLight = this.scene.lights
       .addLight(bounds.centerX, bounds.centerY, TILE_SIZE * 8)
-      .setIntensity(this.scene.getInventory().has(PowerUps.TORCH) ? 3 : 0)
+      .setIntensity(this.scene.getInventory().equip(PowerUps.TORCH) ? 3 : 0)
       .setColor(0xffffdd);
 
     // TODO: activate after create normal maps for sprite
@@ -1171,7 +1171,7 @@ export class Player extends SpriteCollidable {
       .isKeyPressed(ControllerKey.A);
 
     // First check if Player has unlocked wall jump
-    if (this.scene.getInventory().has(PowerUps.GLOVE)) {
+    if (this.scene.getInventory().equip(PowerUps.GLOVE)) {
       // Test if the Player is near walls
       const walls: boolean[] = this.isTouchingWalls() as boolean[];
       const wallsCount = walls.filter((wall) => wall);
@@ -1305,7 +1305,7 @@ export class Player extends SpriteCollidable {
         }
       } else if (
         // First check if Player has unlocked double jump
-        this.scene.getInventory().has(PowerUps.ROCKET)
+        this.scene.getInventory().equip(PowerUps.ROCKET)
         // Then check if Player had already performed the action
         && !this.hasDoneDoubleJump
         // Finally check if Player can actually perform the action at the moment
@@ -1433,7 +1433,7 @@ export class Player extends SpriteCollidable {
       .getController()
       .isKeyPressed(ControllerKey.X);
 
-    if (this.scene.getInventory().has(PowerUps.DASH)) {
+    if (this.scene.getInventory().equip(PowerUps.DASH)) {
       const time = this.scene.getController().getKeyDuration(ControllerKey.X);
 
       if (time < 100
@@ -1469,7 +1469,7 @@ export class Player extends SpriteCollidable {
    * Handle the hang action
    */
   protected hang(): void {
-    if (this.scene.getInventory().has(PowerUps.HOOK)) {
+    if (this.scene.getInventory().equip(PowerUps.HOOK)) {
       if (this.body.velocity.y !== 0 || this.isHanging) {
         const isDownPress: boolean = this.scene
           .getController()
@@ -1891,19 +1891,19 @@ export class Player extends SpriteCollidable {
   }
 
   protected getJumpSpeedMultiplier(): number {
-    if (this.isSwimming && !this.scene.getInventory().has(PowerUps.FAN)) {
+    if (this.isSwimming && !this.scene.getInventory().equip(PowerUps.FAN)) {
       return Player.SWIM_Y_SPEED_MULTIPLIER;
     }
 
-    if (this.scene.getInventory().has(PowerUps.GLOVE) && this.canWallJump) {
+    if (this.scene.getInventory().equip(PowerUps.GLOVE) && this.canWallJump) {
       return Player.WALL_JUMP_SPEED_MULTIPLIER;
     }
 
-    if (this.scene.getInventory().has(PowerUps.ROCKET) && this.canDoubleJump) {
+    if (this.scene.getInventory().equip(PowerUps.ROCKET) && this.canDoubleJump) {
       return Player.JUMP_SPEED_MULTIPLIER;
     }
 
-    if (this.scene.getInventory().has(PowerUps.BOOTS)) {
+    if (this.scene.getInventory().equip(PowerUps.BOOTS)) {
       return Player.HIGH_JUMP_SPEED_MULTIPLIER;
     }
 
@@ -1915,7 +1915,7 @@ export class Player extends SpriteCollidable {
   }
 
   public getRunSpeed(): number {
-    return (this.isSwimming && !this.scene.getInventory().has(PowerUps.FAN))
+    return (this.isSwimming && !this.scene.getInventory().equip(PowerUps.FAN))
       ? this.baseSpeed * Player.SWIM_X_SPEED_MULTIPLIER
       : this.baseSpeed * 2;
   }
@@ -1937,11 +1937,11 @@ export class Player extends SpriteCollidable {
   }
 
   public getRunSpeedMultiplier(): number {
-    if (this.isSwimming && !this.scene.getInventory().has(PowerUps.FAN)) {
+    if (this.isSwimming && !this.scene.getInventory().equip(PowerUps.FAN)) {
       return Player.SWIM_X_SPEED_MULTIPLIER;
     }
 
-    if (this.scene.getInventory().has(PowerUps.BOOSTER)) {
+    if (this.scene.getInventory().equip(PowerUps.BOOSTER)) {
       return Player.BOOSTED_RUN_SPEED_MULTIPLIER;
     }
 

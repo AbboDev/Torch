@@ -1,4 +1,4 @@
-import { Switch } from 'Miscellaneous/Switch';
+import { Switch } from 'Miscellaneous';
 
 export enum PowerUps {
   TORCH = 'torch',
@@ -122,21 +122,39 @@ export class Inventory {
     return Inventory.instance;
   }
 
-  public has(powerUp: PowerUps): boolean {
-    return this[powerUp] === Switch.ENABLE;
+  public get(item: PowerUps | Weapons): Switch {
+    return this[item];
   }
 
-  public switchStatus(powerUp: PowerUps, status: Switch): Inventory {
-    this[powerUp] = status;
+  public has(item: PowerUps | Weapons): boolean {
+    return this[item] !== Switch.INDETERMINATE;
+  }
+
+  public carry(item: Weapons): boolean {
+    return this[item] === Switch.ENABLE;
+  }
+
+  public equip(item: PowerUps): boolean {
+    return this[item] === Switch.ENABLE;
+  }
+
+  public set(item: PowerUps | Weapons, status: Switch): Inventory {
+    this[item] = status;
 
     return this;
   }
 
-  public hasBattery(): boolean {
-    return this.battery === Switch.ENABLE;
+  public invertStatus(item: PowerUps | Weapons): Switch {
+    if (this[item] === Switch.ENABLE) {
+      this[item] = Switch.DISABLE;
+    } else if (this[item] === Switch.DISABLE) {
+      this[item] = Switch.ENABLE;
+    }
+
+    return this[item];
   }
 
-  public carry(weapon: Weapons): boolean {
-    return this[weapon] === Switch.ENABLE;
+  public hasBattery(): boolean {
+    return this.battery === Switch.ENABLE;
   }
 }
