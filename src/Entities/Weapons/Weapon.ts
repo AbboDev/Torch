@@ -8,18 +8,18 @@ export class Weapon extends Phaser.Physics.Arcade.Group {
    *
    * @type {Number}
    */
-  private lastFired = 0;
+  private lastFired: number = 0;
 
   /**
    * The minimum time required to shot another bullet
    *
    * @type {Number}
    */
-  protected rateOfFire = 128;
+  protected rateOfFire: number = 128;
 
   protected isSingle = true;
 
-  protected hasAlreayShoot = false;
+  protected hasAlreadyShoot = false;
 
   public maxSize = 64;
 
@@ -41,7 +41,7 @@ export class Weapon extends Phaser.Physics.Arcade.Group {
   public fireBullet(time: any, config: BulletConfig): boolean {
     const canShoot = time > this.lastFired
       && (!this.isSingle
-        || !this.hasAlreayShoot);
+        || !this.hasAlreadyShoot);
 
     if (canShoot) {
       const bullet = this.get(config.position.x, config.position.y) as Bullet;
@@ -53,13 +53,13 @@ export class Weapon extends Phaser.Physics.Arcade.Group {
     }
 
     if (this.isSingle) {
-      this.hasAlreayShoot = true;
+      this.hasAlreadyShoot = true;
     }
 
     return canShoot;
   }
 
   public canShoot(): void {
-    this.hasAlreayShoot = false;
+    this.hasAlreadyShoot = false;
   }
 }
