@@ -1527,7 +1527,10 @@ export class Player extends SpriteCollidable {
 
             let lastLayer!: Phaser.Tilemaps.DynamicTilemapLayer;
             for (const layer of layers) {
-              if (tiles.length > 0) {
+              if (tiles.length > 0
+                || ['stairs', 'platforms'].indexOf(layer.layer.name) > -1
+                // The Player should not be able to hang on stairs nor one way platforms
+              ) {
                 break;
               }
 
