@@ -20,7 +20,12 @@ export abstract class GroupCollidable extends Phaser.Physics.Arcade.Group {
     }
 
     for (const layer of layers) {
-      scene.physics.add.collider(this, layer, this.postChildCollision);
+      scene.physics.add.collider(
+        this,
+        layer,
+        this.postChildCollision.bind(this),
+        this.testChildCollision.bind(this)
+      );
     }
   }
 
@@ -31,8 +36,19 @@ export abstract class GroupCollidable extends Phaser.Physics.Arcade.Group {
    * @param {Phaser.GameObjects.GameObject} child The child which trigger the collision
    * @param {Phaser.GameObjects.GameObject} tile  The tile on which the child collide
    */
-  protected postChildCollision(
+  protected abstract postChildCollision(
     child: Phaser.GameObjects.GameObject,
     tile: Phaser.GameObjects.GameObject
-  ): void {}
+  ): void
+
+  /**
+   * The callback which is call after a collision occurs
+   *
+   * @param {Phaser.GameObjects.GameObject} child The child which trigger the collision
+   * @param {Phaser.GameObjects.GameObject} tile The tile on which this collide
+   */
+  protected abstract testChildCollision(
+    child: Phaser.GameObjects.GameObject,
+    tile: Phaser.GameObjects.GameObject
+  ): boolean
 }

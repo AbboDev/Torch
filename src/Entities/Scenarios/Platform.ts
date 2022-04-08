@@ -109,4 +109,9 @@ export class Platform extends SpriteCollidable {
 
     return tile.index >= 0;
   }
+
+  protected postCollision(
+    self: Phaser.GameObjects.GameObject,
+    tile: Phaser.GameObjects.GameObject
+  ): void {}
 }

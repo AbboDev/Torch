@@ -46,10 +46,10 @@ export abstract class SpriteCollidable extends Phaser.Physics.Arcade.Sprite {
    * @param {SpriteCollidable}              self The current sprite
    * @param {Phaser.GameObjects.GameObject} tile The tile on which this collide
    */
-  protected postCollision(
+  protected abstract postCollision(
     self: Phaser.GameObjects.GameObject,
     tile: Phaser.GameObjects.GameObject
-  ): void {}
+  ): void
 
   /**
    * The callback which is call after a collision occurs
@@ -60,5 +60,5 @@ export abstract class SpriteCollidable extends Phaser.Physics.Arcade.Sprite {
   protected abstract testCollision(
     self: Phaser.GameObjects.GameObject,
     tile: Phaser.GameObjects.GameObject
-  ): boolean;
+  ): boolean
 }

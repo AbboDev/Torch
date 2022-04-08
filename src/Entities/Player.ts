@@ -2078,6 +2078,11 @@ export class Player extends SpriteCollidable {
       || this.scene.physics.collide(this.ladderHitbox, this.scene.platforms);
   }
 
+  protected postCollision(
+    self: Phaser.GameObjects.GameObject,
+    tile: Phaser.GameObjects.GameObject
+  ): void {}
+
   protected testCollision(
     self: Phaser.GameObjects.GameObject,
     object: unknown
