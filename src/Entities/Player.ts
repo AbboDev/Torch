@@ -941,8 +941,6 @@ export class Player extends SpriteCollidable {
 
     this.previousFacing = { ...this.facing };
 
-    this.lastBattery = this.battery;
-
     if (this.canInteract) {
       // Handle current aim direction based on facing
       this.tiltAim();
@@ -995,6 +993,8 @@ export class Player extends SpriteCollidable {
 
     // Change the current animation based on previous operations
     this.animate();
+
+    this.lastBattery = this.battery;
 
     // Debug the player after all the update cycle
     if (this.scene.physics.world.drawDebug) {
@@ -1142,10 +1142,23 @@ export class Player extends SpriteCollidable {
           ],
           callback: (liquid: any) => {
             if (liquid === 'acid') {
-              --this.battery;
-            }
+              this.battery -= 2;
+              this.life -= 3;
 
-            --this.life;
+              if (this.isTinted) {
+                this.clearTint();
+              } else {
+                this.setTint(0x00ff00, 0xff00ff, 0x00ff00);
+              }
+            } else {
+              this.life -= 2;
+
+              if (this.isTinted) {
+                this.clearTint();
+              } else {
+                this.setTint(0xffff00, 0xffff00, 0xff0000, 0xff0000);
+              }
+            }
           }
         };
 
@@ -1158,6 +1171,10 @@ export class Player extends SpriteCollidable {
       }
     } else if (this.liquidDamageTimer) {
       this.liquidDamageTimer.paused = true;
+
+      if (this.isTinted) {
+        this.clearTint();
+      }
     }
   }
 
