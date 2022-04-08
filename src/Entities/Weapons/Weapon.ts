@@ -1,8 +1,9 @@
 import * as Phaser from 'phaser';
 import { Bullet, BulletConfig } from 'Entities/Bullets/Bullet';
 import { MapScene } from 'Scenes/MapScene';
+import { GroupCollidable } from 'Entities/Collidables';
 
-export class Weapon extends Phaser.Physics.Arcade.Group {
+export class Weapon extends GroupCollidable {
   /**
    * The time when the last bullet had been shot
    *
@@ -30,7 +31,7 @@ export class Weapon extends Phaser.Physics.Arcade.Group {
   public constructor(
     public scene: MapScene
   ) {
-    super(scene.physics.world, scene, {
+    super(scene, {
       runChildUpdate: true,
       classType: Bullet
     });
@@ -61,5 +62,36 @@ export class Weapon extends Phaser.Physics.Arcade.Group {
 
   public canShoot(): void {
     this.hasAlreadyShoot = false;
+  }
+
+  protected postChildCollision(
+    child: unknown,
+    object: unknown
+  ): void {
+    const bullet: Bullet = child as Bullet;
+    const tile: Phaser.Tilemaps.Tile = object as Phaser.Tilemaps.Tile;
+
+    if (tile.layer.name === 'breakables') {
+      this.scene.map.removeTileAt(tile.x, tile.y);
+    }
+
+    bullet.impact();
+  }
+
+  protected testChildCollision(
+    child: Phaser.GameObjects.GameObject,
+    object: unknown
+  ): boolean {
+    const tile: Phaser.Tilemaps.Tile = object as Phaser.Tilemaps.Tile;
+
+    switch (tile.layer.name) {
+      case 'stairs':
+      case 'platforms':
+        return false;
+      default:
+        break;
+    }
+
+    return tile.index >= 0;
   }
 }

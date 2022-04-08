@@ -165,26 +165,6 @@ export class Bullet extends Phaser.Physics.Arcade.Sprite {
     if (!Array.isArray(layers)) {
       layers = [layers];
     }
-
-    for (const layer of layers) {
-    // If the bullet is touching anything, then start impact
-      this.scene.physics.add.collider(
-        this,
-        layer,
-        (bullet, tile: unknown) => {
-          if (tile instanceof Phaser.Tilemaps.Tile && bullet.active) {
-            if (tile.index > -1) {
-              // is the tile destructible?
-              if (tile.layer.name === 'breakables') {
-                this.scene.map.removeTileAt(tile.x, tile.y);
-              }
-
-              this.impact();
-            }
-          }
-        }
-      );
-    }
   }
 
   public update(time: any, delta: number): void {
