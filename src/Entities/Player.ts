@@ -1733,18 +1733,13 @@ export class Player extends SpriteCollidable {
 
     // The user have to press Shot button and the player should not facing front
     if (isShootPress && this.facingForAim.x !== DirectionAxisX.CENTER) {
-      // Test which weapon the player has and if is single or with rate
-      const bulletPosition = new Phaser.Math.Vector2(
-        this.x + (this.width / 2) * (this.facingForAim.x === DirectionAxisX.RIGHT ? 1 : -1),
-        this.getShotHeight()
-      );
-
       const config: BulletConfig = {
         facing: this.facingForAim,
         diagonal: this.isAimingDiagonal,
-        position: bulletPosition
+        position: this.getShotPosition()
       };
 
+      // Test which weapon the player has and if is single or with rate
       let equippedWeapon: string | null = null;
       if (this.scene.getInventory().carry(Weapons.GUN)) {
         equippedWeapon = 'gun';
@@ -2007,10 +2002,26 @@ export class Player extends SpriteCollidable {
    *
    * @return {number} The calculated Y coordinate
    */
-  public getShotHeight(): number {
+  public getShotPosition(): Phaser.Math.Vector2 {
     const bounds = this.getBounds();
+    let width: number = bounds.centerX;
+    let height: number = bounds.top + Player.SHOT_HEIGHT;
 
-    return bounds.top + Player.SHOT_HEIGHT;
+    if (this.facingForAim.y !== DirectionAxisY.MIDDLE) {
+      if (this.facingForAim.y === DirectionAxisY.UP) {
+        height = bounds.top;
+      } else if (this.isAimingDiagonal) {
+        height = bounds.bottom - Player.SHOT_HEIGHT;
+      } else {
+        height = bounds.bottom;
+      }
+
+      if (this.isAimingDiagonal) {
+        width = this.x + (this.width / 2) * (this.facingForAim.x === DirectionAxisX.RIGHT ? 1 : -1);
+      }
+    }
+
+    return new Phaser.Math.Vector2(width, height);
   }
 
   /**

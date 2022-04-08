@@ -81,7 +81,7 @@ export class Bullet extends Phaser.Physics.Arcade.Sprite {
     this
       // .setPipeline('Light2D');
       .setDepth(BULLET_DEPTH)
-      .setOrigin(0.5, 0)
+      .setOrigin(0.5, 0.5)
       .setBounce(0);
 
     this.body.onWorldBounds = true;
@@ -97,21 +97,47 @@ export class Bullet extends Phaser.Physics.Arcade.Sprite {
       sign.x = 0;
     }
 
+    const size: number = Math.min(this.width, this.height);
+    const diff: number = Math.max(this.width, this.height);
+
+    const { width, height } = this;
+
+    const offset = new Phaser.Math.Vector2(
+      (width - size) / 2,
+      (height - size) / 2
+    );
+
+    if (sign.x === 1) {
+      offset.x = width - size;
+    } else if (sign.x === -1) {
+      offset.x = 0;
+    }
+
+    if (sign.y === 1) {
+      offset.y = (diff - size) / 2;
+    } else if (sign.y === -1) {
+      offset.y = -(diff - size) / 2;
+    }
+
+    this.body
+      // The bullet should not fall
+      .setAllowGravity(this.allowGravity)
+      // The bullet have to collide with world bounds too
+      .setCollideWorldBounds(true)
+      .setOffset(offset.x, offset.y)
+      .setSize(size, size, false);
+
+    const vector: Phaser.Math.Vector2 = new Phaser.Math.Vector2(sign.x, sign.y);
+
     this
       .setPosition(config.position.x, config.position.y)
       .setVelocity(
         this.speed * 5 * sign.x,
         this.speed * 5 * sign.y
       )
-      .setScale(sign.x || 1, sign.y || 1)
+      .setRotation(vector.angle())
       .setActive(true)
       .setVisible(true);
-
-    this.body
-      // The bullet should not fall
-      .setAllowGravity(this.allowGravity)
-      // The bullet have to collide with world bounds too
-      .setCollideWorldBounds(true);
 
     if (this.hasLight) {
       const center = this.getCenter();
