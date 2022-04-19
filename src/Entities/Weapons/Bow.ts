@@ -1,5 +1,5 @@
-import { Weapon } from 'Entities/Weapons/Weapon';
-import { BowArrow } from 'Entities/Bullets/BowArrow';
+import { Weapon } from 'Entities/Weapons';
+import { BowArrow } from 'Entities/Bullets';
 
 export class Bow extends Weapon {
   protected rateOfFire = 256;

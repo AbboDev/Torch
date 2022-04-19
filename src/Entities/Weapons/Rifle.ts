@@ -1,5 +1,5 @@
-import { Weapon } from 'Entities/Weapons/Weapon';
-import { RifleBullet } from 'Entities/Bullets/RifleBullet';
+import { Weapon } from 'Entities/Weapons';
+import { RifleBullet } from 'Entities/Bullets';
 
 export class Rifle extends Weapon {
   protected rateOfFire = 128;

@@ -179,9 +179,13 @@ export class Bullet extends Phaser.Physics.Arcade.Sprite {
   /**
    * Stop physics and render updates for this object
    */
-  public impact(): void {
+  public impact(tile?: Phaser.Tilemaps.Tile): void {
     if (this.torchLight) {
       this.scene.lights.removeLight(this.torchLight);
+    }
+
+    if (tile && tile.layer.name === 'breakables') {
+      this.scene.map.removeTileAt(tile.x, tile.y);
     }
 
     this

@@ -1,6 +1,6 @@
 import * as Phaser from 'phaser';
-import { Bullet, BulletConfig } from 'Entities/Bullets/Bullet';
-import { MapScene } from 'Scenes/MapScene';
+import { Bullet, BulletConfig } from 'Entities/Bullets';
+import { MapScene } from 'Scenes';
 import { GroupCollidable } from 'Entities/Collidables';
 
 export class Weapon extends GroupCollidable {
@@ -71,11 +71,7 @@ export class Weapon extends GroupCollidable {
     const bullet: Bullet = child as Bullet;
     const tile: Phaser.Tilemaps.Tile = object as Phaser.Tilemaps.Tile;
 
-    if (tile.layer.name === 'breakables') {
-      this.scene.map.removeTileAt(tile.x, tile.y);
-    }
-
-    bullet.impact();
+    bullet.impact(tile);
   }
 
   protected testChildCollision(
