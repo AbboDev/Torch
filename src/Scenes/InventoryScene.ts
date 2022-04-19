@@ -2,17 +2,19 @@ import * as Phaser from 'phaser';
 import {
   ControllerKey,
   PowerUps,
-  Weapons,
   Switch
 } from 'Miscellaneous';
 import { ItemSwitch } from 'HUD/ItemSwitch';
 import { DataScene } from 'Scenes';
 import { TILE_SIZE } from 'Config/tiles';
+import * as Weapons from 'Entities/Weapons';
+
+type InventoryButton = [PowerUps/*  | Weapons.WeaponType */, ItemSwitch];
 
 export class InventoryScene extends DataScene {
   private cursor!: Phaser.GameObjects.Triangle;
 
-  private buttons: [PowerUps | Weapons, ItemSwitch][] = [];
+  private buttons: InventoryButton[] = [];
 
   private selectedButtonIndex = 0;
 
@@ -84,19 +86,20 @@ export class InventoryScene extends DataScene {
       previousY = button.y + TILE_SIZE * 1.5;
     }
 
-    previousY = TILE_SIZE * 2;
-    for (const [weapon, key] of Object.entries(Weapons)) {
-      const button = new ItemSwitch(
-        this,
-        TILE_SIZE * 12,
-        previousY,
-        weapon,
-        this.getInventory().get(key)
-      );
+    // console.debug(Weapons);
+    // previousY = TILE_SIZE * 2;
+    // for (const [weapon, key] of Object.entries(Weapons)) {
+    //   const button = new ItemSwitch(
+    //     this,
+    //     TILE_SIZE * 12,
+    //     previousY,
+    //     weapon,
+    //     this.getInventory().get(key)
+    //   );
 
-      this.buttons.push([key, button]);
-      previousY = button.y + TILE_SIZE * 1.5;
-    }
+    //   this.buttons.push([key, button]);
+    //   previousY = button.y + TILE_SIZE * 1.5;
+    // }
 
     this.selectButton(this.selectedButtonIndex);
 
@@ -164,7 +167,7 @@ export class InventoryScene extends DataScene {
   }
 
   private selectButton(index: number): void {
-    const currentTuple: [PowerUps | Weapons, ItemSwitch] = this.buttons[this.selectedButtonIndex];
+    const currentTuple: InventoryButton = this.buttons[this.selectedButtonIndex];
 
     if (currentTuple.length !== 2) {
       throw new Error('Invalid tuple');
@@ -175,7 +178,7 @@ export class InventoryScene extends DataScene {
     // set the current selected button to a white tint
     button.setStrokeStyle(button.lineWidth, 0xffffff);
 
-    const nextTuple: [PowerUps | Weapons, ItemSwitch] = this.buttons[index];
+    const nextTuple: InventoryButton = this.buttons[index];
 
     if (nextTuple.length !== 2) {
       throw new Error('Invalid tuple');
@@ -196,13 +199,13 @@ export class InventoryScene extends DataScene {
 
   private confirmSelection(): void {
     // get the currently selected button
-    const tuple: [PowerUps | Weapons, ItemSwitch] = this.buttons[this.selectedButtonIndex];
+    const tuple: InventoryButton = this.buttons[this.selectedButtonIndex];
 
     if (tuple.length !== 2) {
       throw new Error('Invalid tuple');
     }
 
-    const item: PowerUps | Weapons = tuple[0];
+    const item: PowerUps = tuple[0];
     const inventory = this.getInventory();
 
     if (inventory.has(item)) {

@@ -6,7 +6,11 @@ import {
   Platform
 } from 'Entities/Scenarios';
 import { Player } from 'Entities/Player';
-
+import {
+  Bow,
+  Gun,
+  Rifle
+} from 'Entities/Weapons';
 import {
   BACKGROUND_DEPTH,
   BELOW_LAYER_DEPTH,
@@ -140,6 +144,11 @@ export class MainScene extends MapScene {
     const y: number = this.spawnPoint.y || 0;
 
     const roomNumber: number = this.setCurrentRoom(x, y);
+
+    this.getInventory()
+      .pushWeapon(new Gun(this))
+      .pushWeapon(new Rifle(this))
+      .pushWeapon(new Bow(this));
 
     this.hero = new Player(this, x, y, roomNumber);
 

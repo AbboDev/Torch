@@ -1,4 +1,6 @@
 import { Switch } from 'Miscellaneous';
+import { Weapon } from 'Entities/Weapons';
+import { ContinuousScene } from 'Scenes';
 
 export enum PowerUps {
   TORCH = 'torch',
@@ -9,12 +11,6 @@ export enum PowerUps {
   FAN = 'swim',
   HOOK = 'hang',
   DASH = 'dash',
-}
-
-export enum Weapons {
-  GUN = 'gun',
-  RIFLE = 'rifle',
-  BOW = 'bow',
 }
 
 export class Inventory {
@@ -83,68 +79,92 @@ export class Inventory {
    */
   private dash: Switch = Switch.DISABLE;
 
-  /**
-   * The Player has the gun range weapon
-   *
-   * @type {Boolean}
-   */
-  private gun: Switch = Switch.ENABLE;
+  private weapons: Weapon[] = [];
 
-  /**
-   * The Player has the rifle range weapon
-   *
-   * @type {Boolean}
-   */
-  private rifle: Switch = Switch.DISABLE;
+  private _activeWeaponsIndex: number = 0;
 
-  /**
-   * The Player has the bow range weapon
-   *
-   * @type {Boolean}
-   */
-  private bow: Switch = Switch.DISABLE;
-
-  private constructor(load?: Inventory) {
+  private constructor(protected scene: ContinuousScene, load?: Inventory) {
     console.debug(load);
   }
 
   /**
    * The static method that controls the access to the singleton instance.
-   *
-   * This implementation let you subclass the Singleton class while keeping
-   * just one instance of each subclass around.
    */
-  public static getInstance(load?: Inventory): Inventory {
+  public static getInstance(scene: ContinuousScene, load?: Inventory): Inventory {
     if (!Inventory.instance) {
-      Inventory.instance = new Inventory(load);
+      Inventory.instance = new Inventory(scene, load);
     }
 
     return Inventory.instance;
   }
 
-  public get(item: PowerUps | Weapons): Switch {
+  public get(item: PowerUps): Switch {
     return this[item];
   }
 
-  public has(item: PowerUps | Weapons): boolean {
+  public has(item: PowerUps): boolean {
     return this[item] !== Switch.INDETERMINATE;
-  }
-
-  public carry(item: Weapons): boolean {
-    return this[item] === Switch.ENABLE;
   }
 
   public equip(item: PowerUps): boolean {
     return this[item] === Switch.ENABLE;
   }
 
-  public set(item: PowerUps | Weapons, status: Switch): Inventory {
+  public getCurrentWeapon(): Weapon | null {
+    return this.getWeapon(this.activeWeaponsIndex);
+  }
+
+  public getWeapon(index: number): Weapon | null {
+    return this.weapons[index];
+  }
+
+  public switchCurrentWeapon(index: number): Inventory {
+    if (index < 0) {
+      this.activeWeaponsIndex = this.weapons.length - 1 || 0;
+    } else if (index >= this.weapons.length) {
+      this.activeWeaponsIndex = 0;
+    } else {
+      this.activeWeaponsIndex = index;
+    }
+
+    return this;
+  }
+
+  public switchToNextWeapon(): Inventory {
+    return this.switchCurrentWeapon(this.activeWeaponsIndex + 1);
+  }
+
+  public switchToPreviousWeapon(): Inventory {
+    return this.switchCurrentWeapon(this.activeWeaponsIndex - 1);
+  }
+
+  public pushWeapon(weapon: Weapon): Inventory {
+    this.weapons.push(weapon);
+
+    return this;
+  }
+
+  public hasAtLeastOneRangeWeapon(): boolean {
+    return this.weapons.length > 0;
+  }
+
+  public resetWeaponsShoot(): Inventory {
+    if (this.hasAtLeastOneRangeWeapon()) {
+      for (const weapon of this.weapons) {
+        weapon.canShoot();
+      }
+    }
+
+    return this;
+  }
+
+  public set(item: PowerUps, status: Switch): Inventory {
     this[item] = status;
 
     return this;
   }
 
-  public invertStatus(item: PowerUps | Weapons): Switch {
+  public invertStatus(item: PowerUps): Switch {
     if (this[item] === Switch.ENABLE) {
       this[item] = Switch.DISABLE;
     } else if (this[item] === Switch.DISABLE) {
@@ -156,5 +176,15 @@ export class Inventory {
 
   public hasBattery(): boolean {
     return this.battery === Switch.ENABLE;
+  }
+
+  public get activeWeaponsIndex(): number {
+    return this._activeWeaponsIndex;
+  }
+
+  public set activeWeaponsIndex(index: number) {
+    this._activeWeaponsIndex = index;
+
+    this.scene.events.emit('changedWeapon', this.getCurrentWeapon());
   }
 }

@@ -22,7 +22,7 @@ export abstract class ContinuousScene extends AnimatedTilesScene {
 
   public create(): void {
     this.controller = Controller.getInstance(this);
-    this.inventory = Inventory.getInstance();
+    this.inventory = Inventory.getInstance(this);
   }
 
   public getController(): Controller {

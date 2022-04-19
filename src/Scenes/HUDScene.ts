@@ -1,6 +1,12 @@
 import * as Phaser from 'phaser';
 import { DataScene } from 'Scenes';
 import { TILE_SIZE } from 'Config/tiles';
+import {
+  Bow,
+  Gun,
+  Rifle,
+  Weapon
+} from 'Entities/Weapons';
 
 export class HUDScene extends DataScene {
   private life!: Phaser.GameObjects.Image;
@@ -15,9 +21,9 @@ export class HUDScene extends DataScene {
 
   private ammoCounter!: Phaser.GameObjects.Text;
 
-  private debugger!: Phaser.GameObjects.Text;
+  private currentWeapon!: Phaser.GameObjects.Text;
 
-  private mainScene!: Phaser.Scene;
+  private debugger!: Phaser.GameObjects.Text;
 
   public constructor() {
     super({
@@ -38,14 +44,17 @@ export class HUDScene extends DataScene {
     if (this.registry.has('life')) {
       life = this.registry.get('life') as number;
     }
+
     let battery = 0;
     if (this.registry.has('battery')) {
       battery = this.registry.get('battery') as number;
     }
+
     let ammo = 0;
     if (this.registry.has('ammo')) {
       ammo = this.registry.get('ammo') as number;
     }
+
     let maxAmmo = 0;
     if (this.registry.has('maxAmmo')) {
       maxAmmo = this.registry.get('maxAmmo') as number;
@@ -95,6 +104,19 @@ export class HUDScene extends DataScene {
       .setAlign('right')
       .setOrigin(1, 0);
 
+    this.currentWeapon = this.add.text(
+      (this.game.scale.width) - TILE_SIZE * 7,
+      TILE_SIZE * 0.5,
+      this.getWeaponGraphic(),
+      {
+        ...style,
+        backgroundColor: '#ffffff',
+        color: '#ff0000'
+      }
+    )
+      .setAlign('right')
+      .setOrigin(1, 0);
+
     this.debugger = this.add.text(
       TILE_SIZE / 2,
       (this.game.scale.height) - TILE_SIZE,
@@ -106,15 +128,22 @@ export class HUDScene extends DataScene {
       .setAlign('left')
       .setOrigin(0);
 
-    this.mainScene = this.scene.get('main');
-    this.mainScene.events.addListener('debugPlayer', (data: any) => {
-      const x = data.position.x.toFixed(3);
-      const y = data.position.y.toFixed(3);
-      const Vx = data.velocity.x.toFixed(3);
-      const Vy = data.velocity.y.toFixed(3);
+    const mainScene = this.scene.get('main');
+    mainScene.events
+      .addListener('debugPlayer', (data: any) => {
+        const x = data.position.x.toFixed(3);
+        const y = data.position.y.toFixed(3);
+        const Vx = data.velocity.x.toFixed(3);
+        const Vy = data.velocity.y.toFixed(3);
 
-      this.debugger.setText(`x: ${x} | y: ${y} | Vx: ${Vx} | Vy: ${Vy}`);
-    });
+        this.debugger.setText(`x: ${x} | y: ${y} | Vx: ${Vx} | Vy: ${Vy}`);
+      });
+
+    const gateway = this.scene.get('gateway');
+    gateway.events
+      .addListener('changedWeapon', (weapon: Weapon) => {
+        this.currentWeapon.setText(this.getWeaponGraphic());
+      });
   }
 
   public update(time: any, delta: number): void {
@@ -149,5 +178,22 @@ export class HUDScene extends DataScene {
       default:
         break;
     }
+  }
+
+  private getWeaponGraphic(): string {
+    let currentWeaponString: string = 'N';
+    if (this.getInventory().hasAtLeastOneRangeWeapon()) {
+      const currentWeapon: Weapon | null = this.getInventory().getCurrentWeapon();
+
+      if (currentWeapon instanceof Gun) {
+        currentWeaponString = 'G';
+      } else if (currentWeapon instanceof Rifle) {
+        currentWeaponString = 'R';
+      } else if (currentWeapon instanceof Bow) {
+        currentWeaponString = 'B';
+      }
+    }
+
+    return currentWeaponString;
   }
 }

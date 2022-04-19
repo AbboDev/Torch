@@ -4,8 +4,7 @@ import {
   DirectionAxisY,
   DirectionAxisX,
   ControllerKey,
-  PowerUps,
-  Weapons
+  PowerUps
 } from 'Miscellaneous';
 import {
   Hitbox,
@@ -976,9 +975,9 @@ export class Player extends SpriteCollidable {
       }
 
       // The user can shoot only if the Player has at least one range weapon
-      if (this.hasAtLeastOneRangeWeapon()) {
+      if (this.scene.getInventory().hasAtLeastOneRangeWeapon()) {
         // Handle all the ranged combat actions
-        this.shoot(time);
+        this.handleWeapons(time);
       }
     }
 
@@ -1740,11 +1739,13 @@ export class Player extends SpriteCollidable {
   /**
    * Handle all the ranged combat actions
    */
-  protected shoot(time: any): void {
+  protected handleWeapons(time: any): void {
+    if (this.scene.getController().isKeyPressedForFirstTime(ControllerKey.Y)) {
+      this.scene.getInventory().switchToNextWeapon();
+    }
+
     if (!this.isPressingShot) {
-      this.gun.canShoot();
-      this.bow.canShoot();
-      this.rifle.canShoot();
+      this.scene.getInventory().resetWeaponsShoot();
     }
 
     const isShootPress: boolean = this.scene
@@ -1752,30 +1753,21 @@ export class Player extends SpriteCollidable {
       .isKeyPressed(ControllerKey.B);
 
     // The user have to press Shot button and the player should not facing front
-    if (isShootPress && this.facingForAim.x !== DirectionAxisX.CENTER) {
+    if (isShootPress
+      && this.facingForAim.x !== DirectionAxisX.CENTER
+      && this.ammo > 0
+    ) {
       const config: BulletConfig = {
         facing: this.facingForAim,
         diagonal: this.isAimingDiagonal,
         position: this.getShotPosition()
       };
 
-      // Test which weapon the player has and if is single or with rate
-      let equippedWeapon: string | null = null;
-      if (this.scene.getInventory().carry(Weapons.GUN)) {
-        equippedWeapon = 'gun';
-      } else if (this.scene.getInventory().carry(Weapons.RIFLE)) {
-        equippedWeapon = 'rifle';
-      } else if (this.scene.getInventory().carry(Weapons.BOW)) {
-        equippedWeapon = 'bow';
-      }
+      const weapon: Weapon = this.scene.getInventory().getCurrentWeapon() as Weapon;
+      const wasFired = weapon.fireBullet(time, config);
 
-      if (equippedWeapon && this.ammo > 0) {
-        const weapon = (this[equippedWeapon as keyof Player] as Weapon);
-        const wasFired = weapon.fireBullet(time, config);
-
-        if (wasFired) {
-          --this.ammo;
-        }
+      if (wasFired) {
+        --this.ammo;
       }
     }
 
@@ -2042,19 +2034,6 @@ export class Player extends SpriteCollidable {
     }
 
     return new Phaser.Math.Vector2(width, height);
-  }
-
-  /**
-   * Return true if the Player has at least one ranged weapon in inventory
-   *
-   * @return {boolean} [description]
-   */
-  public hasAtLeastOneRangeWeapon(): boolean {
-    return this.scene.getInventory().carry(Weapons.GUN)
-    || this.scene.getInventory().carry(Weapons.RIFLE)
-    || this.scene.getInventory().carry(Weapons.BOW);
-
-    // TODO: add all other weapons into the function
   }
 
   /**
