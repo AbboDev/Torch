@@ -102,7 +102,7 @@ export class PreloaderScene extends Phaser.Scene {
     Player.create(this);
 
     this.scene
-      .launch('controller')
+      .launch('gateway')
       .launch('inventory')
       .sleep('inventory')
       .launch('main')

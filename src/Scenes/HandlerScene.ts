@@ -5,7 +5,7 @@ export class HandlerScene extends ContinuousScene {
     super({
       active: false,
       visible: false,
-      key: 'controller'
+      key: 'gateway'
     });
   }
 
