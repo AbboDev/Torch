@@ -43,7 +43,7 @@ module.exports = {
         functions: 'never'
       }
     ],
-    'class-methods-use-this': 'warn',
+    'class-methods-use-this': 'off',
     'no-restricted-syntax': 'off',
     'no-plusplus': 'off',
     'no-underscore-dangle': 'off'
