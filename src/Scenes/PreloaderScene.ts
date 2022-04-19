@@ -44,9 +44,9 @@ export class PreloaderScene extends Phaser.Scene {
         '/assets/images/backgrounds/mountains/sky.png',
         '/assets/images/backgrounds/mountains/sky_n.png'
       ])
-      .image('mountains-montain_far', [
-        '/assets/images/backgrounds/mountains/montain-far.png',
-        '/assets/images/backgrounds/mountains/montain-far_n.png'
+      .image('mountains-mountain_far', [
+        '/assets/images/backgrounds/mountains/mountain-far.png',
+        '/assets/images/backgrounds/mountains/mountain-far_n.png'
       ])
       .image('mountains-mountains', [
         '/assets/images/backgrounds/mountains/mountains.png',
