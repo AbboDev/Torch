@@ -2,10 +2,10 @@ module.exports = {
   mode: 'production',
   output: {
     publicPath: './',
-    filename: '[name].min.js',
+    filename: '[name].min.js'
   },
   optimization: {
-    minimize: true,
+    minimize: true
   },
-  stats: false,
+  stats: false
 };

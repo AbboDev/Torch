@@ -10,22 +10,22 @@ const CopyWebpackPlugin = require('copy-webpack-plugin');
 module.exports = (env) => {
   const config = {
     entry: {
-      game: path.resolve(__dirname, 'src/Game.ts'),
+      game: path.resolve(__dirname, 'src/Game.ts')
     },
     output: {
-      path: path.resolve(__dirname, 'build'),
+      path: path.resolve(__dirname, 'build')
     },
     module: {
       rules: [
         {
           test: /\.ts?$/,
-          use: 'ts-loader',
+          use: 'ts-loader'
         },
         {
           test: [/\.vert$/, /\.frag$/],
-          use: 'raw-loader',
-        },
-      ],
+          use: 'raw-loader'
+        }
+      ]
     },
     optimization: {
       splitChunks: {
@@ -33,10 +33,10 @@ module.exports = (env) => {
           commons: {
             test: /[\\/]node_modules[\\/]/,
             name: 'vendors',
-            chunks: 'all',
-          },
-        },
-      },
+            chunks: 'all'
+          }
+        }
+      }
     },
     resolve: {
       extensions: ['.ts', '.js'],
@@ -46,34 +46,34 @@ module.exports = (env) => {
         Entities: path.resolve(__dirname, 'src/Entities/'),
         Miscellaneous: path.resolve(__dirname, 'src/Miscellaneous/'),
         HUD: path.resolve(__dirname, 'src/HUD/'),
-        Scenes: path.resolve(__dirname, 'src/Scenes/'),
-      },
+        Scenes: path.resolve(__dirname, 'src/Scenes/')
+      }
     },
     plugins: [
       new webpack.DefinePlugin({
         'typeof SHADER_REQUIRE': JSON.stringify(false),
         'typeof CANVAS_RENDERER': JSON.stringify(true),
-        'typeof WEBGL_RENDERER': JSON.stringify(true),
+        'typeof WEBGL_RENDERER': JSON.stringify(true)
       }),
       new CopyWebpackPlugin({
         patterns: [
           {
             from: './assets',
             to: './assets',
-            force: true,
+            force: true
           },
           {
             from: './app.css',
             to: './app.css',
-            force: true,
-          },
-        ],
+            force: true
+          }
+        ]
       }),
       new HtmlWebpackPlugin({
         filename: 'index.html',
-        template: 'index.html',
-      }),
-    ],
+        template: 'index.html'
+      })
+    ]
   };
 
   const currentEnv = env && env.production ? 'prod' : 'dev';
