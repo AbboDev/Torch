@@ -23,6 +23,9 @@ const config: Phaser.Types.Core.GameConfig = {
   height: TILE_SIZE * 22,
 
   zoom: 1,
+  render: {
+    pixelArt: true
+  },
 
   scene: [
     PreloaderScene,
