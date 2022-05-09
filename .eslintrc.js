@@ -16,6 +16,7 @@ module.exports = {
     '@typescript-eslint'
   ],
   rules: {
+    'quotes': ["error", "double"],
     'no-shadow': 'off',
     '@typescript-eslint/no-shadow': 'error',
     'no-use-before-define': 'off',
@@ -46,7 +47,8 @@ module.exports = {
     'class-methods-use-this': 'off',
     'no-restricted-syntax': 'off',
     'no-plusplus': 'off',
-    'no-underscore-dangle': 'off'
+    'no-underscore-dangle': 'off',
+    'no-continue': 'off'
   },
   settings: {
     'import/resolver': {

@@ -90,7 +90,10 @@ export class Inventory {
   /**
    * The static method that controls the access to the singleton instance.
    */
-  public static getInstance(scene: ContinuousScene, load?: Inventory): Inventory {
+  public static getInstance(
+    scene: ContinuousScene,
+    load?: Inventory
+  ): Inventory {
     if (!Inventory.instance) {
       Inventory.instance = new Inventory(scene, load);
     }
@@ -110,6 +113,17 @@ export class Inventory {
     return this[item] === Switch.ENABLE;
   }
 
+  public carry(item: Weapon): boolean {
+    if (this.hasAtLeastOneRangeWeapon()) {
+      return this.weapons.some((weapon: Weapon) => {
+        // @ts-ignore
+        return weapon == item || weapon instanceof item;
+      });
+    }
+
+    return false;
+  }
+
   public getCurrentWeapon(): Weapon | null {
     return this.getWeapon(this.activeWeaponsIndex);
   }
@@ -118,7 +132,14 @@ export class Inventory {
     return this.weapons[index];
   }
 
-  public switchCurrentWeapon(index: number): Inventory {
+  public switchCurrentWeapon(index: number | Weapon): Inventory {
+    if (typeof index !== 'number') {
+      index = this.weapons.findIndex((weapon: Weapon) => {
+        // @ts-ignore
+        return weapon == index || weapon instanceof index;
+      });
+    }
+
     if (index < 0) {
       this.activeWeaponsIndex = this.weapons.length - 1 || 0;
     } else if (index >= this.weapons.length) {
@@ -139,7 +160,10 @@ export class Inventory {
   }
 
   public pushWeapon(weapon: Weapon): Inventory {
-    this.weapons.push(weapon);
+    const index: number = this.weapons.push(weapon);
+    this.switchCurrentWeapon(index);
+
+    this.scene.events.emit("changedWeapon", weapon);
 
     return this;
   }
@@ -185,6 +209,6 @@ export class Inventory {
   public set activeWeaponsIndex(index: number) {
     this._activeWeaponsIndex = index;
 
-    this.scene.events.emit('changedWeapon', this.getCurrentWeapon());
+    this.scene.events.emit("changedWeapon", this.getCurrentWeapon());
   }
 }
