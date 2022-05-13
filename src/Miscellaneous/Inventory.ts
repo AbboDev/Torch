@@ -117,7 +117,7 @@ export class Inventory {
     if (this.hasAtLeastOneRangeWeapon()) {
       return this.weapons.some((weapon: Weapon) => {
         // @ts-ignore
-        return weapon == item || weapon instanceof item;
+        return weapon == item || (typeof item === 'function' && weapon instanceof item);
       });
     }
 
