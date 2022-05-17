@@ -21,6 +21,7 @@ import { SpriteCollidable } from 'Entities/Collidables';
 import { MapScene } from 'Scenes';
 import { PLAYER_DEPTH } from 'Config/depths';
 import { TILE_SIZE } from 'Config/tiles';
+import { text } from 'stream/consumers';
 
 export class Player extends SpriteCollidable {
   /**
@@ -638,275 +639,106 @@ export class Player extends SpriteCollidable {
   }
 
   public static preload(scene: Phaser.Scene): void {
-    const spriteSize: Phaser.Types.Loader.FileTypes.ImageFrameConfig = {
-      frameWidth: TILE_SIZE * 2,
-      frameHeight: TILE_SIZE * 3
-    };
-
-    // TODO: assemble everything into a Sprite Atlas
-    scene.load
-      .spritesheet(
-        'hero_idle_center',
-        '/assets/sprites/hero_idle_center.png',
-        spriteSize
-      )
-      .spritesheet(
-        'hero_idle_left',
-        '/assets/sprites/hero_idle_left.png',
-        spriteSize
-      )
-      .spritesheet(
-        'hero_idle_right',
-        '/assets/sprites/hero_idle_right.png',
-        spriteSize
-      )
-      .spritesheet(
-        'hero_walk_left',
-        '/assets/sprites/hero_walk_left.png',
-        spriteSize
-      )
-      .spritesheet(
-        'hero_walk_right',
-        '/assets/sprites/hero_walk_right.png',
-        spriteSize
-      )
-      .spritesheet(
-        'hero_jump_idle_left',
-        '/assets/sprites/hero_jump_idle_left.png',
-        spriteSize
-      )
-      .spritesheet(
-        'hero_jump_idle_right',
-        '/assets/sprites/hero_jump_idle_right.png',
-        spriteSize
-      )
-      .spritesheet(
-        'hero_hang_left',
-        '/assets/sprites/hero_hang_left.png',
-        spriteSize
-      )
-      .spritesheet(
-        'hero_hang_right',
-        '/assets/sprites/hero_hang_right.png',
-        spriteSize
-      )
-      .spritesheet(
-        'hero_aim_up_left',
-        '/assets/sprites/hero_aim_up_left.png',
-        spriteSize
-      )
-      .spritesheet(
-        'hero_aim_up_right',
-        '/assets/sprites/hero_aim_up_right.png',
-        spriteSize
-      )
-      .spritesheet(
-        'hero_aim_up_diagonal_left',
-        '/assets/sprites/hero_aim_up_diagonal_left.png',
-        spriteSize
-      )
-      .spritesheet(
-        'hero_aim_up_diagonal_right',
-        '/assets/sprites/hero_aim_up_diagonal_right.png',
-        spriteSize
-      )
-      .spritesheet(
-        'hero_aim_down_diagonal_left',
-        '/assets/sprites/hero_aim_down_diagonal_left.png',
-        spriteSize
-      )
-      .spritesheet(
-        'hero_aim_down_diagonal_right',
-        '/assets/sprites/hero_aim_down_diagonal_right.png',
-        spriteSize
-      )
-      .spritesheet(
-        'hero_jump_left',
-        '/assets/sprites/hero_jump_left.png',
-        spriteSize
-      )
-      .spritesheet(
-        'hero_jump_right',
-        '/assets/sprites/hero_jump_right.png',
-        spriteSize
-      )
-      .spritesheet(
-        'hero_jump_left_start',
-        '/assets/sprites/hero_jump_left_start.png',
-        spriteSize
-      )
-      .spritesheet(
-        'hero_jump_right_start',
-        '/assets/sprites/hero_jump_right_start.png',
-        spriteSize
-      )
-      .spritesheet(
-        'hero_crouch_idle_left',
-        '/assets/sprites/hero_crouch_idle_left.png',
-        spriteSize
-      )
-      .spritesheet(
-        'hero_crouch_idle_right',
-        '/assets/sprites/hero_crouch_idle_right.png',
-        spriteSize
-      );
+    scene.load.atlas("hero", "assets/sprites/hero.png", "assets/sprites/hero.json");
   }
 
   public static create(scene: Phaser.Scene): void {
-    scene.anims.create({
-      key: 'hero_idle_center_animation',
-      frames: scene.anims.generateFrameNumbers('hero_idle_center', {}),
-      frameRate: 4,
-      repeat: -1
-    });
+    const spriteSize: Phaser.Types.Loader.FileTypes.ImageFrameConfig = {
+      frameWidth: TILE_SIZE * 2,
+      frameHeight: TILE_SIZE * 3,
+    };
 
-    scene.anims.create({
-      key: 'hero_idle_left_animation',
-      frames: scene.anims.generateFrameNumbers('hero_idle_left', {}),
-      frameRate: 4,
-      repeat: -1
-    });
+    const idleAnimations = [
+      "idle",
+      "crouch_idle",
+      "hang",
+      "aim_up",
+      "aim_up_diagonal",
+      "aim_down_diagonal",
+    ];
+    for (let idleAnimation of idleAnimations) {
+      const animations = [
+        `${idleAnimation}_left`,
+        `${idleAnimation}_right`
+      ];
 
-    scene.anims.create({
-      key: 'hero_idle_right_animation',
-      frames: scene.anims.generateFrameNumbers('hero_idle_right', {}),
-      frameRate: 4,
-      repeat: -1
-    });
+      if (idleAnimation.indexOf("idle") !== -1) {
+        animations.push(`${idleAnimation}_center`);
+      }
 
-    scene.anims.create({
-      key: 'hero_crouch_idle_left_animation',
-      frames: scene.anims.generateFrameNumbers('hero_crouch_idle_left', {}),
-      frameRate: 4,
-      repeat: -1
-    });
+      for (const animation of animations) {
+        const key = `hero_${animation}`;
+        scene.textures.addSpriteSheetFromAtlas(key, {
+          atlas: "hero",
+          frame: key,
+          ...spriteSize,
+        });
 
-    scene.anims.create({
-      key: 'hero_crouch_idle_right_animation',
-      frames: scene.anims.generateFrameNumbers('hero_crouch_idle_right', {}),
-      frameRate: 4,
-      repeat: -1
-    });
+        scene.anims.create({
+          key: `hero_${animation}_animation`,
+          frames: scene.anims.generateFrameNumbers(key, {
+            start: 0,
+          }),
+          frameRate: 4,
+          repeat: -1,
+        });
+      }
+    }
 
-    scene.anims.create({
-      key: 'hero_walk_left_animation',
-      frames: scene.anims.generateFrameNumbers('hero_walk_left', {}),
-      frameRate: 20,
-      repeat: -1
-    });
+    const fastAnimations = ["walk", "jump"];
+    for (let fastAnimation of fastAnimations) {
+      const animations = [`${fastAnimation}_left`, `${fastAnimation}_right`];
 
-    scene.anims.create({
-      key: 'hero_walk_right_animation',
-      frames: scene.anims.generateFrameNumbers('hero_walk_right', {}),
-      frameRate: 20,
-      repeat: -1
-    });
+      for (const animation of animations) {
+        const key = `hero_${animation}`;
+        scene.textures.addSpriteSheetFromAtlas(key, {
+          atlas: "hero",
+          frame: key,
+          ...spriteSize,
+        });
 
-    scene.anims.create({
-      key: 'hero_jump_idle_left_animation',
-      frames: scene.anims.generateFrameNumbers('hero_jump_idle_left', {
-        start: 0,
-        end: 1
-      }),
-      duration: 300
-    });
+        scene.anims.create({
+          key: `hero_${animation}_animation`,
+          frames: scene.anims.generateFrameNumbers(key, {
+            start: 0,
+          }),
+          frameRate: 20,
+          repeat: -1,
+        });
+      }
+    }
 
-    scene.anims.create({
-      key: 'hero_jump_idle_right_animation',
-      frames: scene.anims.generateFrameNumbers('hero_jump_idle_right', {
-        start: 0,
-        end: 1
-      }),
-      duration: 300
-    });
+    const jumpAnimations = ["jump_idle", "fall_idle"];
+    const textures = [
+      `${jumpAnimations[0]}_left`,
+      `${jumpAnimations[0]}_right`,
+    ];
+    for (const texture of textures) {
+      const key = `hero_${texture}`;
+      scene.textures.addSpriteSheetFromAtlas(key, {
+        atlas: "hero",
+        frame: key,
+        ...spriteSize,
+      });
+    }
 
-    scene.anims.create({
-      key: 'hero_fall_idle_left_animation',
-      frames: scene.anims.generateFrameNumbers('hero_jump_idle_left', {
-        start: 2,
-        end: 3
-      }),
-      duration: 300
-    });
+    for (let jumpAnimation of jumpAnimations) {
+      const animations = [`${jumpAnimation}_left`, `${jumpAnimation}_right`];
+      const isJump = jumpAnimation.indexOf("jump") !== -1;
 
-    scene.anims.create({
-      key: 'hero_fall_idle_right_animation',
-      frames: scene.anims.generateFrameNumbers('hero_jump_idle_right', {
-        start: 2,
-        end: 3
-      }),
-      duration: 300
-    });
+      for (let index = 0; index < animations.length; index++) {
+        const animation = animations[index];
 
-    scene.anims.create({
-      key: 'hero_jump_left_animation',
-      frames: scene.anims.generateFrameNumbers('hero_jump_left', {}),
-      frameRate: 20,
-      repeat: -1
-    });
-
-    scene.anims.create({
-      key: 'hero_jump_right_animation',
-      frames: scene.anims.generateFrameNumbers('hero_jump_right', {}),
-      frameRate: 20,
-      repeat: -1
-    });
-
-    scene.anims.create({
-      key: 'hero_hang_left_animation',
-      frames: scene.anims.generateFrameNumbers('hero_hang_left', {}),
-      frameRate: 4,
-      repeat: -1
-    });
-
-    scene.anims.create({
-      key: 'hero_hang_right_animation',
-      frames: scene.anims.generateFrameNumbers('hero_hang_right', {}),
-      frameRate: 4,
-      repeat: -1
-    });
-
-    scene.anims.create({
-      key: 'hero_aim_up_left_animation',
-      frames: scene.anims.generateFrameNumbers('hero_aim_up_left', {}),
-      frameRate: 4,
-      repeat: -1
-    });
-
-    scene.anims.create({
-      key: 'hero_aim_up_right_animation',
-      frames: scene.anims.generateFrameNumbers('hero_aim_up_right', {}),
-      frameRate: 4,
-      repeat: -1
-    });
-
-    scene.anims.create({
-      key: 'hero_aim_up_diagonal_left_animation',
-      frames: scene.anims.generateFrameNumbers('hero_aim_up_diagonal_left', {}),
-      frameRate: 4,
-      repeat: -1
-    });
-
-    scene.anims.create({
-      key: 'hero_aim_up_diagonal_right_animation',
-      frames: scene.anims.generateFrameNumbers('hero_aim_up_diagonal_right', {}),
-      frameRate: 4,
-      repeat: -1
-    });
-
-    scene.anims.create({
-      key: 'hero_aim_down_diagonal_left_animation',
-      frames: scene.anims.generateFrameNumbers('hero_aim_down_diagonal_left', {}),
-      frameRate: 4,
-      repeat: -1
-    });
-
-    scene.anims.create({
-      key: 'hero_aim_down_diagonal_right_animation',
-      frames: scene.anims.generateFrameNumbers('hero_aim_down_diagonal_right', {}),
-      frameRate: 4,
-      repeat: -1
-    });
+        scene.anims.create({
+          key: `hero_${animation}_animation`,
+          frames: scene.anims.generateFrameNumbers(`hero_${textures[index]}`, {
+            start: isJump ? 0 : 2,
+            end: isJump ? 1 : 3,
+          }),
+          duration: 300,
+        });
+      }
+    }
   }
 
   /**
@@ -1833,7 +1665,11 @@ export class Player extends SpriteCollidable {
     const doNewAnimation: boolean = animation !== this.anims.getCurrentKey();
 
     if (doNewAnimation) {
-      this.anims.play(animation, true);
+      try {
+        this.anims.play(animation, true);
+      } catch (error) {
+        console.error(error, animation);
+      }
     }
   }
 
