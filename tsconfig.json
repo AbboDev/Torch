@@ -1,31 +1,30 @@
 {
   "compilerOptions": {
-    "target": "esnext",
-    "moduleResolution": "node",
+    "target": "ESNext",
+    "moduleResolution": "Bundler",
     "module": "esnext",
     "strict": true,
     "sourceMap": true,
-    "noEmit": false,
+    "noEmit": true,
     "allowJs": true,
     "noImplicitAny": false,
-    "baseUrl": "./src",
     "typeRoots": [
       "./node_modules/phaser/types",
       "./node_modules/@types",
       "./src/@types"
     ],
     "paths": {
-      "Config/*": ["./Config/*"],
-      "Entities/Bullets/*": ["./Entities/Bullets/*"],
-      "Entities/Hitboxes/*": ["./Entities/Hitboxes/*"],
-      "Entities/Weapons/*": ["./Entities/Weapons/*"],
-      "Entities/*": ["./Entities/*"],
-      "Miscellaneous/*": ["./Miscellaneous/*"],
-      "HUD/*": ["./HUD/*"],
-      "Scenes/*": ["./Scenes/*"]
+      "Config/*": ["./src/Config/*"],
+      "Entities/Bullets/*": ["./src/Entities/Bullets/*"],
+      "Entities/Hitboxes/*": ["./src/Entities/Hitboxes/*"],
+      "Entities/Weapons/*": ["./src/Entities/Weapons/*"],
+      "Entities/*": ["./src/Entities/*"],
+      "Miscellaneous": ["./src/Miscellaneous/index.ts"],
+      "Miscellaneous/*": ["./src/Miscellaneous/*"],
+      "HUD/*": ["./src/HUD/*"],
+      "Scenes": ["./src/Scenes/index.ts"],
+      "Scenes/*": ["./src/Scenes/*"]
     }
   },
-  "include": [
-    "./src/**/*"
-  ]
+  "include": ["./src/**/*"]
 }

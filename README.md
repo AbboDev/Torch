@@ -1,22 +1,17 @@
-# Phaser 3 TypeScript/Webpack Project Template
+# Torch
 
-A Phaser 3 TypeScript Template
+A Phaser 3 game built with TypeScript and Vite.
 
-Modeled after [Phaser 3 Project Template](https://github.com/photonstorm/phaser3-project-template)
+## Requirements
 
-### Requirements
-
-We need [Node.js](https://nodejs.org) to install and run scripts.
+Use Node.js 24 LTS and npm.
 
 ## Install and run
 
-Run next commands in your terminal:
-
-| Command | Description |
-|---------|-------------|
-| `npm install` | Install dependencies and launch browser with examples.|
-| `npm run build:dev` | Builds a unminified copy of your game, with source maps, for debugging purposes. |
-| `npm run build:prod` | Builds a minified copy of your game without source maps for production use. |
-| `npm start` | Launch browser of choice and navigate to [http://localhost:8080/](http://localhost:8080/). <br> Press `Ctrl + C` in NodeJS terminal to kill **webpack-dev-server** process. |
-=======
-
+| Command             | Description                                                  |
+| ------------------- | ------------------------------------------------------------ |
+| `npm install`       | Install dependencies.                                        |
+| `npm run dev`       | Start the Vite development server at http://localhost:5173/. |
+| `npm run typecheck` | Check TypeScript without emitting files.                     |
+| `npm run build`     | Create a minified production build in `build/`.              |
+| `npm run build:dev` | Create a source-mapped, unminified build in `build/`.        |

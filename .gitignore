@@ -68,3 +68,5 @@ rawAssets
 
 # editor config folder
 .vscode/
+
+.vercel
