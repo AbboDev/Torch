@@ -1,4 +1,4 @@
 {
-  "buildCommand": "npm run build:prod",
+  "buildCommand": "if [ \"$VERCEL_ENV\" = \"production\" ]; then npm run build:prod; else npm run build:dev; fi",
   "outputDirectory": "build"
 }
