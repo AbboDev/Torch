@@ -10,65 +10,29 @@ export enum ControllerKey {
   X = "X",
   Y = "Y",
   L = "L",
-  R = "R",
   START = "Start",
   SELECT = "Select",
   DEBUG = "Debug",
 }
 
+const KEY_CODES: Record<ControllerKey, number> = {
+  [ControllerKey.UP]: Phaser.Input.Keyboard.KeyCodes.UP,
+  [ControllerKey.DOWN]: Phaser.Input.Keyboard.KeyCodes.DOWN,
+  [ControllerKey.LEFT]: Phaser.Input.Keyboard.KeyCodes.LEFT,
+  [ControllerKey.RIGHT]: Phaser.Input.Keyboard.KeyCodes.RIGHT,
+  [ControllerKey.A]: Phaser.Input.Keyboard.KeyCodes.X,
+  [ControllerKey.B]: Phaser.Input.Keyboard.KeyCodes.C,
+  [ControllerKey.X]: Phaser.Input.Keyboard.KeyCodes.Z,
+  [ControllerKey.Y]: Phaser.Input.Keyboard.KeyCodes.S,
+  [ControllerKey.L]: Phaser.Input.Keyboard.KeyCodes.A,
+  [ControllerKey.START]: Phaser.Input.Keyboard.KeyCodes.ENTER,
+  [ControllerKey.SELECT]: Phaser.Input.Keyboard.KeyCodes.SHIFT,
+  [ControllerKey.DEBUG]: Phaser.Input.Keyboard.KeyCodes.BACK_SLASH,
+};
+
 export class Controller {
-  public keyUp: Phaser.Input.Keyboard.Key;
-
-  public isKeyUpPress = false;
-
-  public keyDown: Phaser.Input.Keyboard.Key;
-
-  public isKeyDownPress = false;
-
-  public keyLeft: Phaser.Input.Keyboard.Key;
-
-  public isKeyLeftPress = false;
-
-  public keyRight: Phaser.Input.Keyboard.Key;
-
-  public isKeyRightPress = false;
-
-  public keyA: Phaser.Input.Keyboard.Key;
-
-  public isKeyAPress = false;
-
-  public keyB: Phaser.Input.Keyboard.Key;
-
-  public isKeyBPress = false;
-
-  public keyX: Phaser.Input.Keyboard.Key;
-
-  public isKeyXPress = false;
-
-  public keyY: Phaser.Input.Keyboard.Key;
-
-  public isKeyYPress = false;
-
-  public keyL: Phaser.Input.Keyboard.Key;
-
-  public isKeyLPress = false;
-
-  public keyR: Phaser.Input.Keyboard.Key;
-
-  public isKeyRPress = false;
-
-  public keyStart: Phaser.Input.Keyboard.Key;
-
-  public isKeyStartPress = false;
-
-  public keySelect: Phaser.Input.Keyboard.Key;
-
-  public isKeySelectPress = false;
-
-  public keyDebug: Phaser.Input.Keyboard.Key;
-
-  public isKeyDebugPress = false;
-
+  private keys = new Map<ControllerKey, Phaser.Input.Keyboard.Key>();
+  private pressed = new Set<ControllerKey>();
   private static instance: Controller;
 
   private constructor(protected scene: Phaser.Scene) {
@@ -77,91 +41,16 @@ export class Controller {
       throw new Error("Keyboard input is unavailable");
     }
 
-    this.keyUp = keyboard
-      .addKey(Phaser.Input.Keyboard.KeyCodes.UP)
-      .on("up", () => {
-        this.isKeyUpPress = false;
-      });
-
-    this.keyDown = keyboard
-      .addKey(Phaser.Input.Keyboard.KeyCodes.DOWN)
-      .on("up", () => {
-        this.isKeyDownPress = false;
-      });
-
-    this.keyLeft = keyboard
-      .addKey(Phaser.Input.Keyboard.KeyCodes.LEFT)
-      .on("up", () => {
-        this.isKeyLeftPress = false;
-      });
-
-    this.keyRight = keyboard
-      .addKey(Phaser.Input.Keyboard.KeyCodes.RIGHT)
-      .on("up", () => {
-        this.isKeyRightPress = false;
-      });
-
-    this.keyA = keyboard
-      .addKey(Phaser.Input.Keyboard.KeyCodes.X)
-      .on("up", () => {
-        this.isKeyAPress = false;
-      });
-
-    this.keyB = keyboard
-      .addKey(Phaser.Input.Keyboard.KeyCodes.C)
-      .on("up", () => {
-        this.isKeyBPress = false;
-      });
-
-    this.keyX = keyboard
-      .addKey(Phaser.Input.Keyboard.KeyCodes.Z)
-      .on("up", () => {
-        this.isKeyXPress = false;
-      });
-
-    this.keyY = keyboard
-      .addKey(Phaser.Input.Keyboard.KeyCodes.S)
-      .on("up", () => {
-        this.isKeyYPress = false;
-      });
-
-    this.keyL = keyboard
-      .addKey(Phaser.Input.Keyboard.KeyCodes.A)
-      .on("up", () => {
-        this.isKeyLPress = false;
-      });
-
-    this.keyR = keyboard
-      .addKey(Phaser.Input.Keyboard.KeyCodes.D)
-      .on("up", () => {
-        this.isKeyRPress = false;
-      });
-
-    this.keyStart = keyboard
-      .addKey(Phaser.Input.Keyboard.KeyCodes.ENTER)
-      .on("up", () => {
-        this.isKeyStartPress = false;
-      });
-
-    this.keySelect = keyboard
-      .addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT)
-      .on("up", () => {
-        this.isKeySelectPress = false;
-      });
-
-    this.keyDebug = keyboard
-      .addKey(Phaser.Input.Keyboard.KeyCodes.BACK_SLASH)
-      .on("up", () => {
-        this.isKeyDebugPress = false;
-      });
+    for (const [key, code] of Object.entries(KEY_CODES) as [
+      ControllerKey,
+      number,
+    ][]) {
+      const input = keyboard.addKey(code);
+      input.on("up", () => this.pressed.delete(key));
+      this.keys.set(key, input);
+    }
   }
 
-  /**
-   * The static method that controls the access to the singleton instance.
-   *
-   * This implementation let you subclass the Singleton class while keeping
-   * just one instance of each subclass around.
-   */
   public static getInstance(scene: Phaser.Scene): Controller {
     if (!Controller.instance) {
       Controller.instance = new Controller(scene);
@@ -170,100 +59,31 @@ export class Controller {
     return Controller.instance;
   }
 
-  /**
-   * Retrieve the key if exist from symbolic string, otherwise return false
-   *
-   * @param  {ControllerKey} key The requested key
-   *
-   * @return {boolean|Key}       The requested Key or false if not found
-   */
-  public getKey(key: ControllerKey): boolean | Phaser.Input.Keyboard.Key {
-    if (!Object.values(ControllerKey).includes(key)) {
-      return false;
-    }
-
-    const stringKey = `key${key}` as keyof Controller;
-
-    if (this[stringKey] instanceof Phaser.Input.Keyboard.Key) {
-      return this[stringKey] as Phaser.Input.Keyboard.Key;
-    }
-
-    return false;
-  }
-
-  /**
-   * Test if the requested key is currently press
-   *
-   * @param  {ControllerKey} key      The requested key
-   * @param  {number}        duration Eventually test the duration of press
-   *
-   * @return {boolean}                The check if the key is press or not
-   */
   public isKeyPressed(key: ControllerKey, duration?: number): boolean {
-    const input: boolean | Phaser.Input.Keyboard.Key = this.getKey(key);
-
+    const input = this.keys.get(key);
     if (!input) {
       return false;
     }
 
     if (duration) {
       const keyboard = this.scene.input.keyboard;
-      return keyboard
-        ? keyboard.checkDown(input as Phaser.Input.Keyboard.Key, duration)
-        : false;
+      return keyboard ? keyboard.checkDown(input, duration) : false;
     }
 
-    return (input as Phaser.Input.Keyboard.Key).isDown;
+    return input.isDown;
   }
 
-  /**
-   * Test if the requested key is been pressed before
-   * If not, then set it as pressed and return true
-   *
-   * @param  {ControllerKey} key The requested key
-   *
-   * @return {boolean}           The check if the key was not hold before
-   */
   public isKeyPressedForFirstTime(key: ControllerKey): boolean {
-    const input: boolean | Phaser.Input.Keyboard.Key = this.getKey(key);
-
-    if (!input) {
+    if (!this.isKeyPressed(key) || this.pressed.has(key)) {
       return false;
     }
 
-    const stringKey = `isKey${key}Press` as keyof Controller;
-
-    if (typeof this[stringKey] !== "boolean") {
-      return false;
-    }
-
-    if (!this.isKeyPressed(key)) {
-      return false;
-    }
-
-    const currentValue = this[stringKey] as boolean;
-
-    if (currentValue !== true) {
-      (this[stringKey] as boolean) = true;
-    }
-
-    return this.isKeyPressed(key) && currentValue === false;
+    this.pressed.add(key);
+    return true;
   }
 
-  /**
-   * Return the current press duration of a key
-   *
-   * @param  {ControllerKey} key The requested key
-   *
-   * @return {number}            The amount of time the key has been pressed
-   */
   public getKeyDuration(key: ControllerKey): number {
-    const input: boolean | Phaser.Input.Keyboard.Key = this.getKey(key);
-
-    if (!input) {
-      return 0;
-    }
-
-    return (input as Phaser.Input.Keyboard.Key).getDuration();
+    const input = this.keys.get(key);
+    return input ? input.getDuration() : 0;
   }
 }

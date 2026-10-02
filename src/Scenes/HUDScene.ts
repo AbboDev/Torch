@@ -153,7 +153,7 @@ export class HUDScene extends DataScene {
   }
 
   protected updateData(
-    parent: Phaser.Game,
+    _parent: Phaser.Game,
     key: string,
     data: string | number
   ): void {

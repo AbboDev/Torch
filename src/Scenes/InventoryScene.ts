@@ -186,25 +186,6 @@ export class InventoryScene extends DataScene {
     }
   }
 
-  protected updateData(
-    parent: Phaser.Game,
-    key: string,
-    data: string | number
-  ): void {
-    switch (key) {
-      case "ammo":
-      case "maxAmmo":
-      case "life":
-      case "maxLife":
-      case "battery":
-      case "maxBattery":
-        break;
-      default:
-        // console.debug(key, data.toString());
-        break;
-    }
-  }
-
   private selectNextButton(
     horizontalMovement = 0,
     verticalMovement = 1
@@ -282,11 +263,7 @@ export class InventoryScene extends DataScene {
     const item: PowerUps | typeof Weapon = tuple[0];
     const inventory = this.getInventory();
 
-    console.debug(item);
-
     if (typeof item === "function" && inventory.carry(item as unknown as Weapon)) {
-      console.debug(tuple[1]);
-      console.debug(inventory.getCurrentWeapon());
       if (inventory.getCurrentWeapon() instanceof item) {
         return this;
       }

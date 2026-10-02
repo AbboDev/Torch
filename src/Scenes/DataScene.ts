@@ -13,5 +13,5 @@ export abstract class DataScene extends ContinuousScene {
       });
   }
 
-  protected abstract updateData(parent: any, key: string, data: any): void;
+  protected updateData(_parent: any, _key: string, _data: any): void {}
 }
