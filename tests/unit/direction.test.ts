@@ -5,7 +5,7 @@ import {
   getSign,
   getSignX,
   getSignY,
-} from "../../src/Miscellaneous/Direction";
+} from "@/miscellaneous/Direction";
 
 vi.mock("phaser", () => ({
   Math: {

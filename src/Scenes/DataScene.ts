@@ -1,4 +1,4 @@
-import { ContinuousScene } from "Scenes/ContinuousScene";
+import { ContinuousScene } from "@/scenes/ContinuousScene";
 
 export abstract class DataScene extends ContinuousScene {
   public create(): void {

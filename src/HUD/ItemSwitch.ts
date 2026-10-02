@@ -1,7 +1,7 @@
 import * as Phaser from "phaser";
-import { DataScene } from "Scenes/DataScene";
-import { TILE_SIZE } from "Config/tiles";
-import { Switch } from "Miscellaneous";
+import { DataScene } from "@/scenes/DataScene";
+import { TILE_SIZE } from "@/config/tiles";
+import { Switch } from "@/miscellaneous/Switch";
 
 export class ItemSwitch extends Phaser.GameObjects.Arc {
   private status: Switch;

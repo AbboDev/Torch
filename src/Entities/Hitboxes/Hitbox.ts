@@ -1,6 +1,6 @@
 import * as Phaser from "phaser";
-import { MapScene } from "Scenes";
-import { PLAYER_DEPTH } from "Config/depths";
+import { MapScene } from "@/scenes/MapScene";
+import { PLAYER_DEPTH } from "@/config/depths";
 
 /**
  * The three possible orientations along the Y axis

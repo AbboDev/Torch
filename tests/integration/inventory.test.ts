@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("Miscellaneous", () => ({
+vi.mock("@/miscellaneous/Switch", () => ({
   Switch: {
     ENABLE: "true",
     DISABLE: "false",
@@ -14,8 +14,7 @@ describe("inventory integration", () => {
   });
 
   it("updates power-ups and notifies the scene when a weapon is added", async () => {
-    const { Inventory, PowerUps } =
-      await import("../../src/Miscellaneous/Inventory");
+    const { Inventory, PowerUps } = await import("@/miscellaneous/Inventory");
     const sceneEvents = { emit: vi.fn() };
     const inventory = Inventory.getInstance({ events: sceneEvents } as never);
 

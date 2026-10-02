@@ -1,9 +1,10 @@
 import * as Phaser from "phaser";
-import { ContinuousScene } from "Scenes";
-import { ControllerKey } from "Miscellaneous";
-import { TiledObject, TiledObjectProperty, Platform } from "Entities/Scenarios";
+import { ContinuousScene } from "@/scenes/ContinuousScene";
+import { ControllerKey } from "@/miscellaneous/Controller";
+import { TiledObject, TiledObjectProperty } from "@/entities/scenarios/TiledObject";
+import { Platform } from "@/entities/scenarios/Platform";
 
-import { DEFAULT_LIGHT } from "Config/lights";
+import { DEFAULT_LIGHT } from "@/config/lights";
 
 export abstract class MapScene extends ContinuousScene {
   /**

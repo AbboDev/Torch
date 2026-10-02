@@ -1,9 +1,12 @@
 import * as Phaser from "phaser";
-import { MapScene } from "Scenes/MapScene";
-import { ControllerKey } from "Miscellaneous";
-import { TiledObject, Platform } from "Entities/Scenarios";
-import { Player } from "Entities/Player";
-import { Bow, Gun, Rifle } from "Entities/Weapons";
+import { MapScene } from "@/scenes/MapScene";
+import { ControllerKey } from "@/miscellaneous/Controller";
+import { TiledObject } from "@/entities/scenarios/TiledObject";
+import { Platform } from "@/entities/scenarios/Platform";
+import { Player } from "@/entities/Player";
+import { Bow } from "@/entities/weapons/Bow";
+import { Gun } from "@/entities/weapons/Gun";
+import { Rifle } from "@/entities/weapons/Rifle";
 import {
   BACKGROUND_DEPTH,
   BELOW_LAYER_DEPTH,
@@ -11,9 +14,9 @@ import {
   WORLD_LAYER_DEPTH,
   STAIRS_LAYER_DEPTH,
   GLOBAL_ABOVE_LAYER_DEPTH,
-} from "Config/depths";
-import { DEFAULT_LIGHT } from "Config/lights";
-import { TILE_SIZE } from "Config/tiles";
+} from "@/config/depths";
+import { DEFAULT_LIGHT } from "@/config/lights";
+import { TILE_SIZE } from "@/config/tiles";
 
 export class MainScene extends MapScene {
   private hero!: Player;

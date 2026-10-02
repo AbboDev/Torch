@@ -1,7 +1,10 @@
 import * as Phaser from "phaser";
-import { DataScene } from "Scenes";
-import { TILE_SIZE } from "Config/tiles";
-import { Bow, Gun, Rifle, Weapon } from "Entities/Weapons";
+import { DataScene } from "@/scenes/DataScene";
+import { TILE_SIZE } from "@/config/tiles";
+import { Bow } from "@/entities/weapons/Bow";
+import { Gun } from "@/entities/weapons/Gun";
+import { Rifle } from "@/entities/weapons/Rifle";
+import { Weapon } from "@/entities/weapons/Weapon";
 
 export class HUDScene extends DataScene {
   private life!: Phaser.GameObjects.Image;

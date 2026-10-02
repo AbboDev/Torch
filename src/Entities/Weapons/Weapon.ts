@@ -1,7 +1,7 @@
 import * as Phaser from "phaser";
-import { Bullet, BulletConfig } from "Entities/Bullets";
-import { MapScene } from "Scenes";
-import { GroupCollidable } from "Entities/Collidables";
+import { Bullet, BulletConfig } from "@/entities/bullets/Bullet";
+import { MapScene } from "@/scenes/MapScene";
+import { GroupCollidable } from "@/entities/collidables/GroupCollidable";
 
 export class Weapon extends GroupCollidable {
   /**

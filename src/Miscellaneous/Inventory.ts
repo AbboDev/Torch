@@ -1,6 +1,6 @@
-import { Switch } from "Miscellaneous";
-import { Weapon } from "Entities/Weapons";
-import { ContinuousScene } from "Scenes";
+import { Switch } from "@/miscellaneous/Switch";
+import { Weapon } from "@/entities/weapons/Weapon";
+import { ContinuousScene } from "@/scenes/ContinuousScene";
 
 export enum PowerUps {
   TORCH = "torch",

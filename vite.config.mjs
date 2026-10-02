@@ -13,11 +13,7 @@ export default defineConfig(({ mode }) => ({
   ],
   resolve: {
     alias: {
-      Config: sourcePath("./src/Config"),
-      Entities: sourcePath("./src/Entities"),
-      HUD: sourcePath("./src/HUD"),
-      Miscellaneous: sourcePath("./src/Miscellaneous"),
-      Scenes: sourcePath("./src/Scenes"),
+      "@": sourcePath("./src"),
     },
   },
   build: {

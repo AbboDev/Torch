@@ -1,6 +1,8 @@
 import * as Phaser from "phaser";
-import { Player } from "Entities/Player";
-import { GunBullet, BowArrow, RifleBullet } from "Entities/Bullets";
+import { Player } from "@/entities/Player";
+import { GunBullet } from "@/entities/bullets/GunBullet";
+import { BowArrow } from "@/entities/bullets/BowArrow";
+import { RifleBullet } from "@/entities/bullets/RifleBullet";
 
 export class PreloaderScene extends Phaser.Scene {
   public constructor() {

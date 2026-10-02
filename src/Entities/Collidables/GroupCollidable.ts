@@ -1,5 +1,5 @@
 import * as Phaser from "phaser";
-import { MapScene } from "Scenes";
+import { MapScene } from "@/scenes/MapScene";
 
 export abstract class GroupCollidable extends Phaser.Physics.Arcade.Group {
   /**

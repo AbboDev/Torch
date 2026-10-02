@@ -1,5 +1,6 @@
 import * as Phaser from "phaser";
-import { Controller, Inventory } from "Miscellaneous";
+import { Controller } from "@/miscellaneous/Controller";
+import { Inventory } from "@/miscellaneous/Inventory";
 
 export abstract class ContinuousScene extends Phaser.Scene {
   /**

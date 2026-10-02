@@ -15,16 +15,7 @@
       "./src/@types"
     ],
     "paths": {
-      "Config/*": ["./src/Config/*"],
-      "Entities/Bullets/*": ["./src/Entities/Bullets/*"],
-      "Entities/Hitboxes/*": ["./src/Entities/Hitboxes/*"],
-      "Entities/Weapons/*": ["./src/Entities/Weapons/*"],
-      "Entities/*": ["./src/Entities/*"],
-      "Miscellaneous": ["./src/Miscellaneous/index.ts"],
-      "Miscellaneous/*": ["./src/Miscellaneous/*"],
-      "HUD/*": ["./src/HUD/*"],
-      "Scenes": ["./src/Scenes/index.ts"],
-      "Scenes/*": ["./src/Scenes/*"]
+      "@/*": ["./src/*"]
     }
   },
   "include": ["./src/**/*", "./tests/**/*"]

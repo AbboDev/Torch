@@ -1,9 +1,9 @@
 import * as Phaser from "phaser";
-import { Facing, getSign } from "Miscellaneous";
-import { MapScene } from "Scenes";
-import { BULLET_DEPTH } from "Config/depths";
-import { DEFAULT_BULLET_LIGHT } from "Config/lights";
-import { TILE_SIZE } from "Config/tiles";
+import { Facing, getSign } from "@/miscellaneous/Direction";
+import { MapScene } from "@/scenes/MapScene";
+import { BULLET_DEPTH } from "@/config/depths";
+import { DEFAULT_BULLET_LIGHT } from "@/config/lights";
+import { TILE_SIZE } from "@/config/tiles";
 
 export interface BulletConfig {
   position: Phaser.Math.Vector2;

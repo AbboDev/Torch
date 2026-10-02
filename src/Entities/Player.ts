@@ -3,16 +3,21 @@ import {
   Facing,
   DirectionAxisY,
   DirectionAxisX,
-  ControllerKey,
-  PowerUps,
-} from "Miscellaneous";
-import { Hitbox, AreaPosition } from "Entities/Hitboxes";
-import { Gun, Bow, Rifle, Weapon } from "Entities/Weapons";
-import { BulletConfig } from "Entities/Bullets";
-import { SpriteCollidable } from "Entities/Collidables";
-import { MapScene } from "Scenes";
-import { PLAYER_DEPTH } from "Config/depths";
-import { TILE_SIZE } from "Config/tiles";
+} from "@/miscellaneous/Direction";
+import { ControllerKey } from "@/miscellaneous/Controller";
+import {
+  PowerUps
+} from "@/miscellaneous/Inventory";
+import { Hitbox, AreaPosition } from "@/entities/hitboxes/Hitbox";
+import { Bow } from "@/entities/weapons/Bow";
+import { Gun } from "@/entities/weapons/Gun";
+import { Rifle } from "@/entities/weapons/Rifle";
+import { Weapon } from "@/entities/weapons/Weapon";
+import { BulletConfig } from "@/entities/bullets/Bullet";
+import { SpriteCollidable } from "@/entities/collidables/SpriteCollidable";
+import { MapScene } from "@/scenes/MapScene";
+import { PLAYER_DEPTH } from "@/config/depths";
+import { TILE_SIZE } from "@/config/tiles";
 
 export class Player extends SpriteCollidable {
   /**

@@ -1,13 +1,11 @@
 import * as Phaser from "phaser";
-import {
-  PreloaderScene,
-  HandlerScene,
-  MainScene,
-  HUDScene,
-  InventoryScene,
-} from "Scenes";
+import { PreloaderScene } from "@/scenes/PreloaderScene";
+import { HandlerScene } from "@/scenes/HandlerScene";
+import { MainScene } from "@/scenes/MainScene";
+import { HUDScene } from "@/scenes/HUDScene";
+import { InventoryScene } from "@/scenes/InventoryScene";
 
-import { TILE_SIZE } from "Config/tiles";
+import { TILE_SIZE } from "@/config/tiles";
 
 console.clear();
 

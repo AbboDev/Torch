@@ -1,9 +1,9 @@
 import * as Phaser from "phaser";
-import { SpriteCollidable } from "Entities/Collidables";
-import { MapScene } from "Scenes";
-import { WORLD_LAYER_DEPTH } from "Config/depths";
-import { TILE_SIZE } from "Config/tiles";
-import { TiledObjectProperty } from "Entities/Scenarios";
+import { SpriteCollidable } from "@/entities/collidables/SpriteCollidable";
+import { MapScene } from "@/scenes/MapScene";
+import { WORLD_LAYER_DEPTH } from "@/config/depths";
+import { TILE_SIZE } from "@/config/tiles";
+import { TiledObjectProperty } from "@/entities/scenarios/TiledObject";
 
 export enum PlatformDirection {
   VERTICAL = "vertical",
