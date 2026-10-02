@@ -53,6 +53,6 @@
   },
   "dependencies": {
     "phaser": "^3.90.0",
-    "phaser-animated-tiles": "^2.0.2"
+    "phaser-animated-tiles-2": "^2.0.4"
   }
 }

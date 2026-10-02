@@ -1,5 +1,5 @@
 import * as Phaser from "phaser";
-import AnimatedTiles from "phaser-animated-tiles/dist/AnimatedTiles";
+import AnimatedTiles from "phaser-animated-tiles-2";
 import {
   PreloaderScene,
   HandlerScene,

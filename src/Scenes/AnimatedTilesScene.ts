@@ -1,5 +1,5 @@
 import * as Phaser from "phaser";
-import * as AnimatedTiles from "phaser-animated-tiles/dist/AnimatedTiles";
+import type AnimatedTiles from "phaser-animated-tiles-2";
 
 interface AnimatedTilesSceneSystem extends Phaser.Scenes.Systems {
   animatedTiles: AnimatedTiles;
