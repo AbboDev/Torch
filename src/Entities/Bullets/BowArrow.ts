@@ -1,7 +1,7 @@
-import * as Phaser from 'phaser';
-import { MapScene } from 'Scenes';
-import { Bullet } from 'Entities/Bullets';
-import { TILE_SIZE } from 'Config/tiles';
+import * as Phaser from "phaser";
+import { MapScene } from "Scenes";
+import { Bullet } from "Entities/Bullets";
+import { TILE_SIZE } from "Config/tiles";
 
 export class BowArrow extends Bullet {
   protected allowGravity = true;
@@ -24,14 +24,13 @@ export class BowArrow extends Bullet {
 
     const spriteSize: Phaser.Types.Loader.FileTypes.ImageFrameConfig = {
       frameWidth: 16,
-      frameHeight: 8
+      frameHeight: 8,
     };
 
-    scene.load
-      .spritesheet(
-        'bow_arrow',
-        '/assets/sprites/bow_arrow.png',
-        spriteSize
-      );
+    scene.load.spritesheet(
+      "bow_arrow",
+      "assets/sprites/bow_arrow.png",
+      spriteSize
+    );
   }
 }

@@ -1,5 +1,5 @@
-import * as Phaser from 'phaser';
-import { MapScene } from 'Scenes';
+import * as Phaser from "phaser";
+import { MapScene } from "Scenes";
 
 export abstract class SpriteCollidable extends Phaser.Physics.Arcade.Sprite {
   /**
@@ -17,15 +17,10 @@ export abstract class SpriteCollidable extends Phaser.Physics.Arcade.Sprite {
    * @param {number}   y       The start y position
    * @param {string}   texture The initial texture key
    */
-  constructor(
-    scene: MapScene,
-    x: number,
-    y: number,
-    texture: string
-  ) {
+  constructor(scene: MapScene, x: number, y: number, texture: string) {
     super(scene, x, y, texture);
 
-    let layers: Phaser.Tilemaps.DynamicTilemapLayer[] = scene.worldLayer;
+    let layers: Phaser.Tilemaps.TilemapLayer[] = scene.worldLayer;
     if (!Array.isArray(layers)) {
       layers = [layers];
     }
@@ -34,8 +29,12 @@ export abstract class SpriteCollidable extends Phaser.Physics.Arcade.Sprite {
       scene.physics.add.collider(
         this,
         layer,
-        this.postCollision.bind(this),
-        this.testCollision.bind(this)
+        this.postCollision.bind(
+          this
+        ) as Phaser.Types.Physics.Arcade.ArcadePhysicsCallback,
+        this.testCollision.bind(
+          this
+        ) as Phaser.Types.Physics.Arcade.ArcadePhysicsCallback
       );
     }
   }
@@ -49,7 +48,7 @@ export abstract class SpriteCollidable extends Phaser.Physics.Arcade.Sprite {
   protected abstract postCollision(
     self: Phaser.GameObjects.GameObject,
     tile: Phaser.GameObjects.GameObject
-  ): void
+  ): void;
 
   /**
    * The callback which is call after a collision occurs
@@ -60,5 +59,5 @@ export abstract class SpriteCollidable extends Phaser.Physics.Arcade.Sprite {
   protected abstract testCollision(
     self: Phaser.GameObjects.GameObject,
     tile: Phaser.GameObjects.GameObject
-  ): boolean
+  ): boolean;
 }

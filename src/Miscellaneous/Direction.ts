@@ -1,29 +1,29 @@
-import * as Phaser from 'phaser';
+import * as Phaser from "phaser";
 
 /**
  * The three possible orientations along the Y axis
  */
 export enum DirectionAxisY {
-  UP = 'up',
-  DOWN = 'down',
-  MIDDLE = 'middle'
+  UP = "up",
+  DOWN = "down",
+  MIDDLE = "middle",
 }
 
 /**
  * The three possible orientations along the X axis
  */
 export enum DirectionAxisX {
-  LEFT = 'left',
-  RIGHT = 'right',
-  CENTER = 'center'
+  LEFT = "left",
+  RIGHT = "right",
+  CENTER = "center",
 }
 
 /**
  * A game object should have both
  */
 export interface Facing {
-  x: null | DirectionAxisX,
-  y: null | DirectionAxisY
+  x: null | DirectionAxisX;
+  y: null | DirectionAxisY;
 }
 
 /**
@@ -72,8 +72,5 @@ export function getSignY(directionY: DirectionAxisY | null): number {
  * @return {number}                The sign of the movement
  */
 export function getSign(facing: Facing): Phaser.Math.Vector2 {
-  return new Phaser.Math.Vector2(
-    getSignX(facing.x),
-    getSignY(facing.y)
-  );
+  return new Phaser.Math.Vector2(getSignX(facing.x), getSignY(facing.y));
 }

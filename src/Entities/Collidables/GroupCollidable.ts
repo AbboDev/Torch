@@ -1,5 +1,5 @@
-import * as Phaser from 'phaser';
-import { MapScene } from 'Scenes';
+import * as Phaser from "phaser";
+import { MapScene } from "Scenes";
 
 export abstract class GroupCollidable extends Phaser.Physics.Arcade.Group {
   /**
@@ -14,7 +14,7 @@ export abstract class GroupCollidable extends Phaser.Physics.Arcade.Group {
   ) {
     super(scene.physics.world, scene, config);
 
-    let layers: Phaser.Tilemaps.DynamicTilemapLayer[] = scene.worldLayer;
+    let layers: Phaser.Tilemaps.TilemapLayer[] = scene.worldLayer;
     if (!Array.isArray(layers)) {
       layers = [layers];
     }
@@ -23,8 +23,12 @@ export abstract class GroupCollidable extends Phaser.Physics.Arcade.Group {
       scene.physics.add.collider(
         this,
         layer,
-        this.postChildCollision.bind(this),
-        this.testChildCollision.bind(this)
+        this.postChildCollision.bind(
+          this
+        ) as Phaser.Types.Physics.Arcade.ArcadePhysicsCallback,
+        this.testChildCollision.bind(
+          this
+        ) as Phaser.Types.Physics.Arcade.ArcadePhysicsCallback
       );
     }
   }
@@ -39,7 +43,7 @@ export abstract class GroupCollidable extends Phaser.Physics.Arcade.Group {
   protected abstract postChildCollision(
     child: Phaser.GameObjects.GameObject,
     tile: Phaser.GameObjects.GameObject
-  ): void
+  ): void;
 
   /**
    * The callback which is call after a collision occurs
@@ -50,5 +54,5 @@ export abstract class GroupCollidable extends Phaser.Physics.Arcade.Group {
   protected abstract testChildCollision(
     child: Phaser.GameObjects.GameObject,
     tile: Phaser.GameObjects.GameObject
-  ): boolean
+  ): boolean;
 }

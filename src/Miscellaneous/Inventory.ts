@@ -1,16 +1,16 @@
-import { Switch } from 'Miscellaneous';
-import { Weapon } from 'Entities/Weapons';
-import { ContinuousScene } from 'Scenes';
+import { Switch } from "Miscellaneous";
+import { Weapon } from "Entities/Weapons";
+import { ContinuousScene } from "Scenes";
 
 export enum PowerUps {
-  TORCH = 'torch',
-  ROCKET = 'doubleJump',
-  BOOTS = 'highJump',
-  GLOVE = 'wallJump',
-  BOOSTER = 'boostedRun',
-  FAN = 'swim',
-  HOOK = 'hang',
-  DASH = 'dash',
+  TORCH = "torch",
+  ROCKET = "doubleJump",
+  BOOTS = "highJump",
+  GLOVE = "wallJump",
+  BOOSTER = "boostedRun",
+  FAN = "swim",
+  HOOK = "hang",
+  DASH = "dash",
 }
 
 export class Inventory {
@@ -83,7 +83,10 @@ export class Inventory {
 
   private _activeWeaponsIndex: number = 0;
 
-  private constructor(protected scene: ContinuousScene, load?: Inventory) {
+  private constructor(
+    protected scene: ContinuousScene,
+    load?: Inventory
+  ) {
     console.debug(load);
   }
 
@@ -117,7 +120,10 @@ export class Inventory {
     if (this.hasAtLeastOneRangeWeapon()) {
       return this.weapons.some((weapon: Weapon) => {
         // @ts-ignore
-        return weapon == item || (typeof item === 'function' && weapon instanceof item);
+        return (
+          weapon == item ||
+          (typeof item === "function" && weapon instanceof item)
+        );
       });
     }
 
@@ -133,7 +139,7 @@ export class Inventory {
   }
 
   public switchCurrentWeapon(index: number | Weapon): Inventory {
-    if (typeof index !== 'number') {
+    if (typeof index !== "number") {
       index = this.weapons.findIndex((weapon: Weapon) => {
         // @ts-ignore
         return weapon == index || weapon instanceof index;

@@ -1,9 +1,6 @@
-import * as Phaser from 'phaser';
-import {
-  Controller,
-  Inventory
-} from 'Miscellaneous';
-import { AnimatedTilesScene } from 'Scenes';
+import * as Phaser from "phaser";
+import { Controller, Inventory } from "Miscellaneous";
+import { AnimatedTilesScene } from "Scenes";
 
 export abstract class ContinuousScene extends AnimatedTilesScene {
   /**

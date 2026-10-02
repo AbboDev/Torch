@@ -1,11 +1,11 @@
-import { ContinuousScene } from 'Scenes/ContinuousScene';
+import { ContinuousScene } from "Scenes/ContinuousScene";
 
 export class HandlerScene extends ContinuousScene {
   public constructor() {
     super({
       active: false,
       visible: false,
-      key: 'gateway'
+      key: "gateway",
     });
   }
 

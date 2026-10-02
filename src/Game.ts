@@ -1,73 +1,67 @@
-import * as Phaser from 'phaser';
+import * as Phaser from "phaser";
+import AnimatedTiles from "phaser-animated-tiles/dist/AnimatedTiles";
 import {
   PreloaderScene,
   HandlerScene,
   MainScene,
   HUDScene,
-  InventoryScene
-} from 'Scenes';
+  InventoryScene,
+} from "Scenes";
 
-import { TILE_SIZE } from 'Config/tiles';
+import { TILE_SIZE } from "Config/tiles";
 
-// eslint-disable-next-line no-console
 console.clear();
 
 const config: Phaser.Types.Core.GameConfig = {
-  title: 'Torch',
+  title: "Torch",
   type: Phaser.WEBGL,
-  parent: 'canvas',
-  backgroundColor: '#000000',
-  version: 'Dev',
+  parent: "canvas",
+  backgroundColor: "#000000",
+  version: "Dev",
 
   width: TILE_SIZE * 40,
   height: TILE_SIZE * 22,
 
   zoom: 1,
   render: {
-    pixelArt: true
+    pixelArt: true,
   },
 
-  scene: [
-    PreloaderScene,
-    HandlerScene,
-    MainScene,
-    HUDScene,
-    InventoryScene
-  ],
+  scene: [PreloaderScene, HandlerScene, MainScene, HUDScene, InventoryScene],
 
   plugins: {
     scene: [
       {
-        key: 'AnimatedTiles',
-        // eslint-disable-next-line global-require
-        plugin: require('phaser-animated-tiles/dist/AnimatedTiles'),
-        mapping: 'animatedTiles'
-      }
-    ]
+        key: "AnimatedTiles",
+        plugin: AnimatedTiles,
+        mapping: "animatedTiles",
+      },
+    ],
   },
 
   scale: {
-    parent: 'canvas',
+    parent: "canvas",
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.NO_CENTER,
 
     min: {
       width: TILE_SIZE * 20,
-      height: TILE_SIZE * 11
-    }
+      height: TILE_SIZE * 11,
+    },
   },
 
   disableContextMenu: true,
 
   physics: {
-    default: 'arcade',
+    default: "arcade",
     arcade: {
       debug: true,
       gravity: {
-        y: TILE_SIZE * 32
-      }
-    }
-  }
+        x: 0,
+        y: TILE_SIZE * 32,
+      },
+    },
+  },
 };
 
 export default new Phaser.Game(config);

@@ -1,35 +1,31 @@
-import * as Phaser from 'phaser';
-import { ContinuousScene } from 'Scenes';
-import { ControllerKey } from 'Miscellaneous';
-import {
-  TiledObject,
-  TiledObjectProperty,
-  Platform
-} from 'Entities/Scenarios';
+import * as Phaser from "phaser";
+import { ContinuousScene } from "Scenes";
+import { ControllerKey } from "Miscellaneous";
+import { TiledObject, TiledObjectProperty, Platform } from "Entities/Scenarios";
 
-import { DEFAULT_LIGHT } from 'Config/lights';
+import { DEFAULT_LIGHT } from "Config/lights";
 
 export abstract class MapScene extends ContinuousScene {
   /**
    * The main tilemap layer where all the collision will be implemented
    *
-   * @type {Phaser.Tilemaps.DynamicTilemapLayer}
+   * @type {Phaser.Tilemaps.TilemapLayer}
    */
-  public collisionsLayer!: Phaser.Tilemaps.DynamicTilemapLayer;
+  public collisionsLayer!: Phaser.Tilemaps.TilemapLayer;
 
   /**
    * The main tilemap layer where all the tiles with only top side collision will be implemented
    *
-   * @type {Phaser.Tilemaps.DynamicTilemapLayer}
+   * @type {Phaser.Tilemaps.TilemapLayer}
    */
-  public oneWayCollisionsLayer!: Phaser.Tilemaps.DynamicTilemapLayer;
+  public oneWayCollisionsLayer!: Phaser.Tilemaps.TilemapLayer;
 
   /**
    * The tilemap layer where all the stairs will be implemented
    *
-   * @type {Phaser.Tilemaps.DynamicTilemapLayer}
+   * @type {Phaser.Tilemaps.TilemapLayer}
    */
-  public stairsLayer!: Phaser.Tilemaps.DynamicTilemapLayer;
+  public stairsLayer!: Phaser.Tilemaps.TilemapLayer;
 
   /**
    * The group where all the moving platforms will be implemented
@@ -41,37 +37,37 @@ export abstract class MapScene extends ContinuousScene {
   /**
    * The tilemap layer where all the liquids will be implemented
    *
-   * @type {Phaser.Tilemaps.DynamicTilemapLayer}
+   * @type {Phaser.Tilemaps.TilemapLayer}
    */
-  public breakablesLayer!: Phaser.Tilemaps.DynamicTilemapLayer;
+  public breakablesLayer!: Phaser.Tilemaps.TilemapLayer;
 
   /**
    * The tilemap layer where all the liquids will be implemented
    *
-   * @type {Phaser.Tilemaps.DynamicTilemapLayer}
+   * @type {Phaser.Tilemaps.TilemapLayer}
    */
-  public liquidsLayer!: Phaser.Tilemaps.DynamicTilemapLayer;
+  public liquidsLayer!: Phaser.Tilemaps.TilemapLayer;
 
   /**
    * The tilemap layer just before the background
    *
-   * @type {Phaser.Tilemaps.StaticTilemapLayer}
+   * @type {Phaser.Tilemaps.TilemapLayer}
    */
-  public belowLayer!: Phaser.Tilemaps.StaticTilemapLayer;
+  public belowLayer!: Phaser.Tilemaps.TilemapLayer;
 
   /**
    * The tilemap layer above all the elements
    *
-   * @type {Phaser.Tilemaps.StaticTilemapLayer}
+   * @type {Phaser.Tilemaps.TilemapLayer}
    */
-  public aboveLayer!: Phaser.Tilemaps.StaticTilemapLayer;
+  public aboveLayer!: Phaser.Tilemaps.TilemapLayer;
 
   /**
    * The tilemap layer above all the elements and liquids
    *
-   * @type {Phaser.Tilemaps.StaticTilemapLayer}
+   * @type {Phaser.Tilemaps.TilemapLayer}
    */
-  public frontLayer!: Phaser.Tilemaps.StaticTilemapLayer;
+  public frontLayer!: Phaser.Tilemaps.TilemapLayer;
 
   /**
    * The graphic which will render the tiles collision debug
@@ -125,7 +121,8 @@ export abstract class MapScene extends ContinuousScene {
   public create(): void {
     super.create();
 
-    this.collisionDebugGraphics = this.add.graphics()
+    this.collisionDebugGraphics = this.add
+      .graphics()
       .setAlpha(0.75)
       .setDepth(10000);
 
@@ -135,14 +132,14 @@ export abstract class MapScene extends ContinuousScene {
       active: true,
       maxSize: -1,
       runChildUpdate: true,
-      classType: Platform
+      classType: Platform,
     });
   }
 
   public update(time: any, delta: number): void {
     // Test if the user is pressing debug key
     if (this.getController().isKeyPressedForFirstTime(ControllerKey.DEBUG)) {
-      if (typeof this.physics.world.debugGraphic === 'undefined') {
+      if (typeof this.physics.world.debugGraphic === "undefined") {
         // If the game was started without debug enable, than init the graphic
         this.physics.world.createDebugGraphic();
         this.physics.world.drawDebug = true;
@@ -164,17 +161,14 @@ export abstract class MapScene extends ContinuousScene {
   }
 
   public updateCollisionGraphic(active: boolean): void {
-    this.collisionDebugGraphics
-      .setActive(active)
-      .setVisible(active);
+    this.collisionDebugGraphics.setActive(active).setVisible(active);
   }
 
   public setCurrentRoom(x: number, y: number): number {
     const currentRoomNumber: boolean | number = this.getCurrentRoom(x, y);
 
-    if (typeof currentRoomNumber !== 'number') {
-      // eslint-disable-next-line no-throw-literal
-      throw 'Missing room: player outbound';
+    if (typeof currentRoomNumber !== "number") {
+      throw "Missing room: player outbound";
     }
 
     let light = DEFAULT_LIGHT;
@@ -189,15 +183,15 @@ export abstract class MapScene extends ContinuousScene {
       let hasVisited = false;
       for (const property of properties) {
         switch (property.name) {
-          case 'dark': {
+          case "dark": {
             const darkness: string = property.value as string;
 
-            if (darkness && typeof darkness === 'string') {
+            if (darkness && typeof darkness === "string") {
               light = Phaser.Display.Color.HexStringToColor(darkness).color;
             }
             break;
           }
-          case 'visited':
+          case "visited":
             property.value = true;
             hasVisited = true;
             break;
@@ -208,15 +202,22 @@ export abstract class MapScene extends ContinuousScene {
 
       if (!hasVisited) {
         const visited: TiledObjectProperty = {
-          name: 'visited',
-          type: 'boolean',
-          value: true
+          name: "visited",
+          type: "boolean",
+          value: true,
         };
         properties.push(visited);
       }
     }
 
-    if (light !== this.lights.ambientColor) {
+    const ambientColor = this.lights.ambientColor;
+    const currentLight = Phaser.Display.Color.GetColor(
+      ambientColor.r,
+      ambientColor.g,
+      ambientColor.b
+    );
+
+    if (light !== currentLight) {
       this.lights.setAmbientColor(light);
     }
 
@@ -239,12 +240,12 @@ export abstract class MapScene extends ContinuousScene {
     return false;
   }
 
-  public get worldLayer(): Phaser.Tilemaps.DynamicTilemapLayer[] {
+  public get worldLayer(): Phaser.Tilemaps.TilemapLayer[] {
     return [
       this.collisionsLayer,
       this.oneWayCollisionsLayer,
       this.stairsLayer,
-      this.breakablesLayer
+      this.breakablesLayer,
     ];
   }
 }

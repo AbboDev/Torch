@@ -1,19 +1,19 @@
-import * as Phaser from 'phaser';
+import * as Phaser from "phaser";
 
 export enum ControllerKey {
-  UP = 'Up',
-  DOWN = 'Down',
-  LEFT = 'Left',
-  RIGHT = 'Right',
-  A = 'A',
-  B = 'B',
-  X = 'X',
-  Y = 'Y',
-  L = 'L',
-  R = 'R',
-  START = 'Start',
-  SELECT = 'Select',
-  DEBUG = 'Debug',
+  UP = "Up",
+  DOWN = "Down",
+  LEFT = "Left",
+  RIGHT = "Right",
+  A = "A",
+  B = "B",
+  X = "X",
+  Y = "Y",
+  L = "L",
+  R = "R",
+  START = "Start",
+  SELECT = "Select",
+  DEBUG = "Debug",
 }
 
 export class Controller {
@@ -73,82 +73,85 @@ export class Controller {
 
   private constructor(protected scene: Phaser.Scene) {
     const { keyboard } = this.scene.input;
+    if (!keyboard) {
+      throw new Error("Keyboard input is unavailable");
+    }
 
     this.keyUp = keyboard
       .addKey(Phaser.Input.Keyboard.KeyCodes.UP)
-      .on('up', () => {
+      .on("up", () => {
         this.isKeyUpPress = false;
       });
 
     this.keyDown = keyboard
       .addKey(Phaser.Input.Keyboard.KeyCodes.DOWN)
-      .on('up', () => {
+      .on("up", () => {
         this.isKeyDownPress = false;
       });
 
     this.keyLeft = keyboard
       .addKey(Phaser.Input.Keyboard.KeyCodes.LEFT)
-      .on('up', () => {
+      .on("up", () => {
         this.isKeyLeftPress = false;
       });
 
     this.keyRight = keyboard
       .addKey(Phaser.Input.Keyboard.KeyCodes.RIGHT)
-      .on('up', () => {
+      .on("up", () => {
         this.isKeyRightPress = false;
       });
 
     this.keyA = keyboard
       .addKey(Phaser.Input.Keyboard.KeyCodes.X)
-      .on('up', () => {
+      .on("up", () => {
         this.isKeyAPress = false;
       });
 
     this.keyB = keyboard
       .addKey(Phaser.Input.Keyboard.KeyCodes.C)
-      .on('up', () => {
+      .on("up", () => {
         this.isKeyBPress = false;
       });
 
     this.keyX = keyboard
       .addKey(Phaser.Input.Keyboard.KeyCodes.Z)
-      .on('up', () => {
+      .on("up", () => {
         this.isKeyXPress = false;
       });
 
     this.keyY = keyboard
       .addKey(Phaser.Input.Keyboard.KeyCodes.S)
-      .on('up', () => {
+      .on("up", () => {
         this.isKeyYPress = false;
       });
 
     this.keyL = keyboard
       .addKey(Phaser.Input.Keyboard.KeyCodes.A)
-      .on('up', () => {
+      .on("up", () => {
         this.isKeyLPress = false;
       });
 
     this.keyR = keyboard
       .addKey(Phaser.Input.Keyboard.KeyCodes.D)
-      .on('up', () => {
+      .on("up", () => {
         this.isKeyRPress = false;
       });
 
     this.keyStart = keyboard
       .addKey(Phaser.Input.Keyboard.KeyCodes.ENTER)
-      .on('up', () => {
+      .on("up", () => {
         this.isKeyStartPress = false;
       });
 
     this.keySelect = keyboard
       .addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT)
-      .on('up', () => {
+      .on("up", () => {
         this.isKeySelectPress = false;
       });
 
     this.keyDebug = keyboard
       .addKey(Phaser.Input.Keyboard.KeyCodes.BACK_SLASH)
-      .on('up', () => {
+      .on("up", () => {
         this.isKeyDebugPress = false;
       });
   }
@@ -204,10 +207,10 @@ export class Controller {
     }
 
     if (duration) {
-      return this.scene
-        .input
-        .keyboard
-        .checkDown(input as Phaser.Input.Keyboard.Key, duration);
+      const keyboard = this.scene.input.keyboard;
+      return keyboard
+        ? keyboard.checkDown(input as Phaser.Input.Keyboard.Key, duration)
+        : false;
     }
 
     return (input as Phaser.Input.Keyboard.Key).isDown;
@@ -230,7 +233,7 @@ export class Controller {
 
     const stringKey = `isKey${key}Press` as keyof Controller;
 
-    if (typeof this[stringKey] !== 'boolean') {
+    if (typeof this[stringKey] !== "boolean") {
       return false;
     }
 

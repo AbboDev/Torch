@@ -1,7 +1,7 @@
-import * as Phaser from 'phaser';
-import { DataScene } from 'Scenes/DataScene';
-import { TILE_SIZE } from 'Config/tiles';
-import { Switch } from 'Miscellaneous';
+import * as Phaser from "phaser";
+import { DataScene } from "Scenes/DataScene";
+import { TILE_SIZE } from "Config/tiles";
+import { Switch } from "Miscellaneous";
 
 export class ItemSwitch extends Phaser.GameObjects.Arc {
   private status: Switch;
@@ -19,14 +19,23 @@ export class ItemSwitch extends Phaser.GameObjects.Arc {
     strokeColor: number = 0xffffff,
     strokeAlpha: number = 1
   ) {
-    super(scene, x, y, radius, undefined, undefined, undefined, fillColor, fillAlpha);
+    super(
+      scene,
+      x,
+      y,
+      radius,
+      undefined,
+      undefined,
+      undefined,
+      fillColor,
+      fillAlpha
+    );
 
     this.status = status;
 
-    this
-      .setStrokeStyle(strokeWidth, strokeColor, strokeAlpha)
+    this.setStrokeStyle(strokeWidth, strokeColor, strokeAlpha)
       .setColor()
-      .on('selected', this.selected.bind(this));
+      .on("selected", this.selected.bind(this));
 
     this.scene.add.text(this.x + this.width, this.y, text).setOrigin(0, 0.5);
     this.scene.add.existing(this);

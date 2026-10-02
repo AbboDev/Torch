@@ -1,1 +1,1 @@
-export * from './Hitbox';
+export * from "./Hitbox";

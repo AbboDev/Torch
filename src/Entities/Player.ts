@@ -1,27 +1,18 @@
-import * as Phaser from 'phaser';
+import * as Phaser from "phaser";
 import {
   Facing,
   DirectionAxisY,
   DirectionAxisX,
   ControllerKey,
-  PowerUps
-} from 'Miscellaneous';
-import {
-  Hitbox,
-  AreaPosition
-} from 'Entities/Hitboxes';
-import {
-  Gun,
-  Bow,
-  Rifle,
-  Weapon
-} from 'Entities/Weapons';
-import { BulletConfig } from 'Entities/Bullets';
-import { SpriteCollidable } from 'Entities/Collidables';
-import { MapScene } from 'Scenes';
-import { PLAYER_DEPTH } from 'Config/depths';
-import { TILE_SIZE } from 'Config/tiles';
-import { text } from 'stream/consumers';
+  PowerUps,
+} from "Miscellaneous";
+import { Hitbox, AreaPosition } from "Entities/Hitboxes";
+import { Gun, Bow, Rifle, Weapon } from "Entities/Weapons";
+import { BulletConfig } from "Entities/Bullets";
+import { SpriteCollidable } from "Entities/Collidables";
+import { MapScene } from "Scenes";
+import { PLAYER_DEPTH } from "Config/depths";
+import { TILE_SIZE } from "Config/tiles";
 
 export class Player extends SpriteCollidable {
   /**
@@ -469,17 +460,17 @@ export class Player extends SpriteCollidable {
     y: number,
     currentRoom = 0
   ) {
-    super(scene, x, y, 'hero_idle_center');
+    super(scene, x, y, "hero_idle_center");
 
     this.currentRoom = currentRoom;
 
     this.facing = {
       y: DirectionAxisY.MIDDLE,
-      x: DirectionAxisX.CENTER
+      x: DirectionAxisX.CENTER,
     };
     this.facingForAim = {
       y: DirectionAxisY.MIDDLE,
-      x: DirectionAxisX.CENTER
+      x: DirectionAxisX.CENTER,
     };
 
     this.baseSpeed = this.scene.getWorldGravity().y / 2;
@@ -487,20 +478,16 @@ export class Player extends SpriteCollidable {
     this.scene.add.existing(this);
     this.scene.physics.world.enable(this);
 
-    this
-      .setDepth(PLAYER_DEPTH)
+    this.setDepth(PLAYER_DEPTH)
       .setOrigin(0.5, 0)
       .setCollideWorldBounds(true)
       .setBounce(0)
-      .setMaxVelocity(
-        this.getMaxRunSpeed(),
-        this.getMaxJumpSpeed()
-      );
+      .setMaxVelocity(this.getMaxRunSpeed(), this.getMaxJumpSpeed());
 
     this.body
       .setAllowGravity(true)
       .setAllowDrag(true)
-      .setDragX(0.90)
+      .setDragX(0.9)
       .setOffset(
         (this.width - Player.BODY_WIDTH) * (1 - this.originX),
         (this.height - Player.BODY_HEIGHT) * (1 - this.originY)
@@ -566,12 +553,12 @@ export class Player extends SpriteCollidable {
     // this.setPipeline('Light2D');
 
     this.scene.registry
-      .set('ammo', this.ammo)
-      .set('maxAmmo', this.maxAmmo)
-      .set('life', this.life)
-      .set('maxLife', this.maxLife)
-      .set('battery', this.battery)
-      .set('maxBattery', this.maxBattery);
+      .set("ammo", this.ammo)
+      .set("maxAmmo", this.maxAmmo)
+      .set("life", this.life)
+      .set("maxLife", this.maxLife)
+      .set("battery", this.battery)
+      .set("maxBattery", this.maxBattery);
   }
 
   public get life(): number {
@@ -585,7 +572,7 @@ export class Player extends SpriteCollidable {
     }
 
     this._life = newValue;
-    this.scene.registry.set('life', this._life);
+    this.scene.registry.set("life", this._life);
   }
 
   public get maxLife(): number {
@@ -594,7 +581,7 @@ export class Player extends SpriteCollidable {
 
   public set maxLife(value: number) {
     this._maxLife = value;
-    this.scene.registry.set('maxLife', this._maxLife);
+    this.scene.registry.set("maxLife", this._maxLife);
   }
 
   public get ammo(): number {
@@ -603,7 +590,7 @@ export class Player extends SpriteCollidable {
 
   public set ammo(value: number) {
     this._ammo = value;
-    this.scene.registry.set('ammo', this._ammo);
+    this.scene.registry.set("ammo", this._ammo);
   }
 
   public get maxAmmo(): number {
@@ -612,7 +599,7 @@ export class Player extends SpriteCollidable {
 
   public set maxAmmo(value: number) {
     this._maxAmmo = value;
-    this.scene.registry.set('maxAmmo', this._maxAmmo);
+    this.scene.registry.set("maxAmmo", this._maxAmmo);
   }
 
   public get battery(): number {
@@ -626,7 +613,7 @@ export class Player extends SpriteCollidable {
     }
 
     this._battery = newValue;
-    this.scene.registry.set('battery', this._battery);
+    this.scene.registry.set("battery", this._battery);
   }
 
   public get maxBattery(): number {
@@ -635,11 +622,15 @@ export class Player extends SpriteCollidable {
 
   public set maxBattery(value: number) {
     this._maxBattery = value;
-    this.scene.registry.set('maxBattery', this._maxBattery);
+    this.scene.registry.set("maxBattery", this._maxBattery);
   }
 
   public static preload(scene: Phaser.Scene): void {
-    scene.load.atlas("hero", "assets/sprites/hero.png", "assets/sprites/hero.json");
+    scene.load.atlas(
+      "hero",
+      "assets/sprites/hero.png",
+      "assets/sprites/hero.json"
+    );
   }
 
   public static create(scene: Phaser.Scene): void {
@@ -657,10 +648,7 @@ export class Player extends SpriteCollidable {
       "aim_down_diagonal",
     ];
     for (let idleAnimation of idleAnimations) {
-      const animations = [
-        `${idleAnimation}_left`,
-        `${idleAnimation}_right`
-      ];
+      const animations = [`${idleAnimation}_left`, `${idleAnimation}_right`];
 
       if (idleAnimation.indexOf("idle") !== -1) {
         animations.push(`${idleAnimation}_center`);
@@ -751,7 +739,10 @@ export class Player extends SpriteCollidable {
     super.preUpdate(time, delta);
 
     const bounds = this.getBodyBounds();
-    const roomNumber = this.scene.setCurrentRoom(bounds.centerX, bounds.centerY);
+    const roomNumber = this.scene.setCurrentRoom(
+      bounds.centerX,
+      bounds.centerY
+    );
 
     // Update player room variables
     if (roomNumber !== null && roomNumber !== this.currentRoom) {
@@ -848,14 +839,16 @@ export class Player extends SpriteCollidable {
     }
 
     // Check if the timeout was not init
-    let canTimeoutStarts: boolean = typeof this.batteryTimeoutTimer === 'undefined';
+    let canTimeoutStarts: boolean =
+      typeof this.batteryTimeoutTimer === "undefined";
     if (!canTimeoutStarts) {
       // If the timeout was init, test if is completed
       canTimeoutStarts = this.batteryTimeoutTimer.getProgress() === 1;
     }
 
     // Check if the timer was not init
-    let canTimerStarts: boolean = typeof this.batteryRechargeTimer === 'undefined';
+    let canTimerStarts: boolean =
+      typeof this.batteryRechargeTimer === "undefined";
     if (!canTimerStarts) {
       // If the timer was init, test if is completed
       canTimerStarts = this.batteryRechargeTimer.getProgress() === 1;
@@ -891,7 +884,7 @@ export class Player extends SpriteCollidable {
               this.batteryRechargeTimer.destroy();
               this.batteryRechargeTimer.remove();
             }
-          }
+          },
         };
 
         // Start the timer only after a certain amount of time
@@ -924,16 +917,17 @@ export class Player extends SpriteCollidable {
       .getController()
       .isKeyPressed(ControllerKey.RIGHT);
 
-    const isAimingWhileMoving = (isLeftPressed || isRightPressed)
-    && (isUpPressed || isDownPressed);
+    const isAimingWhileMoving =
+      (isLeftPressed || isRightPressed) && (isUpPressed || isDownPressed);
 
     this.wasAimingDiagonal = this.isAimingDiagonal;
 
     if (isUpPressed || (isAimPress && !this.isAimingDiagonal)) {
       this.facing.y = DirectionAxisY.UP;
       this.facingForAim.y = DirectionAxisY.UP;
-    } else if (isDownPressed
-      && (this.body.velocity.y !== 0 || isAimPress || isAimingWhileMoving)
+    } else if (
+      isDownPressed &&
+      (this.body.velocity.y !== 0 || isAimPress || isAimingWhileMoving)
     ) {
       this.facing.y = DirectionAxisY.DOWN;
       this.facingForAim.y = DirectionAxisY.DOWN;
@@ -951,8 +945,11 @@ export class Player extends SpriteCollidable {
   protected swim(): void {
     let liquidName: string | null = null;
 
-    this.isSwimming = this.scene.physics
-      .overlap(this, this.scene.liquidsLayer, undefined, (hero, object: unknown) => {
+    this.isSwimming = this.scene.physics.overlap(
+      this,
+      this.scene.liquidsLayer,
+      undefined,
+      (hero, object: unknown) => {
         const liquid = object as Phaser.Tilemaps.Tile;
         if (liquid.index > -1) {
           liquidName = liquid.properties.liquid;
@@ -960,19 +957,18 @@ export class Player extends SpriteCollidable {
         }
 
         return false;
-      });
+      }
+    );
 
     if (this.isSwimming && liquidName) {
-      if (liquidName === 'acid' || liquidName === 'lava') {
+      if (liquidName === "acid" || liquidName === "lava") {
         const config: Phaser.Types.Time.TimerEventConfig = {
           startAt: 0,
           delay: 200,
           loop: true,
-          args: [
-            liquidName
-          ],
+          args: [liquidName],
           callback: (liquid: any) => {
-            if (liquid === 'acid') {
+            if (liquid === "acid") {
               this.battery -= 2;
               this.life -= 3;
 
@@ -990,7 +986,7 @@ export class Player extends SpriteCollidable {
                 this.setTint(0xffff00, 0xffff00, 0xff0000, 0xff0000);
               }
             }
-          }
+          },
         };
 
         if (!this.liquidDamageTimer) {
@@ -1026,7 +1022,7 @@ export class Player extends SpriteCollidable {
 
       // Perform wall jump only if the Player
       // is not on the ground and is touching only one wall
-      this.canWallJump = (!this.isOnFloor() && wallsCount.length === 1);
+      this.canWallJump = !this.isOnFloor() && wallsCount.length === 1;
       this.hasDoneWallJump = false;
 
       if (this.canWallJump) {
@@ -1036,19 +1032,17 @@ export class Player extends SpriteCollidable {
 
           if (
             // The Player is touching a wall on left
-            walls[0]
+            walls[0] &&
             // The user is moving on the opposite side of wall (right)
-            && this.scene
-              .getController()
-              .isKeyPressed(ControllerKey.RIGHT)) {
+            this.scene.getController().isKeyPressed(ControllerKey.RIGHT)
+          ) {
             sign = 1;
           } else if (
             // The Player is touching a wall on right
-            walls[1]
+            walls[1] &&
             // The user is moving on the opposite side of wall (left)
-            && this.scene
-              .getController()
-              .isKeyPressed(ControllerKey.LEFT)) {
+            this.scene.getController().isKeyPressed(ControllerKey.LEFT)
+          ) {
             sign = -1;
           }
 
@@ -1077,7 +1071,7 @@ export class Player extends SpriteCollidable {
           .getController()
           .isKeyPressed(ControllerKey.UP);
 
-        isClimbing = (isUpPress || isJumpPress);
+        isClimbing = isUpPress || isJumpPress;
 
         if (isClimbing) {
           this.climb(TILE_SIZE, TILE_SIZE * 2);
@@ -1088,8 +1082,8 @@ export class Player extends SpriteCollidable {
       if (this.isOnFloor() && !this.isPressingJump) {
         if (this.body.blocked.right || this.body.blocked.left) {
           const bounds: Phaser.Geom.Rectangle = this.getBodyBounds();
-          let hasFreeUpperTile!: Phaser.Tilemaps.Tile;
-          let hasTileOnFoot!: Phaser.Tilemaps.Tile;
+          let hasFreeUpperTile: Phaser.Tilemaps.Tile | null = null;
+          let hasTileOnFoot: Phaser.Tilemaps.Tile | null = null;
 
           const isLeft = this.body.blocked.left;
           const x = isLeft
@@ -1098,7 +1092,7 @@ export class Player extends SpriteCollidable {
 
           const xTile = Math.floor(x / TILE_SIZE);
 
-          let layers: Phaser.Tilemaps.DynamicTilemapLayer[] = this.scene.worldLayer;
+          let layers: Phaser.Tilemaps.TilemapLayer[] = this.scene.worldLayer;
           if (!Array.isArray(layers)) {
             layers = [layers];
           }
@@ -1131,7 +1125,7 @@ export class Player extends SpriteCollidable {
             );
           }
 
-          isClimbing = (!hasFreeUpperTile && hasTileOnFoot);
+          isClimbing = !hasFreeUpperTile && hasTileOnFoot !== null;
         }
 
         if (!isClimbing) {
@@ -1153,11 +1147,11 @@ export class Player extends SpriteCollidable {
         }
       } else if (
         // First check if Player has unlocked double jump
-        this.scene.getInventory().equip(PowerUps.ROCKET)
+        this.scene.getInventory().equip(PowerUps.ROCKET) &&
         // Then check if Player had already performed the action
-        && !this.hasDoneDoubleJump
+        !this.hasDoneDoubleJump &&
         // Finally check if Player can actually perform the action at the moment
-        && this.canDoubleJump
+        this.canDoubleJump
       ) {
         // Prevent the Player to perform another double jump
         this.hasDoneDoubleJump = true;
@@ -1182,10 +1176,7 @@ export class Player extends SpriteCollidable {
     }
 
     if (!this.isStandingJumping) {
-      this.setMaxVelocity(
-        this.getMaxRunSpeed(),
-        this.getMaxJumpSpeed()
-      );
+      this.setMaxVelocity(this.getMaxRunSpeed(), this.getMaxJumpSpeed());
     }
 
     this.isClimbing = isClimbing;
@@ -1267,7 +1258,7 @@ export class Player extends SpriteCollidable {
 
       // Simulate a little slide onto the floor for a bit
       // and stop it if match certain X speed
-      if (Math.abs(this.body.velocity.x) < (this.baseSpeed / 20)) {
+      if (Math.abs(this.body.velocity.x) < this.baseSpeed / 20) {
         this.setVelocityX(0);
       }
     }
@@ -1284,18 +1275,16 @@ export class Player extends SpriteCollidable {
     if (this.scene.getInventory().equip(PowerUps.DASH)) {
       const time = this.scene.getController().getKeyDuration(ControllerKey.X);
 
-      if (time < 100
-        && isDashPress
-        && this.battery > 0
-        && this.facing.x !== DirectionAxisX.CENTER
+      if (
+        time < 100 &&
+        isDashPress &&
+        this.battery > 0 &&
+        this.facing.x !== DirectionAxisX.CENTER
       ) {
         const isRight = this.facing.x === DirectionAxisX.RIGHT;
-        const facing: number = (isRight ? 1 : -1);
+        const facing: number = isRight ? 1 : -1;
 
-        this.setMaxVelocity(
-          this.getDashSpeed(),
-          this.getMaxJumpSpeed()
-        );
+        this.setMaxVelocity(this.getDashSpeed(), this.getMaxJumpSpeed());
 
         this.setVelocityX(this.getDashSpeed() * facing);
 
@@ -1340,7 +1329,7 @@ export class Player extends SpriteCollidable {
           hitbox = this.rightHangHitbox;
         }
 
-        if (typeof hitbox !== 'undefined') {
+        if (typeof hitbox !== "undefined") {
           // Test if Player's hitbox is touching a tile
           isTouchingTiles = hitbox.overlapTilesArea(AreaPosition.TOP_HALF);
           let currentTile!: Phaser.Tilemaps.Tile;
@@ -1351,29 +1340,30 @@ export class Player extends SpriteCollidable {
 
             let tiles: Phaser.Tilemaps.Tile[] = [];
 
-            let layers: Phaser.Tilemaps.DynamicTilemapLayer[] = this.scene.worldLayer;
+            let layers: Phaser.Tilemaps.TilemapLayer[] = this.scene.worldLayer;
             if (!Array.isArray(layers)) {
               layers = [layers];
             }
 
-            let lastLayer!: Phaser.Tilemaps.DynamicTilemapLayer;
+            let lastLayer!: Phaser.Tilemaps.TilemapLayer;
             for (const layer of layers) {
-              if (tiles.length > 0
-                || ['stairs', 'platforms'].indexOf(layer.layer.name) > -1
+              if (
+                tiles.length > 0 ||
+                ["stairs", "platforms"].indexOf(layer.layer.name) > -1
                 // The Player should not be able to hang on stairs nor one way platforms
               ) {
                 break;
               }
 
-              tiles = this.scene.map
-                .getTilesWithinShape(
+              tiles =
+                this.scene.map.getTilesWithinShape(
                   hitbox.getBounds(),
                   {
-                    isNotEmpty: true
+                    isNotEmpty: true,
                   },
                   undefined,
                   layer
-                );
+                ) ?? [];
 
               lastLayer = layer;
             }
@@ -1381,8 +1371,12 @@ export class Player extends SpriteCollidable {
             if (tiles.length === 1) {
               [currentTile] = tiles;
               // Check if there is a tile upper the current one
-              const upperTile = this.scene.map
-                .getTileAt(currentTile.x, currentTile.y - 1, undefined, lastLayer);
+              const upperTile = this.scene.map.getTileAt(
+                currentTile.x,
+                currentTile.y - 1,
+                undefined,
+                lastLayer
+              );
               hasTileOnHand = upperTile === null;
             }
           }
@@ -1413,17 +1407,16 @@ export class Player extends SpriteCollidable {
       false
     );
 
-    this.isOnLadder = this.scene.physics
-      .overlap(
-        this,
-        this.scene.stairsLayer,
-        undefined,
-        (hero, object: unknown) => {
-          const ladder = object as Phaser.Tilemaps.Tile;
+    this.isOnLadder = this.scene.physics.overlap(
+      this,
+      this.scene.stairsLayer,
+      undefined,
+      (hero, object: unknown) => {
+        const ladder = object as Phaser.Tilemaps.Tile;
 
-          return ladder.index > -1;
-        }
-      );
+        return ladder.index > -1;
+      }
+    );
 
     const isDownPressed: boolean = this.scene
       .getController()
@@ -1440,10 +1433,7 @@ export class Player extends SpriteCollidable {
         }
       }
 
-      if (isDownPressed
-        || (isUpPressed
-          && this.isOnLadder)
-      ) {
+      if (isDownPressed || (isUpPressed && this.isOnLadder)) {
         const speed = isDownPressed ? 1 : -1;
         this.setVelocityY(this.getLadderClimbSpeed() * speed);
 
@@ -1469,16 +1459,16 @@ export class Player extends SpriteCollidable {
     const x1: number = x;
     let y1: number | undefined = y;
 
-    if (typeof y === 'undefined') {
+    if (typeof y === "undefined") {
       y1 = x1;
     }
 
     this.canInteract = false;
 
-    const sign: string = this.facing.x === DirectionAxisX.LEFT ? '-' : '+';
+    const sign: string = this.facing.x === DirectionAxisX.LEFT ? "-" : "+";
     this.scene.tweens.add({
       targets: this,
-      ease: 'Linear',
+      ease: "Linear",
       duration: 150,
       repeat: 0,
       yoyo: false,
@@ -1486,7 +1476,7 @@ export class Player extends SpriteCollidable {
       y: `-=${y1}`,
       onComplete: () => {
         this.canInteract = true;
-      }
+      },
     });
   }
 
@@ -1556,10 +1546,12 @@ export class Player extends SpriteCollidable {
 
       if (this.adjustTo) {
         const clone = this.adjustTo.clone();
-        clone.add(new Phaser.Math.Vector2(
-          previousOffset.x - offsetX,
-          previousOffset.y - offsetY
-        ));
+        clone.add(
+          new Phaser.Math.Vector2(
+            previousOffset.x - offsetX,
+            previousOffset.y - offsetY
+          )
+        );
 
         this.setNewPosition(clone);
       }
@@ -1585,17 +1577,20 @@ export class Player extends SpriteCollidable {
       .isKeyPressed(ControllerKey.B);
 
     // The user have to press Shot button and the player should not facing front
-    if (isShootPress
-      && this.facingForAim.x !== DirectionAxisX.CENTER
-      && this.ammo > 0
+    if (
+      isShootPress &&
+      this.facingForAim.x !== DirectionAxisX.CENTER &&
+      this.ammo > 0
     ) {
       const config: BulletConfig = {
         facing: this.facingForAim,
         diagonal: this.isAimingDiagonal,
-        position: this.getShotPosition()
+        position: this.getShotPosition(),
       };
 
-      const weapon: Weapon = this.scene.getInventory().getCurrentWeapon() as Weapon;
+      const weapon: Weapon = this.scene
+        .getInventory()
+        .getCurrentWeapon() as Weapon;
       const wasFired = weapon.fireBullet(time, config);
 
       if (wasFired) {
@@ -1627,42 +1622,40 @@ export class Player extends SpriteCollidable {
    * Change the current animation based on previous operations
    */
   protected animate(): void {
-    let action = '';
+    let action = "";
 
     if (this.isOnFloor()) {
       if (this.isCrouch) {
-        action = 'crouch_idle';
+        action = "crouch_idle";
       } else if (this.body.velocity.x !== 0) {
         if (this.isAimingDiagonal) {
-          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
           action = `aim_${this.facing.y}_diagonal`;
         } else {
-          action = 'walk';
+          action = "walk";
         }
       } else if (this.isAimingDiagonal) {
-        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         action = `aim_${this.facing.y}_diagonal`;
-      } else if (this.facing.y === DirectionAxisY.UP
+      } else if (
+        this.facing.y === DirectionAxisY.UP &&
         // Avoid going from diagonal to up while leaving aim
-        && !this.wasAimingDiagonal
+        !this.wasAimingDiagonal
       ) {
         action = `aim_${this.facing.y}`;
       } else {
-        action = 'idle';
+        action = "idle";
       }
     } else if (this.isHanging) {
-      action = 'hang';
+      action = "hang";
     } else if (!this.isStandingJumping) {
-      action = 'jump';
+      action = "jump";
     } else if (this.isJumping) {
-      action = 'jump_idle';
+      action = "jump_idle";
     } else {
-      action = 'fall_idle';
+      action = "fall_idle";
     }
 
-    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     const animation = `hero_${action}_${this.facing.x}_animation`;
-    const doNewAnimation: boolean = animation !== this.anims.getCurrentKey();
+    const doNewAnimation: boolean = animation !== this.anims.getName();
 
     if (doNewAnimation) {
       try {
@@ -1702,11 +1695,7 @@ export class Player extends SpriteCollidable {
       bounds.top + Player.WALL_DETECTION_DISTANCE / 2 + 1
     );
 
-    this.ladderHitbox.alignToParent(
-      this,
-      bounds.centerX,
-      bounds.bottom
-    );
+    this.ladderHitbox.alignToParent(this, bounds.centerX, bounds.bottom);
 
     this.torchLight.setPosition(bounds.centerX, bounds.centerY);
   }
@@ -1717,20 +1706,20 @@ export class Player extends SpriteCollidable {
   protected debug(): void {
     const controller = this.scene.getController();
 
-    this.scene.events.emit('debugPlayer', {
+    this.scene.events.emit("debugPlayer", {
       velocity: this.body.velocity,
-      position: this.body.position
+      position: this.body.position,
     });
 
     if (controller.isKeyPressedForFirstTime(ControllerKey.SELECT)) {
-      // eslint-disable-next-line no-console
       console.clear();
     }
   }
 
   public getJumpSpeed(applyMultiplier = true): number {
-    return -this.baseSpeed
-    * (applyMultiplier ? this.getJumpSpeedMultiplier() : 1);
+    return (
+      -this.baseSpeed * (applyMultiplier ? this.getJumpSpeedMultiplier() : 1)
+    );
   }
 
   protected getJumpSpeedMultiplier(): number {
@@ -1742,7 +1731,10 @@ export class Player extends SpriteCollidable {
       return Player.WALL_JUMP_SPEED_MULTIPLIER;
     }
 
-    if (this.scene.getInventory().equip(PowerUps.ROCKET) && this.canDoubleJump) {
+    if (
+      this.scene.getInventory().equip(PowerUps.ROCKET) &&
+      this.canDoubleJump
+    ) {
       return Player.JUMP_SPEED_MULTIPLIER;
     }
 
@@ -1758,7 +1750,7 @@ export class Player extends SpriteCollidable {
   }
 
   public getRunSpeed(): number {
-    return (this.isSwimming && !this.scene.getInventory().equip(PowerUps.FAN))
+    return this.isSwimming && !this.scene.getInventory().equip(PowerUps.FAN)
       ? this.baseSpeed * Player.SWIM_X_SPEED_MULTIPLIER
       : this.baseSpeed * 2;
   }
@@ -1814,7 +1806,7 @@ export class Player extends SpriteCollidable {
       default:
         return [
           this.isTouchingWalls(DirectionAxisX.LEFT) as boolean,
-          this.isTouchingWalls(DirectionAxisX.RIGHT) as boolean
+          this.isTouchingWalls(DirectionAxisX.RIGHT) as boolean,
         ];
     }
 
@@ -1865,7 +1857,10 @@ export class Player extends SpriteCollidable {
       }
 
       if (this.isAimingDiagonal) {
-        width = this.x + (this.width / 2) * (this.facingForAim.x === DirectionAxisX.RIGHT ? 1 : -1);
+        width =
+          this.x +
+          (this.width / 2) *
+            (this.facingForAim.x === DirectionAxisX.RIGHT ? 1 : -1);
       }
     }
 
@@ -1890,14 +1885,11 @@ export class Player extends SpriteCollidable {
   }
 
   public getBodyOffset(width?: number, height?: number): Phaser.Math.Vector2 {
-    if (typeof height === 'undefined') {
-      if (typeof width === 'undefined') {
-        // eslint-disable-next-line no-param-reassign
+    if (typeof height === "undefined") {
+      if (typeof width === "undefined") {
         width = Player.BODY_WIDTH;
-        // eslint-disable-next-line no-param-reassign
         height = Player.BODY_HEIGHT;
       } else {
-        // eslint-disable-next-line no-param-reassign
         height = width;
       }
     }
@@ -1909,8 +1901,10 @@ export class Player extends SpriteCollidable {
   }
 
   public isOnFloor(): boolean {
-    return this.body.onFloor()
-      || this.scene.physics.collide(this.ladderHitbox, this.scene.platforms);
+    return (
+      this.body.onFloor() ||
+      this.scene.physics.collide(this.ladderHitbox, this.scene.platforms)
+    );
   }
 
   protected postCollision(
@@ -1925,7 +1919,7 @@ export class Player extends SpriteCollidable {
     const tile: Phaser.Tilemaps.Tile = object as Phaser.Tilemaps.Tile;
 
     switch (tile.layer.name) {
-      case 'platforms':
+      case "platforms":
         if (tile.index >= 0) {
           const bounds: Phaser.Geom.Rectangle = this.getBodyBounds();
           if (bounds.bottom - 1 < tile.pixelY) {
@@ -1933,15 +1927,15 @@ export class Player extends SpriteCollidable {
           }
         }
         return false;
-      case 'stairs':
+      case "stairs":
         if (tile.index >= 0) {
           const isDownPressed: boolean = this.scene
             .getController()
             .isKeyPressed(ControllerKey.DOWN);
 
           const bounds: Phaser.Geom.Rectangle = this.getBodyBounds();
-          const adjacentTile: Phaser.Tilemaps.Tile | null = this.scene.map
-            .getTileAt(tile.x, tile.y - 1, false, 'stairs');
+          const adjacentTile: Phaser.Tilemaps.Tile | null =
+            this.scene.map.getTileAt(tile.x, tile.y - 1, false, "stairs");
 
           if (bounds.bottom - 1 < tile.pixelY && !adjacentTile) {
             return !isDownPressed;

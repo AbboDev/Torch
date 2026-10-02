@@ -1,2 +1,2 @@
-export * from './GroupCollidable';
-export * from './SpriteCollidable';
+export * from "./GroupCollidable";
+export * from "./SpriteCollidable";

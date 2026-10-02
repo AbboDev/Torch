@@ -1,20 +1,20 @@
-import * as Phaser from 'phaser';
-import { MapScene } from 'Scenes';
-import { PLAYER_DEPTH } from 'Config/depths';
+import * as Phaser from "phaser";
+import { MapScene } from "Scenes";
+import { PLAYER_DEPTH } from "Config/depths";
 
 /**
  * The three possible orientations along the Y axis
  */
 export enum AreaPosition {
-  FULL = 'full',
-  TOP_HALF = 'top_half',
-  LEFT_HALF = 'left_half',
-  RIGHT_HALF = 'right_half',
-  BOTTOM_HALF = 'bottom_half',
-  LEFT_TOP_QUARTER = 'left_top_quarter',
-  LEFT_BOTTOM_QUARTER = 'left_bottom_quarter',
-  RIGHT_TOP_QUARTER = 'right_top_quarter',
-  RIGHT_BOTTOM_QUARTER = 'right_bottom_quarter'
+  FULL = "full",
+  TOP_HALF = "top_half",
+  LEFT_HALF = "left_half",
+  RIGHT_HALF = "right_half",
+  BOTTOM_HALF = "bottom_half",
+  LEFT_TOP_QUARTER = "left_top_quarter",
+  LEFT_BOTTOM_QUARTER = "left_bottom_quarter",
+  RIGHT_TOP_QUARTER = "right_top_quarter",
+  RIGHT_BOTTOM_QUARTER = "right_bottom_quarter",
 }
 
 export class Hitbox extends Phaser.GameObjects.Rectangle {
@@ -33,25 +33,14 @@ export class Hitbox extends Phaser.GameObjects.Rectangle {
     public fillColor: number = 0xffffff,
     public fillAlpha: number = 0
   ) {
-    super(
-      scene,
-      x,
-      y,
-      width,
-      height,
-      fillColor,
-      fillAlpha
-    );
+    super(scene, x, y, width, height, fillColor, fillAlpha);
 
     this.scene.add.existing(this);
     this.scene.physics.world.enable(this);
 
-    this
-      .setOrigin(0.5, 0.5)
-      .setDepth(PLAYER_DEPTH + 1);
+    this.setOrigin(0.5, 0.5).setDepth(PLAYER_DEPTH + 1);
 
-    this.body
-      .setAllowGravity(false);
+    this.body.setAllowGravity(false);
 
     // The hitbox should be static or anchored to a parent,
     // so is useless show the velocity debug
@@ -78,8 +67,8 @@ export class Hitbox extends Phaser.GameObjects.Rectangle {
     let x1 = x;
     let y1 = y;
 
-    if (typeof y === 'undefined') {
-      if (typeof x === 'undefined') {
+    if (typeof y === "undefined") {
+      if (typeof x === "undefined") {
         x1 = parent.body.position.x;
         y1 = parent.body.position.y;
       } else {
@@ -93,7 +82,7 @@ export class Hitbox extends Phaser.GameObjects.Rectangle {
   }
 
   public overlapTiles(): boolean {
-    let layers: Phaser.Tilemaps.DynamicTilemapLayer[] = this.scene.worldLayer;
+    let layers: Phaser.Tilemaps.TilemapLayer[] = this.scene.worldLayer;
     if (!Array.isArray(layers)) {
       layers = [layers];
     }
@@ -103,7 +92,7 @@ export class Hitbox extends Phaser.GameObjects.Rectangle {
         this,
         layer,
         undefined,
-        (hitbox, tile: unknown) => ((tile as Phaser.Tilemaps.Tile).index > -1)
+        (hitbox, tile: unknown) => (tile as Phaser.Tilemaps.Tile).index > -1
       );
 
       if (overlap) {
@@ -122,10 +111,10 @@ export class Hitbox extends Phaser.GameObjects.Rectangle {
    */
   public overlapTilesArea(
     area: AreaPosition,
-    layers?: Phaser.Tilemaps.DynamicTilemapLayer[] | Phaser.Tilemaps.DynamicTilemapLayer,
+    layers?: Phaser.Tilemaps.TilemapLayer[] | Phaser.Tilemaps.TilemapLayer,
     precision: boolean = true
   ): boolean {
-    let layersToDetect: Phaser.Tilemaps.DynamicTilemapLayer[];
+    let layersToDetect: Phaser.Tilemaps.TilemapLayer[];
 
     if (layers) {
       if (!Array.isArray(layers)) {
@@ -150,7 +139,8 @@ export class Hitbox extends Phaser.GameObjects.Rectangle {
           const tile: Phaser.Tilemaps.Tile = object as Phaser.Tilemaps.Tile;
           if (tile.index > -1) {
             const hitboxBounds: Phaser.Geom.Rectangle = this.getBounds();
-            const tileBounds: Phaser.Geom.Rectangle = tile.getBounds() as Phaser.Geom.Rectangle;
+            const tileBounds: Phaser.Geom.Rectangle =
+              tile.getBounds() as Phaser.Geom.Rectangle;
 
             let { x } = tileBounds;
             let { y } = tileBounds;
@@ -211,7 +201,10 @@ export class Hitbox extends Phaser.GameObjects.Rectangle {
             const rectangle = new Phaser.Geom.Rectangle(x, y, width, height);
 
             if (precision) {
-              return Phaser.Geom.Rectangle.ContainsRect(rectangle, hitboxBounds);
+              return Phaser.Geom.Rectangle.ContainsRect(
+                rectangle,
+                hitboxBounds
+              );
             }
 
             return Phaser.Geom.Rectangle.Overlaps(rectangle, hitboxBounds);

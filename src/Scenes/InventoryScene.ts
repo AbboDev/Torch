@@ -1,13 +1,9 @@
-import * as Phaser from 'phaser';
-import {
-  ControllerKey,
-  PowerUps,
-  Switch
-} from 'Miscellaneous';
-import { ItemSwitch } from 'HUD/ItemSwitch';
-import { DataScene } from 'Scenes';
-import { TILE_SIZE } from 'Config/tiles';
-import * as Weapons from 'Entities/Weapons';
+import * as Phaser from "phaser";
+import { ControllerKey, PowerUps, Switch } from "Miscellaneous";
+import { ItemSwitch } from "HUD/ItemSwitch";
+import { DataScene } from "Scenes";
+import { TILE_SIZE } from "Config/tiles";
+import * as Weapons from "Entities/Weapons";
 
 type InventoryButton = [PowerUps | Weapons.Weapon, ItemSwitch];
 
@@ -22,7 +18,7 @@ export class InventoryScene extends DataScene {
     super({
       active: false,
       visible: false,
-      key: 'inventory'
+      key: "inventory",
     });
   }
 
@@ -32,29 +28,26 @@ export class InventoryScene extends DataScene {
     const { width } = this.scale;
 
     const style: Phaser.Types.GameObjects.Text.TextStyle = {
-      fontSize: `${TILE_SIZE}px`
+      fontSize: `${TILE_SIZE}px`,
     };
 
-    this.add.text(
-      width / 2,
-      TILE_SIZE / 2,
-      'inventory',
-      style
-    )
-      .setAlign('center')
+    this.add
+      .text(width / 2, TILE_SIZE / 2, "inventory", style)
+      .setAlign("center")
       .setOrigin(0.5);
 
-    this.cursor = this.add.triangle(
-      TILE_SIZE,
-      TILE_SIZE * 2,
-      0,
-      0,
-      0,
-      TILE_SIZE,
-      TILE_SIZE,
-      TILE_SIZE / 2,
-      0x6666ff
-    )
+    this.cursor = this.add
+      .triangle(
+        TILE_SIZE,
+        TILE_SIZE * 2,
+        0,
+        0,
+        0,
+        TILE_SIZE,
+        TILE_SIZE,
+        TILE_SIZE / 2,
+        0x6666ff
+      )
       .setOrigin(0, 0.5)
       .setStrokeStyle(2, 0xffffff);
 
@@ -64,12 +57,17 @@ export class InventoryScene extends DataScene {
       duration: 1000,
       yoyo: true,
       repeat: -1,
-      ease: 'Sine.easeInOut',
+      ease: "Sine.easeInOut",
       onUpdate: (tween) => {
-        const value = Math.floor(tween.getValue());
+        const currentValue = tween.getValue();
 
-        this.cursor.setFillStyle(Phaser.Display.Color.GetColor(0, value, value));
-      }
+        if (currentValue !== null) {
+          const value = Math.floor(currentValue);
+          this.cursor.setFillStyle(
+            Phaser.Display.Color.GetColor(0, value, value)
+          );
+        }
+      },
     });
 
     let previousY: number = TILE_SIZE * 2;
@@ -100,9 +98,10 @@ export class InventoryScene extends DataScene {
 
       let value = Switch.INDETERMINATE;
       if (this.getInventory().carry(weapon as Weapons.Weapon)) {
-        value = (this.getInventory().getCurrentWeapon() === weapon)
-          ? Switch.ENABLE
-          : Switch.DISABLE;
+        value =
+          this.getInventory().getCurrentWeapon() === weapon
+            ? Switch.ENABLE
+            : Switch.DISABLE;
       }
 
       const button = new ItemSwitch(
@@ -123,52 +122,56 @@ export class InventoryScene extends DataScene {
 
     this.selectButton(this.selectedButtonIndex);
 
-    this.cameras.main.setBackgroundColor('rgba(0, 0, 0, 0.75)');
+    this.cameras.main.setBackgroundColor("rgba(0, 0, 0, 0.75)");
 
-    const gateway = this.scene.get('gateway');
-    gateway.events
-      .addListener('changedWeapon', (weapon: Weapons.Weapon) => {
-        for (let index = 0; index < this.buttons[1].length; index++) {
-          const button = this.buttons[1][index];
-          const [key, itemSwitch] = button;
+    const gateway = this.scene.get("gateway");
+    gateway.events.addListener("changedWeapon", (weapon: Weapons.Weapon) => {
+      for (let index = 0; index < this.buttons[1].length; index++) {
+        const button = this.buttons[1][index];
+        const [key, itemSwitch] = button;
 
-          // @ts-ignore
-          const isActive: boolean = key === weapon.constructor;
-          const status: Switch = (isActive) ? Switch.ENABLE : Switch.DISABLE;
+        // @ts-ignore
+        const isActive: boolean = key === weapon.constructor;
+        const status: Switch = isActive ? Switch.ENABLE : Switch.DISABLE;
 
-          if (isActive) {
-            this.selectButton([1, index]).confirmSelection();
-          }
-
-          itemSwitch.emit('selected', status);
+        if (isActive) {
+          this.selectButton([1, index]).confirmSelection();
         }
-      });
+
+        itemSwitch.emit("selected", status);
+      }
+    });
   }
 
   public update(time: any, delta: number): void {
     super.update(time, delta);
 
-    const isStartPressed: boolean = this.getController()
-      .isKeyPressedForFirstTime(ControllerKey.START);
+    const isStartPressed: boolean =
+      this.getController().isKeyPressedForFirstTime(ControllerKey.START);
 
     if (isStartPressed) {
-      this.scene.resume('main').sleep();
+      this.scene.resume("main").sleep();
     }
 
-    const isUpPress: boolean = this.getController()
-      .isKeyPressedForFirstTime(ControllerKey.UP);
+    const isUpPress: boolean = this.getController().isKeyPressedForFirstTime(
+      ControllerKey.UP
+    );
 
-    const isDownPress: boolean = this.getController()
-      .isKeyPressedForFirstTime(ControllerKey.DOWN);
+    const isDownPress: boolean = this.getController().isKeyPressedForFirstTime(
+      ControllerKey.DOWN
+    );
 
-    const isLeftPress: boolean = this.getController()
-      .isKeyPressedForFirstTime(ControllerKey.LEFT);
+    const isLeftPress: boolean = this.getController().isKeyPressedForFirstTime(
+      ControllerKey.LEFT
+    );
 
-    const isRightPress: boolean = this.getController()
-      .isKeyPressedForFirstTime(ControllerKey.RIGHT);
+    const isRightPress: boolean = this.getController().isKeyPressedForFirstTime(
+      ControllerKey.RIGHT
+    );
 
-    const isAPress: boolean = this.getController()
-      .isKeyPressedForFirstTime(ControllerKey.A);
+    const isAPress: boolean = this.getController().isKeyPressedForFirstTime(
+      ControllerKey.A
+    );
 
     if (isUpPress) {
       this.selectNextButton(0, -1);
@@ -189,12 +192,12 @@ export class InventoryScene extends DataScene {
     data: string | number
   ): void {
     switch (key) {
-      case 'ammo':
-      case 'maxAmmo':
-      case 'life':
-      case 'maxLife':
-      case 'battery':
-      case 'maxBattery':
+      case "ammo":
+      case "maxAmmo":
+      case "life":
+      case "maxLife":
+      case "battery":
+      case "maxBattery":
         break;
       default:
         // console.debug(key, data.toString());
@@ -202,7 +205,10 @@ export class InventoryScene extends DataScene {
     }
   }
 
-  private selectNextButton(horizontalMovement = 0, verticalMovement = 1): InventoryScene {
+  private selectNextButton(
+    horizontalMovement = 0,
+    verticalMovement = 1
+  ): InventoryScene {
     const [horizontal, vertical]: [number, number] = this.selectedButtonIndex;
 
     let newVertical: number = vertical + verticalMovement;
@@ -216,7 +222,8 @@ export class InventoryScene extends DataScene {
     }
 
     if (newVertical >= this.buttons[newHorizontal].length) {
-      newVertical = (newHorizontal === 0) ? 0 : this.buttons[newHorizontal].length - 1;
+      newVertical =
+        newHorizontal === 0 ? 0 : this.buttons[newHorizontal].length - 1;
     } else if (newVertical < 0) {
       newVertical = this.buttons[newHorizontal].length - 1;
     }
@@ -227,11 +234,13 @@ export class InventoryScene extends DataScene {
   }
 
   private selectButton(index: [number, number]): InventoryScene {
-    const [oldHorizontal, oldVertical]: [number, number] = this.selectedButtonIndex;
-    const currentTuple: InventoryButton = this.buttons[oldHorizontal][oldVertical];
+    const [oldHorizontal, oldVertical]: [number, number] =
+      this.selectedButtonIndex;
+    const currentTuple: InventoryButton =
+      this.buttons[oldHorizontal][oldVertical];
 
     if (currentTuple.length !== 2) {
-      throw new Error('Invalid tuple');
+      throw new Error("Invalid tuple");
     }
 
     const button: ItemSwitch = currentTuple[1];
@@ -243,7 +252,7 @@ export class InventoryScene extends DataScene {
     const nextTuple: InventoryButton = this.buttons[horizontal][vertical];
 
     if (nextTuple.length !== 2) {
-      throw new Error('Invalid tuple');
+      throw new Error("Invalid tuple");
     }
 
     const nextButton: ItemSwitch = nextTuple[1];
@@ -303,7 +312,7 @@ export class InventoryScene extends DataScene {
       const status: Switch = inventory.invertStatus(item as PowerUps);
 
       // emit the 'selected' event
-      tuple[1].emit('selected', status);
+      tuple[1].emit("selected", status);
     }
 
     return this;

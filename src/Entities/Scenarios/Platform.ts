@@ -1,14 +1,14 @@
-import * as Phaser from 'phaser';
-import { SpriteCollidable } from 'Entities/Collidables';
-import { MapScene } from 'Scenes';
-import { WORLD_LAYER_DEPTH } from 'Config/depths';
-import { TILE_SIZE } from 'Config/tiles';
-import { TiledObjectProperty } from 'Entities/Scenarios';
+import * as Phaser from "phaser";
+import { SpriteCollidable } from "Entities/Collidables";
+import { MapScene } from "Scenes";
+import { WORLD_LAYER_DEPTH } from "Config/depths";
+import { TILE_SIZE } from "Config/tiles";
+import { TiledObjectProperty } from "Entities/Scenarios";
 
 export enum PlatformDirection {
-  VERTICAL = 'vertical',
-  HORIZONTAL = 'horizontal',
-  BOTH = 'both'
+  VERTICAL = "vertical",
+  HORIZONTAL = "horizontal",
+  BOTH = "both",
 }
 
 export class Platform extends SpriteCollidable {
@@ -33,7 +33,7 @@ export class Platform extends SpriteCollidable {
     y: number,
     properties: TiledObjectProperty[] | undefined
   ) {
-    super(scene, x, y, 'platform');
+    super(scene, x, y, "platform");
 
     this.scene.add.existing(this);
     this.scene.physics.world.enable(this);
@@ -41,13 +41,13 @@ export class Platform extends SpriteCollidable {
     if (properties) {
       for (const property of properties) {
         switch (property.name) {
-          case 'speed':
+          case "speed":
             this.baseSpeed = property.value as number;
             break;
-          case 'direction':
+          case "direction":
             this.direction = property.value as PlatformDirection;
             break;
-          case 'distance':
+          case "distance":
             this.distance = property.value as number;
             break;
           default:
@@ -56,12 +56,9 @@ export class Platform extends SpriteCollidable {
       }
     }
 
-    this.body
-      .setAllowGravity(false)
-      .setImmovable(true);
+    this.body.setAllowGravity(false).setImmovable(true);
 
-    this
-      .setDepth(WORLD_LAYER_DEPTH)
+    this.setDepth(WORLD_LAYER_DEPTH)
       .setOrigin(0, 0)
       .setCollideWorldBounds(true)
       .setBounce(1);
@@ -86,8 +83,10 @@ export class Platform extends SpriteCollidable {
 
     if (this.distance !== 0) {
       const realDistance: number = this.distance * TILE_SIZE;
-      const bounceX: boolean = Math.abs(this.x - this.startPosition.x) >= realDistance;
-      const bounceY: boolean = Math.abs(this.y - this.startPosition.y) >= realDistance;
+      const bounceX: boolean =
+        Math.abs(this.x - this.startPosition.x) >= realDistance;
+      const bounceY: boolean =
+        Math.abs(this.y - this.startPosition.y) >= realDistance;
 
       if (bounceX || bounceY) {
         this.startPosition.x = this.x;

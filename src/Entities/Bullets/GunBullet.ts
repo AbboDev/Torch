@@ -1,7 +1,7 @@
-import * as Phaser from 'phaser';
-import { MapScene } from 'Scenes';
-import { Bullet } from 'Entities/Bullets';
-import { TILE_SIZE } from 'Config/tiles';
+import * as Phaser from "phaser";
+import { MapScene } from "Scenes";
+import { Bullet } from "Entities/Bullets";
+import { TILE_SIZE } from "Config/tiles";
 
 export class GunBullet extends Bullet {
   protected allowGravity = false;
@@ -24,14 +24,9 @@ export class GunBullet extends Bullet {
 
     const spriteSize: Phaser.Types.Loader.FileTypes.ImageFrameConfig = {
       frameWidth: 4,
-      frameHeight: 4
+      frameHeight: 4,
     };
 
-    scene.load
-      .spritesheet(
-        'bullet',
-        '/assets/sprites/bullet.png',
-        spriteSize
-      );
+    scene.load.spritesheet("bullet", "assets/sprites/bullet.png", spriteSize);
   }
 }

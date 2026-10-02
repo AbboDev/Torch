@@ -1,2 +1,2 @@
-export * from './Platform';
-export * from './TiledObject';
+export * from "./Platform";
+export * from "./TiledObject";

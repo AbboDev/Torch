@@ -1,7 +1,7 @@
-import * as Phaser from 'phaser';
-import { Bullet, BulletConfig } from 'Entities/Bullets';
-import { MapScene } from 'Scenes';
-import { GroupCollidable } from 'Entities/Collidables';
+import * as Phaser from "phaser";
+import { Bullet, BulletConfig } from "Entities/Bullets";
+import { MapScene } from "Scenes";
+import { GroupCollidable } from "Entities/Collidables";
 
 export class Weapon extends GroupCollidable {
   /**
@@ -26,30 +26,27 @@ export class Weapon extends GroupCollidable {
 
   public classType = Bullet;
 
-  public defaultKey = 'bullet';
+  public defaultKey = "bullet";
 
-  public constructor(
-    public scene: MapScene
-  ) {
+  public constructor(public scene: MapScene) {
     super(scene, {
       runChildUpdate: true,
-      classType: Bullet
+      classType: Bullet,
     });
 
     this.scene.add.existing(this);
   }
 
   public fireBullet(time: any, config: BulletConfig): boolean {
-    const canShoot = time > this.lastFired
-      && (!this.isSingle
-        || !this.hasAlreadyShoot);
+    const canShoot =
+      time > this.lastFired && (!this.isSingle || !this.hasAlreadyShoot);
 
     if (canShoot) {
       const bullet = this.get(config.position.x, config.position.y) as Bullet;
 
       if (bullet) {
         bullet.fire(config);
-        this.lastFired = time as number + this.rateOfFire;
+        this.lastFired = (time as number) + this.rateOfFire;
       }
     }
 
@@ -64,10 +61,7 @@ export class Weapon extends GroupCollidable {
     this.hasAlreadyShoot = false;
   }
 
-  protected postChildCollision(
-    child: unknown,
-    object: unknown
-  ): void {
+  protected postChildCollision(child: unknown, object: unknown): void {
     const bullet: Bullet = child as Bullet;
     const tile: Phaser.Tilemaps.Tile = object as Phaser.Tilemaps.Tile;
 
@@ -81,8 +75,8 @@ export class Weapon extends GroupCollidable {
     const tile: Phaser.Tilemaps.Tile = object as Phaser.Tilemaps.Tile;
 
     switch (tile.layer.name) {
-      case 'stairs':
-      case 'platforms':
+      case "stairs":
+      case "platforms":
         return false;
       default:
         break;

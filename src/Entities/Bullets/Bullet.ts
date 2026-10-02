@@ -1,14 +1,14 @@
-import * as Phaser from 'phaser';
-import { Facing, getSign } from 'Miscellaneous';
-import { MapScene } from 'Scenes';
-import { BULLET_DEPTH } from 'Config/depths';
-import { DEFAULT_BULLET_LIGHT } from 'Config/lights';
-import { TILE_SIZE } from 'Config/tiles';
+import * as Phaser from "phaser";
+import { Facing, getSign } from "Miscellaneous";
+import { MapScene } from "Scenes";
+import { BULLET_DEPTH } from "Config/depths";
+import { DEFAULT_BULLET_LIGHT } from "Config/lights";
+import { TILE_SIZE } from "Config/tiles";
 
 export interface BulletConfig {
-  position: Phaser.Math.Vector2,
-  diagonal: boolean,
-  facing: Facing
+  position: Phaser.Math.Vector2;
+  diagonal: boolean;
+  facing: Facing;
 }
 
 export class Bullet extends Phaser.Physics.Arcade.Sprite {
@@ -87,7 +87,6 @@ export class Bullet extends Phaser.Physics.Arcade.Sprite {
     this.body.onWorldBounds = true;
   }
 
-  // eslint-disable-next-line
   public static preload(scene: Phaser.Scene): void {}
 
   public fire(config: BulletConfig): void {
@@ -129,12 +128,8 @@ export class Bullet extends Phaser.Physics.Arcade.Sprite {
 
     const vector: Phaser.Math.Vector2 = new Phaser.Math.Vector2(sign.x, sign.y);
 
-    this
-      .setPosition(config.position.x, config.position.y)
-      .setVelocity(
-        this.speed * 5 * sign.x,
-        this.speed * 5 * sign.y
-      )
+    this.setPosition(config.position.x, config.position.y)
+      .setVelocity(this.speed * 5 * sign.x, this.speed * 5 * sign.y)
       .setRotation(vector.angle())
       .setActive(true)
       .setVisible(true);
@@ -153,7 +148,7 @@ export class Bullet extends Phaser.Physics.Arcade.Sprite {
     }
 
     // Detect if the bullet if touching the world's bound
-    this.body.world.on('worldbounds', (body: Phaser.Physics.Arcade.Body) => {
+    this.body.world.on("worldbounds", (body: Phaser.Physics.Arcade.Body) => {
       // Check if the body's game object is the sprite you are listening for
       if (body.gameObject === this) {
         // If it is, then simulate impact
@@ -161,7 +156,7 @@ export class Bullet extends Phaser.Physics.Arcade.Sprite {
       }
     });
 
-    let layers: Phaser.Tilemaps.DynamicTilemapLayer[] = this.scene.worldLayer;
+    let layers: Phaser.Tilemaps.TilemapLayer[] = this.scene.worldLayer;
     if (!Array.isArray(layers)) {
       layers = [layers];
     }
@@ -184,15 +179,11 @@ export class Bullet extends Phaser.Physics.Arcade.Sprite {
       this.scene.lights.removeLight(this.torchLight);
     }
 
-    if (tile && tile.layer.name === 'breakables') {
+    if (tile && tile.layer.name === "breakables") {
       this.scene.map.removeTileAt(tile.x, tile.y);
     }
 
-    this
-      .setVelocity(0, 0)
-      .setActive(false)
-      .setVisible(false)
-      .destroy();
+    this.setVelocity(0, 0).setActive(false).setVisible(false).destroy();
   }
 
   /**
