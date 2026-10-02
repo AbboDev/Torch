@@ -6,12 +6,6 @@ export class PreloaderScene extends Phaser.Scene {
   public constructor() {
     super({
       key: "preloader",
-      pack: {
-        files: [
-          { type: "image", key: "bar", url: "./assets/images/loadBar.png" },
-          { type: "image", key: "barBg", url: "./assets/images/barBg.png" },
-        ],
-      },
     });
   }
 
@@ -68,30 +62,24 @@ export class PreloaderScene extends Phaser.Scene {
     BowArrow.preload(this);
     RifleBullet.preload(this);
 
-    // add the loading bar to use as a display for
-    // the loading progress of the remainder of the assets
-    this.add.image(this.scale.width / 2, this.scale.height / 2, "barBg");
+    const barWidth = 320;
+    const barHeight = 16;
+    const barX = (this.scale.width - barWidth) / 2;
+    const barY = (this.scale.height - barHeight) / 2;
+    const barBackground = this.add.graphics();
+    barBackground
+      .fillStyle(0x202020, 1)
+      .fillRect(barX, barY, barWidth, barHeight)
+      .lineStyle(1, 0xffffff, 0.65)
+      .strokeRect(barX, barY, barWidth, barHeight);
 
-    const bar = this.add.sprite(
-      this.scale.width / 2,
-      this.scale.height / 2,
-      "bar"
-    );
-
-    const mask = this.make.graphics(
-      {
-        x: bar.x - bar.width / 2,
-        y: bar.y - bar.height / 2,
-      },
-      false
-    );
-
-    mask.fillRect(0, 0, 0, bar.height);
-
-    bar.mask = new Phaser.Display.Masks.GeometryMask(this, mask);
+    const bar = this.add.graphics();
 
     this.load.on("progress", (progress: number) => {
-      mask.clear().fillRect(0, 0, bar.width * progress, bar.height);
+      bar
+        .clear()
+        .fillStyle(0xb9e185, 1)
+        .fillRect(barX, barY, barWidth * progress, barHeight);
     });
   }
 

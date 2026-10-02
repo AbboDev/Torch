@@ -29,15 +29,6 @@ export class MainScene extends MapScene {
   public create(): void {
     super.create();
 
-    const config: Phaser.Types.Animations.Animation = {
-      key: "chozodia_tiles_anim",
-      frameRate: 10,
-      frames: this.anims.generateFrameNumbers("chozodia_tiles", {
-        frames: [54, 70],
-      }),
-    };
-    this.anims.create(config);
-
     this.map = this.make.tilemap({ key: "chozodia_map" });
 
     // Get the objects layer of the current loaded map for found
@@ -73,28 +64,28 @@ export class MainScene extends MapScene {
       name: string,
       layerTilesets: Phaser.Tilemaps.Tileset | Phaser.Tilemaps.Tileset[]
     ): Phaser.Tilemaps.TilemapLayer => {
-      const layer = this.map.createLayer(name, layerTilesets, 0, 0);
+      const layer = this.map.createLayer(name, layerTilesets, 0, 0, false);
       if (!layer) {
         throw new Error(`Map layer not found: ${name}`);
       }
-      return layer;
+      return layer as Phaser.Tilemaps.TilemapLayer;
     };
 
     this.belowLayer = createLayer("background", tileset)
       .setDepth(BELOW_LAYER_DEPTH)
-      .setPipeline("Light2D");
+      .setLighting(true);
 
     this.aboveLayer = createLayer("frontground", tileset)
       .setDepth(ABOVE_LAYER_DEPTH)
-      .setPipeline("Light2D");
+      .setLighting(true);
 
     this.frontLayer = createLayer("global_frontground", tileset)
       .setDepth(GLOBAL_ABOVE_LAYER_DEPTH)
-      .setPipeline("Light2D");
+      .setLighting(true);
 
     this.stairsLayer = createLayer("stairs", tileset)
       .setDepth(STAIRS_LAYER_DEPTH)
-      .setPipeline("Light2D")
+      .setLighting(true)
       .setCollisionByProperty({ collides: true })
       .renderDebug(this.collisionDebugGraphics, {
         tileColor: null,
@@ -111,7 +102,7 @@ export class MainScene extends MapScene {
 
     this.collisionsLayer = createLayer("collision", tileset)
       .setDepth(WORLD_LAYER_DEPTH)
-      .setPipeline("Light2D")
+      .setLighting(true)
       .setCollisionByProperty({ collides: true })
       .renderDebug(this.collisionDebugGraphics, {
         tileColor: null,
@@ -121,7 +112,7 @@ export class MainScene extends MapScene {
 
     this.oneWayCollisionsLayer = createLayer("platforms", tileset)
       .setDepth(WORLD_LAYER_DEPTH)
-      .setPipeline("Light2D")
+      .setLighting(true)
       .setCollisionByProperty({ collides: true })
       .renderDebug(this.collisionDebugGraphics, {
         tileColor: null,
@@ -131,7 +122,7 @@ export class MainScene extends MapScene {
 
     this.breakablesLayer = createLayer("breakables", tileset)
       .setDepth(WORLD_LAYER_DEPTH)
-      .setPipeline("Light2D")
+      .setLighting(true)
       .setCollisionByProperty({ collides: true })
       .renderDebug(this.collisionDebugGraphics, {
         tileColor: null,
@@ -183,8 +174,6 @@ export class MainScene extends MapScene {
       .fadeIn(2000, 0, 0, 0);
 
     this.setupRoom(this.rooms[roomNumber]);
-
-    this.sys.animatedTiles.init(this.map);
 
     this.physics.add.collider(this.hero, this.platforms);
   }
@@ -284,7 +273,7 @@ export class MainScene extends MapScene {
             );
 
             this.background
-              .setPipeline("Light2D")
+              .setLighting(true)
               .setScrollFactor(0)
               .setDepth(BACKGROUND_DEPTH - (textures.length - index));
           }
@@ -298,7 +287,7 @@ export class MainScene extends MapScene {
           );
 
           background
-            .setPipeline("Light2D")
+            .setLighting(true)
             .setScrollFactor(index / textures.length, 0)
             .setOrigin(0.5, 0.5)
             .setDepth(BACKGROUND_DEPTH - (textures.length - index));

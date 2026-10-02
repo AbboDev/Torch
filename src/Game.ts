@@ -1,5 +1,4 @@
 import * as Phaser from "phaser";
-import AnimatedTiles from "phaser-animated-tiles-2";
 import {
   PreloaderScene,
   HandlerScene,
@@ -28,16 +27,6 @@ const config: Phaser.Types.Core.GameConfig = {
   },
 
   scene: [PreloaderScene, HandlerScene, MainScene, HUDScene, InventoryScene],
-
-  plugins: {
-    scene: [
-      {
-        key: "AnimatedTiles",
-        plugin: AnimatedTiles,
-        mapping: "animatedTiles",
-      },
-    ],
-  },
 
   scale: {
     parent: "canvas",

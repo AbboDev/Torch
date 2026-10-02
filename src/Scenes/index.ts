@@ -1,4 +1,3 @@
-export * from "./AnimatedTilesScene";
 export * from "./ContinuousScene";
 export * from "./DataScene";
 export * from "./HandlerScene";
