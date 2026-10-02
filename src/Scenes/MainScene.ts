@@ -18,6 +18,14 @@ import {
 import { DEFAULT_LIGHT } from "@/config/lights";
 import { TILE_SIZE } from "@/config/tiles";
 
+const DEBUG_FACE_COLOR = new Phaser.Display.Color(40, 39, 37, 255);
+const DEBUG_COLLISION_COLORS = {
+  stairs: new Phaser.Display.Color(134, 243, 134, 255),
+  collision: new Phaser.Display.Color(243, 134, 48, 255),
+  platforms: new Phaser.Display.Color(48, 48, 134, 255),
+  breakables: new Phaser.Display.Color(134, 243, 48, 255),
+};
+
 export class MainScene extends MapScene {
   private hero!: Player;
 
@@ -65,12 +73,24 @@ export class MainScene extends MapScene {
 
     const createLayer = (
       name: string,
-      layerTilesets: Phaser.Tilemaps.Tileset | Phaser.Tilemaps.Tileset[]
+      layerTilesets: Phaser.Tilemaps.Tileset | Phaser.Tilemaps.Tileset[],
+      collisionColor?: keyof typeof DEBUG_COLLISION_COLORS
     ): Phaser.Tilemaps.TilemapLayer => {
       const layer = this.map.createLayer(name, layerTilesets, 0, 0, false);
       if (!layer) {
         throw new Error(`Map layer not found: ${name}`);
       }
+
+      if (collisionColor) {
+        layer
+          .setCollisionByProperty({ collides: true })
+          .renderDebug(this.collisionDebugGraphics, {
+            tileColor: null,
+            collidingTileColor: DEBUG_COLLISION_COLORS[collisionColor],
+            faceColor: DEBUG_FACE_COLOR,
+          });
+      }
+
       return layer as Phaser.Tilemaps.TilemapLayer;
     };
 
@@ -86,15 +106,9 @@ export class MainScene extends MapScene {
       .setDepth(GLOBAL_ABOVE_LAYER_DEPTH)
       .setLighting(true);
 
-    this.stairsLayer = createLayer("stairs", tileset)
+    this.stairsLayer = createLayer("stairs", tileset, "stairs")
       .setDepth(STAIRS_LAYER_DEPTH)
-      .setLighting(true)
-      .setCollisionByProperty({ collides: true })
-      .renderDebug(this.collisionDebugGraphics, {
-        tileColor: null,
-        collidingTileColor: new Phaser.Display.Color(134, 243, 134, 255),
-        faceColor: new Phaser.Display.Color(40, 39, 37, 255),
-      });
+      .setLighting(true);
 
     this.liquidsLayer = createLayer("liquids", [
       liquidTileset,
@@ -103,35 +117,17 @@ export class MainScene extends MapScene {
       .setDepth(WORLD_LAYER_DEPTH)
       .setAlpha(0.7);
 
-    this.collisionsLayer = createLayer("collision", tileset)
+    this.collisionsLayer = createLayer("collision", tileset, "collision")
       .setDepth(WORLD_LAYER_DEPTH)
-      .setLighting(true)
-      .setCollisionByProperty({ collides: true })
-      .renderDebug(this.collisionDebugGraphics, {
-        tileColor: null,
-        collidingTileColor: new Phaser.Display.Color(243, 134, 48, 255),
-        faceColor: new Phaser.Display.Color(40, 39, 37, 255),
-      });
+      .setLighting(true);
 
-    this.oneWayCollisionsLayer = createLayer("platforms", tileset)
+    this.oneWayCollisionsLayer = createLayer("platforms", tileset, "platforms")
       .setDepth(WORLD_LAYER_DEPTH)
-      .setLighting(true)
-      .setCollisionByProperty({ collides: true })
-      .renderDebug(this.collisionDebugGraphics, {
-        tileColor: null,
-        collidingTileColor: new Phaser.Display.Color(48, 48, 134, 255),
-        faceColor: new Phaser.Display.Color(40, 39, 37, 255),
-      });
+      .setLighting(true);
 
-    this.breakablesLayer = createLayer("breakables", tileset)
+    this.breakablesLayer = createLayer("breakables", tileset, "breakables")
       .setDepth(WORLD_LAYER_DEPTH)
-      .setLighting(true)
-      .setCollisionByProperty({ collides: true })
-      .renderDebug(this.collisionDebugGraphics, {
-        tileColor: null,
-        collidingTileColor: new Phaser.Display.Color(134, 243, 48, 255),
-        faceColor: new Phaser.Display.Color(40, 39, 37, 255),
-      });
+      .setLighting(true);
 
     (this.map.getObjectLayer("scenario_elements")?.objects ?? []).forEach(
       (object: TiledObject) => {

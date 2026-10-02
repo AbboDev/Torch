@@ -155,11 +155,6 @@ export class Bullet extends Phaser.Physics.Arcade.Sprite {
         this.impact();
       }
     });
-
-    let layers: Phaser.Tilemaps.TilemapLayer[] = this.scene.worldLayer;
-    if (!Array.isArray(layers)) {
-      layers = [layers];
-    }
   }
 
   public update(time: any, delta: number): void {

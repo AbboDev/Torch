@@ -8,8 +8,4 @@ export class HandlerScene extends ContinuousScene {
       key: "gateway",
     });
   }
-
-  public create(): void {
-    super.create();
-  }
 }
