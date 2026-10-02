@@ -5,7 +5,7 @@ import eslintConfigPrettier from "eslint-config-prettier/flat";
 
 export default [
   {
-    ignores: ["build/**", "node_modules/**", "src/**/*.d.ts"],
+    ignores: ["build/**", "node_modules/**", "src/**/*.d.ts", ".kilo/**"],
   },
   {
     ...js.configs.recommended,
