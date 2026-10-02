@@ -12,7 +12,7 @@ export default [
     files: ["**/*.{js,mjs,cjs}"],
   },
   {
-    files: ["src/**/*.ts"],
+    files: ["src/**/*.ts", "tests/**/*.ts"],
     languageOptions: {
       parser: babelParser,
       parserOptions: {

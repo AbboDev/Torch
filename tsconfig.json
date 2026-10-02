@@ -26,5 +26,5 @@
       "Scenes/*": ["./src/Scenes/*"]
     }
   },
-  "include": ["./src/**/*"]
+  "include": ["./src/**/*", "./tests/**/*"]
 }

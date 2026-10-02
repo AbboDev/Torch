@@ -1,5 +1,5 @@
 import { fileURLToPath } from "node:url";
-import { defineConfig } from "vite";
+import { defineConfig } from "vitest/config";
 import { viteStaticCopy } from "vite-plugin-static-copy";
 
 const sourcePath = (path) => fileURLToPath(new URL(path, import.meta.url));
@@ -27,5 +27,10 @@ export default defineConfig(({ mode }) => ({
   },
   server: {
     open: true,
+  },
+  test: {
+    include: ["tests/**/*.test.ts"],
+    environment: "node",
+    clearMocks: true,
   },
 }));
