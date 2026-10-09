@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import preloader from "@/scenes/PreloaderScene.ts?raw";
 import { BACKGROUNDS } from "@/config/backgrounds";
-import { getBackgroundLayers } from "@/world/backgrounds";
+import { getBackgroundLayers } from "@/world/backgroundLayers";
 import { getRoomProperty } from "@/world/rooms";
 
 describe("getBackgroundLayers", () => {

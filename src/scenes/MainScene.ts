@@ -2,6 +2,8 @@ import * as Phaser from "phaser";
 import { MapScene } from "@/scenes/MapScene";
 import { ControllerKey } from "@/miscellaneous/Controller";
 import { RoomBackground } from "@/world/RoomBackground";
+import { RoomTransition } from "@/world/RoomTransition";
+import { toBounds } from "@/world/scroll";
 import { getRoomProperty } from "@/world/rooms";
 import { DEV_LOADOUT } from "@/config/dev";
 import { applyDevLoadout } from "@/miscellaneous/devLoadout";
@@ -34,6 +36,11 @@ export class MainScene extends MapScene {
    * The background of the current room
    */
   private background!: RoomBackground;
+
+  /**
+   * The scroll of the camera between two rooms
+   */
+  private roomTransition!: RoomTransition;
 
   /**
    * The save points found in the map: objects of type "save_point" in the
@@ -182,6 +189,25 @@ export class MainScene extends MapScene {
     }
 
     this.background = new RoomBackground(this);
+    this.roomTransition = new RoomTransition({
+      camera: this.cameras.main,
+      addTween: (config) => this.tweens.add(config),
+      // Exactly where startFollow will center the camera when the Player
+      // takes control again: it would jump there otherwise
+      getFocus: () => ({ x: this.hero.x, y: this.hero.y }),
+      freeze: () => {
+        // Prevent Player to do anything and pause all the physics events
+        this.hero.canInteract = false;
+        this.physics.pause();
+      },
+      unfreeze: () => {
+        this.hero.canInteract = true;
+        this.physics.resume();
+      },
+      follow: () => {
+        this.cameras.main.startFollow(this.hero);
+      },
+    });
 
     this.hero = new Player(this, x, y, roomNumber);
 
@@ -207,7 +233,7 @@ export class MainScene extends MapScene {
     // this.cameras.main.centerOnY(this.hero.y - TILE_SIZE * 4.5);
 
     if (this.isChangingRoom && this.rooms.length > 0) {
-      this.boundsCamera(this.hero.currentRoom);
+      this.startRoomTransition(this.hero.previousRoom, this.hero.currentRoom);
     }
 
     const isStartPressed: boolean =
@@ -218,42 +244,22 @@ export class MainScene extends MapScene {
     }
   }
 
-  protected boundsCamera(room: number): void {
-    // Start a fadeOut animation before change room
-    this.cameras.main.fadeOut(
-      250,
-      0,
-      0,
-      0,
-      (cameraIn: Phaser.Cameras.Scene2D.Camera, progressIn: number) => {
-        // Prevent Player to do anything
-        this.hero.canInteract = false;
-        // Pause all the physics events
-        this.physics.pause();
+  /**
+   * Scroll the camera from the room the Player left to the one it entered
+   */
+  protected startRoomTransition(previous: number | null, next: number): void {
+    const room = this.rooms[next];
+    const background = getRoomProperty(room, "background");
 
-        if (progressIn === 1) {
-          // Change camera boundaries when fade out complete
-          this.setupRoom(this.rooms[room]);
-
-          // Fade back in with new boundaries
-          this.cameras.main.fadeIn(
-            500,
-            0,
-            0,
-            0,
-            (cameraOut: Phaser.Cameras.Scene2D.Camera, progressOut: number) => {
-              if (progressOut === 1) {
-                // The Player can now interact
-                this.hero.canInteract = true;
-                // Resume all the physics events
-                this.physics.resume();
-              }
-            },
-            this
-          );
-        }
-      },
-      this
+    this.roomTransition.start(
+      toBounds(this.rooms[previous ?? next]),
+      toBounds(room),
+      (fadeDuration) =>
+        this.background.show(
+          typeof background === "string" ? background : undefined,
+          room.width || 0,
+          fadeDuration
+        )
     );
   }
 

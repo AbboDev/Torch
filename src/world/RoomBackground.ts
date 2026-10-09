@@ -1,6 +1,6 @@
 import * as Phaser from "phaser";
 import { BACKGROUND_DEPTH } from "@/config/depths";
-import { ResolvedLayer, getBackgroundLayers } from "@/world/backgrounds";
+import { ResolvedLayer, getBackgroundLayers } from "@/world/backgroundLayers";
 
 type BackgroundObject =
   Phaser.GameObjects.Image | Phaser.GameObjects.TileSprite;
