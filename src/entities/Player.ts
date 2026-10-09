@@ -18,6 +18,10 @@ import {
   HIGH_JUMP_SPEED_MULTIPLIER,
 } from "@/entities/player/movement";
 import { computeAim } from "@/entities/player/aim";
+import {
+  getAnimationAction,
+  getAnimationKey,
+} from "@/entities/player/animation";
 import { JumpAssist } from "@/entities/player/JumpAssist";
 import {
   getAcceleration,
@@ -1296,39 +1300,19 @@ export class Player extends SpriteCollidable {
    * Change the current animation based on previous operations
    */
   protected animate(): void {
-    let action = "";
+    const action = getAnimationAction({
+      isOnFloor: this.isOnFloor(),
+      isCrouch: this.isCrouch,
+      isHanging: this.isHanging,
+      isJumping: this.isJumping,
+      isStandingJumping: this.isStandingJumping,
+      isAimingDiagonal: this.isAimingDiagonal,
+      wasAimingDiagonal: this.wasAimingDiagonal,
+      velocityX: this.body.velocity.x,
+      facingY: this.facing.y,
+    });
 
-    if (this.isOnFloor()) {
-      if (this.isCrouch) {
-        action = "crouch_idle";
-      } else if (this.body.velocity.x !== 0) {
-        if (this.isAimingDiagonal) {
-          action = `aim_${this.facing.y}_diagonal`;
-        } else {
-          action = "walk";
-        }
-      } else if (this.isAimingDiagonal) {
-        action = `aim_${this.facing.y}_diagonal`;
-      } else if (
-        this.facing.y === DirectionAxisY.UP &&
-        // Avoid going from diagonal to up while leaving aim
-        !this.wasAimingDiagonal
-      ) {
-        action = `aim_${this.facing.y}`;
-      } else {
-        action = "idle";
-      }
-    } else if (this.isHanging) {
-      action = "hang";
-    } else if (!this.isStandingJumping) {
-      action = "jump";
-    } else if (this.isJumping) {
-      action = "jump_idle";
-    } else {
-      action = "fall_idle";
-    }
-
-    const animation = `hero_${action}_${this.facing.x}_animation`;
+    const animation = getAnimationKey(action, this.facing.x);
     const doNewAnimation: boolean = animation !== this.anims.getName();
 
     if (doNewAnimation) {
