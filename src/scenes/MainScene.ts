@@ -1,6 +1,8 @@
 import * as Phaser from "phaser";
 import { MapScene } from "@/scenes/MapScene";
 import { ControllerKey } from "@/miscellaneous/Controller";
+import { RoomBackground } from "@/world/RoomBackground";
+import { getRoomProperty } from "@/world/rooms";
 import { DEV_LOADOUT } from "@/config/dev";
 import { applyDevLoadout } from "@/miscellaneous/devLoadout";
 import { TiledObject } from "@/entities/scenarios/TiledObject";
@@ -27,6 +29,11 @@ const DEBUG_COLLISION_COLORS = {
 
 export class MainScene extends MapScene {
   private hero!: Player;
+
+  /**
+   * The background of the current room
+   */
+  private background!: RoomBackground;
 
   /**
    * The save points found in the map: objects of type "save_point" in the
@@ -174,6 +181,8 @@ export class MainScene extends MapScene {
       applyDevLoadout(this.getInventory());
     }
 
+    this.background = new RoomBackground(this);
+
     this.hero = new Player(this, x, y, roomNumber);
 
     this.updateCollisionGraphic(this.physics.world.drawDebug);
@@ -256,60 +265,10 @@ export class MainScene extends MapScene {
 
     this.cameras.main.setBounds(roomX, roomY, roomWidth, roomHeight, true);
 
-    let textures: string[] = [];
-    if (room.properties) {
-      for (const property of room.properties) {
-        if (property.name === "background") {
-          textures = this.textures
-            .getTextureKeys()
-            .filter((item) => item.indexOf(property.value as string) !== -1);
-        }
-      }
-    }
-
-    if (textures.length > 0) {
-      this.parallaxes.forEach((item) => {
-        item.destroy();
-      });
-      this.parallaxes = [];
-
-      let index = 0;
-      for (const texture of textures) {
-        if (index === 0) {
-          if (this.background) {
-            this.background.setTexture(texture);
-          } else {
-            this.background = this.add.image(
-              this.scale.width / 2,
-              this.scale.height / 2,
-              texture
-            );
-
-            this.background
-              .setLighting(true)
-              .setScrollFactor(0)
-              .setDepth(BACKGROUND_DEPTH - (textures.length - index));
-          }
-        } else {
-          const background: Phaser.GameObjects.TileSprite = this.add.tileSprite(
-            this.scale.width / 2,
-            this.scale.height / 2,
-            roomWidth,
-            this.textures.get(texture).getSourceImage().height,
-            texture
-          );
-
-          background
-            .setLighting(true)
-            .setScrollFactor(index / textures.length, 0)
-            .setOrigin(0.5, 0.5)
-            .setDepth(BACKGROUND_DEPTH - (textures.length - index));
-
-          this.parallaxes.push(background);
-        }
-
-        index++;
-      }
-    }
+    const background = getRoomProperty(room, "background");
+    this.background.show(
+      typeof background === "string" ? background : undefined,
+      roomWidth
+    );
   }
 }

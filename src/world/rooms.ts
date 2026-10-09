@@ -118,3 +118,19 @@ export function resolveRoom(
 export function getRoomId(room: { id: number }): string {
   return `room_${room.id}`;
 }
+
+export interface RoomWithProperties {
+  properties?: { name: string; value?: unknown }[];
+}
+
+/**
+ * The value of a custom property of a room, as set in Tiled
+ *
+ * @return The value, or undefined if the room has no such property
+ */
+export function getRoomProperty(
+  room: RoomWithProperties,
+  name: string
+): unknown {
+  return room.properties?.find((property) => property.name === name)?.value;
+}

@@ -1,7 +1,12 @@
 import * as Phaser from "phaser";
 import { ContinuousScene } from "@/scenes/ContinuousScene";
 import { ControllerKey } from "@/miscellaneous/Controller";
-import { findRoomIndex, getRoomId, resolveRoom } from "@/world/rooms";
+import {
+  findRoomIndex,
+  getRoomId,
+  getRoomProperty,
+  resolveRoom,
+} from "@/world/rooms";
 import { TiledObject } from "@/entities/scenarios/TiledObject";
 import { Platform } from "@/entities/scenarios/Platform";
 
@@ -100,20 +105,6 @@ export abstract class MapScene extends ContinuousScene {
   public map!: Phaser.Tilemaps.Tilemap;
 
   /**
-   * The current map background
-   *
-   * @type {Phaser.GameObjects.Image}
-   */
-  protected background!: Phaser.GameObjects.Image;
-
-  /**
-   * The current map background parallax
-   *
-   * @type {Phaser.GameObjects.TileSprite}
-   */
-  protected parallaxes: Phaser.GameObjects.TileSprite[] = [];
-
-  /**
    * Check if the Player overlap room bounds for start transition
    *
    * @type {Boolean}
@@ -200,14 +191,9 @@ export abstract class MapScene extends ContinuousScene {
     let light = DEFAULT_LIGHT;
     const currentRoom = this.rooms[currentRoomNumber];
 
-    for (const property of currentRoom.properties ?? []) {
-      if (property.name === "dark") {
-        const darkness: string = property.value as string;
-
-        if (darkness && typeof darkness === "string") {
-          light = Phaser.Display.Color.HexStringToColor(darkness).color;
-        }
-      }
+    const darkness = getRoomProperty(currentRoom, "dark");
+    if (darkness && typeof darkness === "string") {
+      light = Phaser.Display.Color.HexStringToColor(darkness).color;
     }
 
     // Remember the visit in the game state (saved with the game), instead of
