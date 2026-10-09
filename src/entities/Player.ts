@@ -18,6 +18,7 @@ import {
   HIGH_JUMP_SPEED_MULTIPLIER,
 } from "@/entities/player/movement";
 import { computeAim } from "@/entities/player/aim";
+import { JumpAssist } from "@/entities/player/JumpAssist";
 import {
   getAcceleration,
   getDeceleration,
@@ -63,6 +64,13 @@ export class Player extends SpriteCollidable {
    * @type {PlayerInput}
    */
   private controls: PlayerInput;
+
+  /**
+   * Coyote time and jump buffer
+   *
+   * @type {JumpAssist}
+   */
+  private jumpAssist = new JumpAssist();
 
   /**
    * The Phaser weapons of this scene. Which weapons the Player owns,
@@ -725,6 +733,9 @@ export class Player extends SpriteCollidable {
     // Test if the user is pressing the button 'A'
     const isJumpPress: boolean = this.controls.jump;
 
+    const now = this.scene.time.now;
+    this.jumpAssist.update(now, this.isOnFloor(), isJumpPress);
+
     // First check if Player has unlocked wall jump
     if (this.scene.getInventory().equip(PowerUps.GLOVE)) {
       // Test if the Player is near walls
@@ -769,6 +780,8 @@ export class Player extends SpriteCollidable {
               Math.abs(this.getJumpSpeed(false)) * 2 * sign,
               this.getJumpSpeed()
             );
+
+            this.jumpAssist.notifyJumped();
           }
         }
       }
@@ -786,8 +799,15 @@ export class Player extends SpriteCollidable {
         }
       }
     } else if (isJumpPress) {
-      // If the Player is touching the floor and the key has been release
-      if (this.isOnFloor() && !this.isPressingJump) {
+      // If the Player is touching the floor (or has just left it) and the key
+      // has been released (or has been pressed a moment before landing)
+      if (
+        this.jumpAssist.canJumpFromGround(now, this.isOnFloor()) &&
+        (!this.isPressingJump ||
+          this.jumpAssist.hasBufferedPress(now, isJumpPress))
+      ) {
+        this.jumpAssist.notifyJumped();
+
         if (this.body.blocked.right || this.body.blocked.left) {
           const bounds: Phaser.Geom.Rectangle = this.getBodyBounds();
           let upperTile: Phaser.Tilemaps.Tile | null = null;
@@ -837,8 +857,11 @@ export class Player extends SpriteCollidable {
         }
 
         if (!isClimbing) {
-          // The Player is actually jumping
+          // The Player is actually jumping: a new jump, so no double jump
+          // from a previous one is left (the key may have been held since landing)
           this.isJumping = true;
+          this.canDoubleJump = false;
+          this.hasDoneDoubleJump = false;
 
           const velocity = Math.abs(this.body.velocity.x);
           this.isStandingJumping = velocity <= TILE_SIZE * 2;
@@ -861,6 +884,8 @@ export class Player extends SpriteCollidable {
         // Finally check if Player can actually perform the action at the moment
         this.canDoubleJump
       ) {
+        this.jumpAssist.notifyJumped();
+
         // Prevent the Player to perform another double jump
         this.hasDoneDoubleJump = true;
         // The Player is actually jumping
