@@ -3,6 +3,8 @@ import { MapScene } from "@/scenes/MapScene";
 import { ControllerKey } from "@/miscellaneous/Controller";
 import { RoomBackground } from "@/world/RoomBackground";
 import { RoomTransition } from "@/world/RoomTransition";
+import { DoorTransition } from "@/world/DoorTransition";
+import { Door, DoorTrigger, findDoorAt, parseDoors } from "@/world/doors";
 import { toBounds } from "@/world/scroll";
 import { getRoomProperty } from "@/world/rooms";
 import { DEV_LOADOUT } from "@/config/dev";
@@ -43,6 +45,18 @@ export class MainScene extends MapScene {
   private roomTransition!: RoomTransition;
 
   /**
+   * The doors of the map (objects of type "door" in Tiled, see world/doors.ts)
+   */
+  private doors: Door[] = [];
+
+  private doorTrigger = new DoorTrigger();
+
+  /**
+   * The fade to black when the Player goes through a door
+   */
+  private doorTransition!: DoorTransition;
+
+  /**
    * The save points found in the map: objects of type "save_point" in the
    * "objects" layer of Tiled. Their name is the id stored in the save.
    */
@@ -63,21 +77,24 @@ export class MainScene extends MapScene {
 
     // Get the objects layer of the current loaded map for found
     // the main spawn point and rooms
-    (this.map.getObjectLayer("objects")?.objects ?? []).forEach(
-      (object: TiledObject) => {
-        if (object.type === "room") {
-          this.rooms.push(object);
-        }
+    const mapObjects: TiledObject[] =
+      this.map.getObjectLayer("objects")?.objects ?? [];
 
-        if (object.type === "save_point") {
-          this.savePoints.push(object);
-        }
+    this.doors = parseDoors(mapObjects);
 
-        if (object.name === "spawn_point") {
-          this.spawnPoint = object;
-        }
+    mapObjects.forEach((object: TiledObject) => {
+      if (object.type === "room") {
+        this.rooms.push(object);
       }
-    );
+
+      if (object.type === "save_point") {
+        this.savePoints.push(object);
+      }
+
+      if (object.name === "spawn_point") {
+        this.spawnPoint = object;
+      }
+    });
 
     if (!this.spawnPoint) {
       throw "No Spawn Point detected";
@@ -195,18 +212,19 @@ export class MainScene extends MapScene {
       // Exactly where startFollow will center the camera when the Player
       // takes control again: it would jump there otherwise
       getFocus: () => ({ x: this.hero.x, y: this.hero.y }),
-      freeze: () => {
-        // Prevent Player to do anything and pause all the physics events
-        this.hero.canInteract = false;
-        this.physics.pause();
-      },
-      unfreeze: () => {
-        this.hero.canInteract = true;
-        this.physics.resume();
-      },
+      freeze: () => this.freeze(),
+      unfreeze: () => this.unfreeze(),
       follow: () => {
         this.cameras.main.startFollow(this.hero);
       },
+    });
+
+    this.doorTransition = new DoorTransition({
+      freeze: () => this.freeze(),
+      unfreeze: () => this.unfreeze(),
+      fadeOut: (duration, done) => this.fadeCamera(true, duration, done),
+      fadeIn: (duration, done) => this.fadeCamera(false, duration, done),
+      enter: (target) => this.enterRoomAt(target.x, target.y),
     });
 
     this.hero = new Player(this, x, y, roomNumber);
@@ -232,6 +250,8 @@ export class MainScene extends MapScene {
     this.hero.update(time, delta);
     // this.cameras.main.centerOnY(this.hero.y - TILE_SIZE * 4.5);
 
+    this.updateDoors();
+
     if (this.isChangingRoom && this.rooms.length > 0) {
       this.startRoomTransition(this.hero.previousRoom, this.hero.currentRoom);
     }
@@ -241,6 +261,89 @@ export class MainScene extends MapScene {
 
     if (isStartPressed) {
       this.scene.pause().wake("inventory");
+    }
+  }
+
+  /**
+   * Prevent the Player to do anything and pause all the physics events
+   */
+  private freeze(): void {
+    this.hero.canInteract = false;
+    this.physics.pause();
+  }
+
+  private unfreeze(): void {
+    this.hero.canInteract = true;
+    this.physics.resume();
+  }
+
+  private fadeCamera(out: boolean, duration: number, done: () => void): void {
+    let called = false;
+    const onProgress = (
+      _camera: Phaser.Cameras.Scene2D.Camera,
+      progress: number
+    ) => {
+      if (progress === 1 && !called) {
+        called = true;
+        done();
+      }
+    };
+
+    if (out) {
+      this.cameras.main.fadeOut(duration, 0, 0, 0, onProgress, this);
+    } else {
+      this.cameras.main.fadeIn(duration, 0, 0, 0, onProgress, this);
+    }
+  }
+
+  /**
+   * Put the Player somewhere else in the map: in the room it is there, with
+   * the light, the background and the camera of that room
+   */
+  private enterRoomAt(x: number, y: number): void {
+    this.hero.teleportTo(x, y);
+
+    const body = this.hero.body;
+    const room = this.setCurrentRoom(
+      body.x + body.width / 2,
+      body.y + body.height / 2
+    );
+
+    // The room is already the current one: no scroll for this change
+    this.hero.previousRoom = this.hero.currentRoom;
+    this.hero.currentRoom = room;
+
+    this.setupRoom(this.rooms[room]);
+    this.cameras.main.startFollow(this.hero);
+  }
+
+  /**
+   * Take the Player through the door it is in, if it has to
+   */
+  private updateDoors(): void {
+    if (
+      this.doors.length === 0 ||
+      !this.hero.canInteract ||
+      this.doorTransition.isRunning ||
+      this.roomTransition.isRunning
+    ) {
+      return;
+    }
+
+    const body = this.hero.body;
+    const inside = findDoorAt(
+      this.doors,
+      body.x + body.width / 2,
+      body.y + body.height / 2
+    );
+
+    const door = this.doorTrigger.update(
+      inside,
+      this.getController().isKeyPressed(ControllerKey.UP)
+    );
+
+    if (door) {
+      this.doorTransition.start(door);
     }
   }
 

@@ -1402,6 +1402,21 @@ export class Player extends SpriteCollidable {
   }
 
   /**
+   * Put the Player somewhere else, standing still (a door, a save point...)
+   *
+   * @param {number} x The x coordinate of the Player, like the spawn point
+   * @param {number} y The y coordinate of the Player
+   */
+  public teleportTo(x: number, y: number): void {
+    this.body.reset(x, y);
+    this.body.updateCenter();
+
+    this.setAccelerationX(0);
+    this.isHanging = false;
+    this.body.setAllowGravity(true);
+  }
+
+  /**
    * Ask to move the body to a new position at the end of the update
    * (see adjustPosition). A coordinate left as null is not changed.
    *
