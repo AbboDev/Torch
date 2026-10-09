@@ -824,10 +824,7 @@ export class Player extends SpriteCollidable {
 
           const xTile = Math.floor(x / TILE_SIZE);
 
-          let layers: Phaser.Tilemaps.TilemapLayer[] = this.scene.worldLayer;
-          if (!Array.isArray(layers)) {
-            layers = [layers];
-          }
+          const layers: Phaser.Tilemaps.TilemapLayer[] = this.scene.worldLayer;
 
           const bottom = Math.floor((bounds.centerY - 1) / TILE_SIZE);
 
