@@ -18,6 +18,10 @@ import {
   HIGH_JUMP_SPEED_MULTIPLIER,
 } from "@/entities/player/movement";
 import { computeAim } from "@/entities/player/aim";
+import {
+  getAcceleration,
+  getDeceleration,
+} from "@/entities/player/horizontalMotion";
 import { PlayerInput } from "@/entities/player/PlayerInput";
 import { SpriteCollidable } from "@/entities/collidables/SpriteCollidable";
 import { MapScene } from "@/scenes/MapScene";
@@ -358,14 +362,19 @@ export class Player extends SpriteCollidable {
     this.body
       .setAllowGravity(true)
       .setAllowDrag(true)
-      .setDragX(0.9)
+      // The drag is a deceleration in px/s², decided every frame in walk()
+      .setDamping(false)
+      .setDragX(
+        getDeceleration(this.getMaxRunSpeed(), {
+          isOnFloor: true,
+          isSwimming: false,
+        })
+      )
       .setOffset(
         (this.width - Player.BODY_WIDTH) * (1 - this.originX),
         (this.height - Player.BODY_HEIGHT) * (1 - this.originY)
       )
       .setSize(Player.BODY_WIDTH, Player.BODY_HEIGHT, false);
-
-    this.body.useDamping = true;
 
     this.arsenal = new Arsenal(this.scene);
     this.controls = new PlayerInput(this.scene.getController());
@@ -937,22 +946,37 @@ export class Player extends SpriteCollidable {
     }
 
     if (this.isHanging) {
+      // Do not keep pushing with the acceleration of the last frame
+      this.setAccelerationX(0);
+
       return;
     }
 
     if (isRightPress && !isLeftPress) {
       this.facing.x = DirectionAxisX.RIGHT;
 
-      this.setAccelerationX(this.getRunSpeed());
+      this.setAccelerationX(
+        getAcceleration(1, this.getRunSpeed(), this.body.velocity.x)
+      );
     } else if (isLeftPress && !isRightPress) {
       this.facing.x = DirectionAxisX.LEFT;
 
-      this.setAccelerationX(-this.getRunSpeed());
+      this.setAccelerationX(
+        getAcceleration(-1, this.getRunSpeed(), this.body.velocity.x)
+      );
     } else {
       this.setAccelerationX(0);
 
-      // Simulate a little slide onto the floor for a bit
-      // and stop it if match certain X speed
+      // With no button pressed the body slows down with this drag: a short
+      // slide on the floor, a longer one in the air (see horizontalMotion.ts)
+      this.body.setDragX(
+        getDeceleration(this.getMaxRunSpeed(), {
+          isOnFloor: this.isOnFloor(),
+          isSwimming: this.isSwimming,
+        })
+      );
+
+      // Stop it if it is slow enough
       if (Math.abs(this.body.velocity.x) < this.baseSpeed / 20) {
         this.setVelocityX(0);
       }
