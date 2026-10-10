@@ -1,5 +1,6 @@
 import * as Phaser from "phaser";
 import { Bullet, BulletConfig } from "@/entities/bullets/Bullet";
+import { SLOPES_LAYER_NAME } from "@/world/slopesLayer";
 import { MapScene } from "@/scenes/MapScene";
 import { GroupCollidable } from "@/entities/collidables/GroupCollidable";
 
@@ -35,6 +36,21 @@ export class Weapon extends GroupCollidable {
     });
 
     this.scene.add.existing(this);
+
+    // The bullets stop at the slopes too: they are not in worldLayer, which
+    // the Player collides with
+    if (scene.slopesLayer) {
+      scene.physics.add.collider(
+        this,
+        scene.slopesLayer,
+        this.postChildCollision.bind(
+          this
+        ) as Phaser.Types.Physics.Arcade.ArcadePhysicsCallback,
+        this.testChildCollision.bind(
+          this
+        ) as Phaser.Types.Physics.Arcade.ArcadePhysicsCallback
+      );
+    }
   }
 
   public fireBullet(time: any, config: BulletConfig): boolean {
@@ -78,6 +94,12 @@ export class Weapon extends GroupCollidable {
       case "stairs":
       case "platforms":
         return false;
+      case SLOPES_LAYER_NAME: {
+        // Only where the bullet is under the ground line of the tile
+        const { center } = (child as Bullet).body;
+
+        return this.scene.slopes.isInside(center.x, center.y);
+      }
       default:
         break;
     }
