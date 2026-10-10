@@ -1,4 +1,4 @@
-import { ControllerKey } from "@/miscellaneous/Controller";
+import { ControllerKey } from "@/input/ControllerKey";
 
 /**
  * What the Player needs from the input device. The `Controller` implements it

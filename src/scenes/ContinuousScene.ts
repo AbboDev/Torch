@@ -6,18 +6,30 @@ import { SaveManager } from "@/state/SaveManager";
 
 export abstract class ContinuousScene extends Phaser.Scene {
   /**
-   * The Controller for handle all the user inputs
-   *
-   * @type {Controller}
+   * Nothing is set up here any more: the Controller and the game state
+   * belong to the game, not to a scene. Kept for the scenes which call it.
    */
-  private controller!: Controller;
+  public create(): void {}
 
-  public create(): void {
-    this.controller = Controller.getInstance(this);
-  }
-
+  /**
+   * The Controller for handle all the user inputs. It belongs to the game, not
+   * to a scene: it is created the first time anyone asks for it and lives as
+   * long as the game does.
+   */
   public getController(): Controller {
-    return this.controller;
+    let controller = this.registry.get("controller") as Controller | undefined;
+
+    if (!controller) {
+      controller = new Controller(window);
+      this.registry.set("controller", controller);
+
+      const created = controller;
+      this.game.events.once(Phaser.Core.Events.DESTROY, () =>
+        created.destroy()
+      );
+    }
+
+    return controller;
   }
 
   /**

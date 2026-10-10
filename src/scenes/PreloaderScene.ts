@@ -86,7 +86,6 @@ export class PreloaderScene extends Phaser.Scene {
     BulletAssets.registerBulletAnimations(this);
 
     this.scene
-      .launch("gateway")
       .launch("inventory")
       .sleep("inventory")
       .launch("main")

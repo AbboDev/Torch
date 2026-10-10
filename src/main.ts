@@ -1,6 +1,5 @@
 import * as Phaser from "phaser";
 import { PreloaderScene } from "@/scenes/PreloaderScene";
-import { HandlerScene } from "@/scenes/HandlerScene";
 import { MainScene } from "@/scenes/MainScene";
 import { HUDScene } from "@/scenes/HUDScene";
 import { InventoryScene } from "@/scenes/InventoryScene";
@@ -50,7 +49,7 @@ const config: Phaser.Types.Core.GameConfig = {
     // Arrotonda le posizioni degli sprite a interi per evitare sfocature durante il movimento/mira
     roundPixels: true,
   },
-  scene: [PreloaderScene, HandlerScene, MainScene, HUDScene, InventoryScene],
+  scene: [PreloaderScene, MainScene, HUDScene, InventoryScene],
 
   disableContextMenu: true,
 

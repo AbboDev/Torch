@@ -1,11 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { ControllerKey } from "@/miscellaneous/Controller";
+import { ControllerKey } from "@/input/ControllerKey";
 import { ButtonSource, PlayerInput } from "@/entities/player/PlayerInput";
-
-// Controller.ts reads Phaser's key codes when loaded: any value will do here
-vi.mock("phaser", () => ({
-  Input: { Keyboard: { KeyCodes: new Proxy({}, { get: () => 0 }) } },
-}));
 
 class FakeSource implements ButtonSource {
   public held = new Set<ControllerKey>();
