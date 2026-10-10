@@ -1,4 +1,4 @@
-import { SlopeField, getReachDown, resolveSlope } from "@/world/slopes";
+import { SlopeField, getReachDown, resolveSlope } from "@/world/slopeGeometry";
 
 /** One step of a body walking, as the game does it with Arcade Physics */
 export interface WalkState {

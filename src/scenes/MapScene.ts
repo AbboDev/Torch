@@ -1,6 +1,8 @@
 import * as Phaser from "phaser";
 import { ContinuousScene } from "@/scenes/ContinuousScene";
 import { ControllerKey } from "@/miscellaneous/Controller";
+import { Slopes } from "@/world/Slopes";
+import { createSlopes } from "@/world/slopesLayer";
 import {
   findRoomIndex,
   getRoomId,
@@ -19,6 +21,20 @@ export abstract class MapScene extends ContinuousScene {
    * @type {Phaser.Tilemaps.TilemapLayer}
    */
   public collisionsLayer!: Phaser.Tilemaps.TilemapLayer;
+
+  /**
+   * The layer of the slopes (see world/slopeGeometry.ts), if the map has one
+   *
+   * @type {Phaser.Tilemaps.TilemapLayer | null}
+   */
+  public slopesLayer: Phaser.Tilemaps.TilemapLayer | null = null;
+
+  /**
+   * Keeps the bodies on the slopes of the map
+   *
+   * @type {Slopes}
+   */
+  public slopes!: Slopes;
 
   /**
    * The main tilemap layer where all the tiles with only top side collision will be implemented
@@ -126,6 +142,8 @@ export abstract class MapScene extends ContinuousScene {
 
     this.rooms = [];
 
+    this.setupSlopes(null);
+
     this.platforms = this.add.group({
       active: true,
       maxSize: -1,
@@ -226,6 +244,17 @@ export abstract class MapScene extends ContinuousScene {
   /**
    * The index of the room containing a point, or null if there is none
    */
+  /**
+   * Set up the slopes of the map
+   *
+   * @param layer The layer of the slopes, or null if there is none
+   */
+  protected setupSlopes(layer: Phaser.Tilemaps.TilemapLayer | null): void {
+    this.slopes?.destroy();
+    this.slopesLayer = layer;
+    this.slopes = createSlopes(this, layer);
+  }
+
   public getCurrentRoom(x: number, y: number): number | null {
     return findRoomIndex(this.rooms, x, y);
   }

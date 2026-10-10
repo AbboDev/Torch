@@ -29,6 +29,7 @@ export interface FakeBody {
   gravity: Vector;
   /** Position, integrated by `step` */
   x: number;
+  y: number;
 }
 
 export function createBody(options: Partial<FakeBody> = {}): FakeBody {
@@ -44,6 +45,7 @@ export function createBody(options: Partial<FakeBody> = {}): FakeBody {
     allowGravity: false,
     gravity: new Vector(),
     x: 0,
+    y: 0,
     ...options,
   };
 }
@@ -57,6 +59,7 @@ world.gravity = new Vector();
 export function step(body: FakeBody, delta = 1 / 60): void {
   world.computeVelocity(body, delta);
   body.x += body.velocity.x * delta;
+  body.y += body.velocity.y * delta;
 }
 
 /** Run steps until `until` is true; returns the elapsed seconds (or Infinity) */

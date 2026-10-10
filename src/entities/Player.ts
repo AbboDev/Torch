@@ -395,6 +395,12 @@ export class Player extends SpriteCollidable {
 
     const bounds = this.getBodyBounds();
 
+    // Keep the Player on the slopes of the map
+    this.scene.slopes.track(this.body);
+    this.once(Phaser.GameObjects.Events.DESTROY, () => {
+      this.scene.slopes.untrack(this.body);
+    });
+
     this.sensors = new PlayerSensors(this.scene, this.body, {
       wallDistance: Player.WALL_DETECTION_DISTANCE,
       // The wall sensors keep the height of the standing body

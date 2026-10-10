@@ -109,6 +109,37 @@ A door without a valid target or size is ignored, with a warning in the console.
 After going through a door the Player can arrive inside another door (the one
 which leads back): doors work again only after it has stepped out of all of them.
 
+### Slopes
+
+Arcade Physics only knows boxes, so sloping ground is made by `src/world/Slopes.ts`.
+It is optional: a map without a layer called `slopes` works as before.
+
+1. In the tileset, give every sloping tile two integer properties, the height of the
+   ground at its **left** and at its **right** edge, from the bottom of the tile (0 to 16):
+
+   | Tile                           | `slopeLeft` | `slopeRight` |
+   | ------------------------------ | ----------- | ------------ |
+   | 45° ramp going up to the right | 0           | 16           |
+   | 45° ramp going up to the left  | 16          | 0            |
+   | gentle ramp, first tile        | 0           | 8            |
+   | gentle ramp, second tile       | 8           | 16           |
+   | flat ground (next to a ramp)   | 16          | 16           |
+
+2. Paint them in a tile layer named `slopes`. The ground is a straight line between the
+   two heights, and it is solid from the line down to the bottom of the tile.
+3. Put **all the ground next to a ramp in that layer**: the flat tiles before and after
+   it too (16 and 16). Going from a ramp to a normal solid floor, the Player is in the
+   air for some frames.
+4. Do not fill the body of the ramp, under the line, with tiles of the `collision`
+   layer. Tiles of the `slopes` layer without the two properties are only art.
+5. Slopes are ground only: there are no sloping ceilings.
+
+The slopes are drawn in orange with the other collisions in debug mode, to check what was
+set in Tiled. The Player stands with the center of its body on the ground (change
+`FOOT_OFFSETS` in `Slopes.ts` to use more points), and bullets stop at the slopes. On a
+45° ramp the Player goes up as fast as it goes forward, so it is 1.4 times faster along
+the ramp.
+
 ### Save points
 
 An object of type `save_point`: its `name` is the id stored in the save, and the

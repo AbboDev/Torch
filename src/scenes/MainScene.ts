@@ -1,6 +1,7 @@
 import * as Phaser from "phaser";
 import { MapScene } from "@/scenes/MapScene";
 import { ControllerKey } from "@/miscellaneous/Controller";
+import { SLOPES_LAYER_NAME, renderSlopesDebug } from "@/world/slopesLayer";
 import { RoomBackground } from "@/world/RoomBackground";
 import { RoomTransition } from "@/world/RoomTransition";
 import { DoorTransition } from "@/world/DoorTransition";
@@ -17,6 +18,7 @@ import {
   BELOW_LAYER_DEPTH,
   ABOVE_LAYER_DEPTH,
   WORLD_LAYER_DEPTH,
+  SLOPES_LAYER_DEPTH,
   STAIRS_LAYER_DEPTH,
   GLOBAL_ABOVE_LAYER_DEPTH,
 } from "@/config/depths";
@@ -168,6 +170,22 @@ export class MainScene extends MapScene {
     this.breakablesLayer = createLayer("breakables", tileset, "breakables")
       .setDepth(WORLD_LAYER_DEPTH)
       .setLighting(true);
+
+    // The slopes are optional: not every map has them
+    if (this.map.layers.some((layer) => layer.name === SLOPES_LAYER_NAME)) {
+      const slopesLayer = createLayer(SLOPES_LAYER_NAME, tileset)
+        .setDepth(SLOPES_LAYER_DEPTH)
+        .setLighting(true)
+        // Only for the bullets: the Player does not collide with its tiles
+        .setCollisionByProperty({ collides: true });
+
+      this.setupSlopes(slopesLayer);
+
+      const grid = this.slopes.getGrid();
+      if (grid) {
+        renderSlopesDebug(this.collisionDebugGraphics, grid);
+      }
+    }
 
     (this.map.getObjectLayer("scenario_elements")?.objects ?? []).forEach(
       (object: TiledObject) => {
