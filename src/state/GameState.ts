@@ -1,4 +1,5 @@
 import { Emitter } from "@/state/Emitter";
+import { createStatsView } from "@/state/playerStats";
 import {
   Inventory,
   InventorySnapshot,
@@ -84,6 +85,12 @@ export class GameState {
   });
 
   private stats: PlayerStats = { ...DEFAULT_STATS };
+
+  /**
+   * The stats as properties of an object, to read and write them like
+   * `state.player.life -= 5`. Same as `get` and `set`.
+   */
+  public readonly player: PlayerStats = createStatsView(this);
 
   private visitedRooms = new Set<string>();
 

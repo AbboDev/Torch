@@ -29,6 +29,7 @@ import { getDeceleration } from "@/entities/player/horizontalMotion";
 import { PlayerInput } from "@/entities/player/PlayerInput";
 import { SpriteCollidable } from "@/entities/collidables/SpriteCollidable";
 import { MapScene } from "@/scenes/MapScene";
+import { PlayerStats } from "@/state/GameState";
 import { PLAYER_DEPTH } from "@/config/depths";
 import { TILE_SIZE } from "@/config/tiles";
 
@@ -370,59 +371,12 @@ export class Player extends SpriteCollidable {
     // this.setPipeline('Light2D');
   }
 
-  // Stats live in the game state (so they are saved and shown by the HUD);
-  // these accessors keep the rest of the Player code unchanged.
-
-  private get gameState() {
-    return this.scene.getGameState();
-  }
-
-  public get life(): number {
-    return this.gameState.get("life");
-  }
-
-  public set life(value: number) {
-    this.gameState.set("life", value);
-  }
-
-  public get maxLife(): number {
-    return this.gameState.get("maxLife");
-  }
-
-  public set maxLife(value: number) {
-    this.gameState.set("maxLife", value);
-  }
-
-  public get ammo(): number {
-    return this.gameState.get("ammo");
-  }
-
-  public set ammo(value: number) {
-    this.gameState.set("ammo", value);
-  }
-
-  public get maxAmmo(): number {
-    return this.gameState.get("maxAmmo");
-  }
-
-  public set maxAmmo(value: number) {
-    this.gameState.set("maxAmmo", value);
-  }
-
-  public get battery(): number {
-    return this.gameState.get("battery");
-  }
-
-  public set battery(value: number) {
-    this.gameState.set("battery", value);
-  }
-
-  public get maxBattery(): number {
-    return this.gameState.get("maxBattery");
-  }
-
-  public set maxBattery(value: number) {
-    this.gameState.set("maxBattery", value);
+  /**
+   * The stats of the Player (life, ammo, battery...): they live in the game
+   * state, so they are saved and shown by the HUD
+   */
+  public get stats(): PlayerStats {
+    return this.scene.getGameState().player;
   }
 
   
@@ -500,7 +454,7 @@ export class Player extends SpriteCollidable {
     // Change the current animation based on previous operations
     this.animate();
 
-    this.lastBattery = this.battery;
+    this.lastBattery = this.stats.battery;
 
     // Debug the player after all the update cycle
     if (this.scene.physics.world.drawDebug) {
@@ -518,7 +472,7 @@ export class Player extends SpriteCollidable {
     }
 
     // If the battery is already at full capacity, skip reload
-    if (this.battery >= this.maxBattery) {
+    if (this.stats.battery >= this.stats.maxBattery) {
       return;
     }
 
@@ -539,7 +493,7 @@ export class Player extends SpriteCollidable {
     }
 
     // If the Player use the battery, restart the timeout
-    const restartTimer: boolean = this.battery < this.lastBattery;
+    const restartTimer: boolean = this.stats.battery < this.lastBattery;
 
     if (restartTimer) {
       // Restart timeout if init
@@ -561,10 +515,10 @@ export class Player extends SpriteCollidable {
           delay: 100,
           loop: true,
           callback: () => {
-            ++this.battery;
+            ++this.stats.battery;
 
             // Stop recharging if reached the max level
-            if (this.battery === this.maxBattery) {
+            if (this.stats.battery === this.stats.maxBattery) {
               this.batteryRechargeTimer.destroy();
               this.batteryRechargeTimer.remove();
             }
@@ -634,8 +588,8 @@ export class Player extends SpriteCollidable {
           args: [liquidName],
           callback: (liquid: any) => {
             if (liquid === "acid") {
-              this.battery -= 2;
-              this.life -= 3;
+              this.stats.battery -= 2;
+              this.stats.life -= 3;
 
               if (this.isTinted) {
                 this.clearTint();
@@ -643,7 +597,7 @@ export class Player extends SpriteCollidable {
                 this.setTint(0x00ff00, 0xff00ff, 0x00ff00);
               }
             } else {
-              this.life -= 2;
+              this.stats.life -= 2;
 
               if (this.isTinted) {
                 this.clearTint();
@@ -768,7 +722,7 @@ export class Player extends SpriteCollidable {
     if (
       isShootPress &&
       this.facingForAim.x !== DirectionAxisX.CENTER &&
-      this.ammo > 0
+      this.stats.ammo > 0
     ) {
       const config: BulletConfig = {
         facing: this.facingForAim,
@@ -780,7 +734,7 @@ export class Player extends SpriteCollidable {
       const wasFired = weapon ? weapon.fireBullet(time, config) : false;
 
       if (wasFired) {
-        --this.ammo;
+        --this.stats.ammo;
       }
     }
 
@@ -978,10 +932,10 @@ export class Player extends SpriteCollidable {
         return player.baseSpeed;
       },
       get battery() {
-        return player.battery;
+        return player.stats.battery;
       },
       set battery(value: number) {
-        player.battery = value;
+        player.stats.battery = value;
       },
       isOnFloor: () => this.isOnFloor(),
       equip: (item) => this.scene.getInventory().equip(item),
