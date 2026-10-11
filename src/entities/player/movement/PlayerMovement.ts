@@ -106,6 +106,16 @@ export class PlayerMovement {
     this.settle(host);
   }
 
+  /**
+   * The Player was put somewhere else (a door): it is not holding on to
+   * anything there, and the state is settled in the next frame
+   */
+  public reset(): void {
+    this.state = MovementState.AIRBORNE;
+    this.climbRequested = false;
+    this.climbFromHang = false;
+  }
+
   /** The Player has finished pulling itself up: back to being in the world */
   public finishClimb(): void {
     if (this.state === MovementState.CLIMBING_LEDGE) {

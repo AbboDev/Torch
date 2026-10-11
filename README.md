@@ -71,6 +71,31 @@ Place unit tests in `tests/unit/` and integration tests in `tests/integration/` 
 
 ---
 
+## 🏃 How the Player moves
+
+`src/entities/player/movement/PlayerMovement.ts` is a state machine: at any time the
+Player is in **one** of these states.
+
+| State            | Meaning                                     | Gravity |
+| ---------------- | ------------------------------------------- | ------- |
+| `GROUNDED`       | standing or running on the floor            | yes     |
+| `CROUCHING`      | crouching on the floor                      | yes     |
+| `AIRBORNE`       | in the air: a jump, a fall, a launch        | yes     |
+| `HANGING`        | hanging from the edge of a ledge            | no      |
+| `ON_LADDER`      | holding a ladder                            | no      |
+| `CLIMBING_LEDGE` | pulling itself up a ledge, not controllable | no      |
+
+Every frame jump, walk, dash, hang, ladders and crouch run in that order; each asks the
+state what it can do and changes it when something happens. At the end of the frame the
+state is settled (floor or air) and the gravity is set for it in one place. `Player` only
+gives the machine what it needs (`MovementHost`: buttons, body, sensors, speeds), so the
+machine does not depend on Phaser and is tested with a fake Player.
+
+The speeds are in `movement.ts`, the stop and turn of the run in `horizontalMotion.ts`, the
+coyote time and jump buffer in `JumpAssist.ts`, the sensors in `PlayerSensors.ts`.
+
+---
+
 ## 🗺️ Rooms, doors and backgrounds (Tiled)
 
 Everything below is set in the `objects` layer of the map, with custom properties.

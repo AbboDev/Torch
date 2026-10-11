@@ -18,15 +18,14 @@ import {
   HIGH_JUMP_SPEED_MULTIPLIER,
 } from "@/entities/player/movement";
 import { computeAim } from "@/entities/player/aim";
+import { MovementHost } from "@/entities/player/movement/host";
+import { PlayerMovement } from "@/entities/player/movement/PlayerMovement";
+import { MovementState } from "@/entities/player/movement/state";
 import {
   getAnimationAction,
   getAnimationKey,
 } from "@/entities/player/animation";
-import { JumpAssist } from "@/entities/player/JumpAssist";
-import {
-  getAcceleration,
-  getDeceleration,
-} from "@/entities/player/horizontalMotion";
+import { getDeceleration } from "@/entities/player/horizontalMotion";
 import { PlayerInput } from "@/entities/player/PlayerInput";
 import { SpriteCollidable } from "@/entities/collidables/SpriteCollidable";
 import { MapScene } from "@/scenes/MapScene";
@@ -70,11 +69,19 @@ export class Player extends SpriteCollidable {
   private controls: PlayerInput;
 
   /**
-   * Coyote time and jump buffer
+   * What the Player is doing with its body (standing, crouching, in the air,
+   * hanging, on a ladder, climbing a ledge), and how it moves
    *
-   * @type {JumpAssist}
+   * @type {PlayerMovement}
    */
-  private jumpAssist = new JumpAssist();
+  private movement = new PlayerMovement();
+
+  /**
+   * What the movement needs from the Player
+   *
+   * @type {MovementHost}
+   */
+  private movementHost: MovementHost;
 
   /**
    * The Phaser weapons of this scene. Which weapons the Player owns,
@@ -127,63 +134,6 @@ export class Player extends SpriteCollidable {
    * @type {Boolean}
    */
   private wasAimingDiagonal: boolean = false;
-
-  /**
-   * The Player is jumping
-   *
-   * @type {Boolean}
-   */
-  private isJumping: boolean = false;
-
-  /**
-   * The Player is jumping
-   *
-   * @type {Boolean}
-   */
-  private isStandingJumping: boolean = false;
-
-  /**
-   * The Player is falling
-   *
-   * @type {Boolean}
-   */
-  private isFalling: boolean = false;
-
-  /**
-   * The Player is climbing a tile
-   *
-   * @type {Boolean}
-   */
-  private isClimbing: boolean = false;
-
-  /**
-   * The Player can now perform the double jump
-   *
-   * @type {Boolean}
-   */
-  private canDoubleJump: boolean = false;
-
-  /**
-   * The Player had actually performed the double jump
-   *
-   * @type {Boolean}
-   */
-  private hasDoneDoubleJump: boolean = false;
-
-  /**
-   * The Player can now perform a wall jump
-   *
-   * @type {Boolean}
-   */
-  private canWallJump: boolean = false;
-
-  /**
-   * Check if the user had previously
-   * performed a jump without releasing the key
-   *
-   * @type {Boolean}
-   */
-  private isPressingJump: boolean = false;
 
   /**
    * Check if the user had previously
@@ -280,17 +230,38 @@ export class Player extends SpriteCollidable {
 
   /**
    * Determinate if Player is crouch
-   *
-   * @type {boolean}
    */
-  public isCrouch: boolean = false;
+  public get isCrouch(): boolean {
+    return this.movement.isCrouch;
+  }
 
   /**
-   * Determinate if Player can crouch
-   *
-   * @type {boolean}
+   * Determinate if Player is hanging on a tile
    */
-  public canCrouch: boolean = true;
+  public get isHanging(): boolean {
+    return this.movement.isHanging;
+  }
+
+  /**
+   * Determinate if Player is near a ladder
+   */
+  public get isOnLadder(): boolean {
+    return this.movement.isOnLadder;
+  }
+
+  /**
+   * Determinate if Player is grabbing a ladder
+   */
+  public get isAttachOnLadder(): boolean {
+    return this.movement.isAttachOnLadder;
+  }
+
+  /**
+   * What the Player is doing with its body
+   */
+  public get movementState(): MovementState {
+    return this.movement.state;
+  }
 
   /**
    * Determinate if Player has smaller collision box
@@ -300,32 +271,11 @@ export class Player extends SpriteCollidable {
   public isBodySmall: boolean = false;
 
   /**
-   * Determinate if Player is hanging on a tile
-   *
-   * @type {boolean}
-   */
-  public isHanging: boolean = false;
-
-  /**
    * Determinate if Player is swimming in a liquid
    *
    * @type {boolean}
    */
   public isSwimming: boolean = false;
-
-  /**
-   * Determinate if Player is near a ladder
-   *
-   * @type {boolean}
-   */
-  public isOnLadder: boolean = false;
-
-  /**
-   * Determinate if Player is grabbing a ladder
-   *
-   * @type {boolean}
-   */
-  public isAttachOnLadder: boolean = false;
 
   /**
    * The timer which apply damage from liquids
@@ -394,6 +344,8 @@ export class Player extends SpriteCollidable {
     this.body.updateCenter();
 
     const bounds = this.getBodyBounds();
+
+    this.movementHost = this.createMovementHost();
 
     // Keep the Player on the slopes of the map
     this.scene.slopes.track(this.body);
@@ -520,32 +472,14 @@ export class Player extends SpriteCollidable {
       // Handle logic when the player is in a liquid
       this.swim();
 
-      // Prevent jump when is facing forward
-      if (this.facing.x !== DirectionAxisX.CENTER) {
-        // Handle all the movement along the y axis
-        this.jump();
-      }
-
-      // Handle all the movement along the x axis
-      this.walk();
-
-      // Handle the dash action
-      this.dash();
-
-      // Handle the hang action
-      this.hang();
-
-      // Handle the ladders climb action
-      this.climbLadders();
+      // Handle jump, walk, dash, hang and the ladders climb
+      this.movement.updateMotion(this.movementHost);
 
       // Handle the player body resizing
       this.resizeBody();
 
-      // Prevent crouch when is facing forward
-      if (this.facing.x !== DirectionAxisX.CENTER) {
-        // Handle the crouch action
-        this.crouch();
-      }
+      // Handle the crouch action and settle the state of the movement
+      this.movement.updateCrouch(this.movementHost);
 
       // The user can shoot only if the Player has at least one range weapon
       if (this.scene.getInventory().hasAtLeastOneRangeWeapon()) {
@@ -736,412 +670,6 @@ export class Player extends SpriteCollidable {
     }
   }
 
-  /**
-   * Handle all the movement along the y axis
-   */
-  protected jump(): void {
-    // Test if the user is pressing the button 'A'
-    const isJumpPress: boolean = this.controls.jump;
-
-    const now = this.scene.time.now;
-    this.jumpAssist.update(now, this.isOnFloor(), isJumpPress);
-
-    // First check if Player has unlocked wall jump
-    if (this.scene.getInventory().equip(PowerUps.GLOVE)) {
-      // Test if the Player is near walls
-      const walls: boolean[] = [
-        this.sensors.isTouchingWall(DirectionAxisX.LEFT),
-        this.sensors.isTouchingWall(DirectionAxisX.RIGHT),
-      ];
-      const wallsCount = walls.filter((wall) => wall);
-
-      // Perform wall jump only if the Player
-      // is not on the ground and is touching only one wall
-      this.canWallJump = !this.isOnFloor() && wallsCount.length === 1;
-
-      if (this.canWallJump) {
-        // The user have to press again the jump key to perform the action
-        if (!this.isPressingJump && isJumpPress) {
-          let sign = 0;
-
-          if (
-            // The Player is touching a wall on left
-            walls[0] &&
-            // The user is moving on the opposite side of wall (right)
-            this.controls.right
-          ) {
-            sign = 1;
-          } else if (
-            // The Player is touching a wall on right
-            walls[1] &&
-            // The user is moving on the opposite side of wall (left)
-            this.controls.left
-          ) {
-            sign = -1;
-          }
-
-          // Test if both the actions are corrects
-          if (sign !== 0) {
-            // The Player is actually performing a jump
-            this.isJumping = true;
-
-            // Then push the player on the opposite side of wall and to the ceil
-            this.setVelocity(
-              Math.abs(this.getJumpSpeed(false)) * 2 * sign,
-              this.getJumpSpeed()
-            );
-
-            this.jumpAssist.notifyJumped();
-          }
-        }
-      }
-    }
-
-    let isClimbing = false;
-    if (this.isHanging) {
-      if (!this.isPressingJump) {
-        const isUpPress: boolean = this.controls.up;
-
-        isClimbing = isUpPress || isJumpPress;
-
-        if (isClimbing) {
-          this.climb(TILE_SIZE, TILE_SIZE * 2);
-        }
-      }
-    } else if (isJumpPress) {
-      // If the Player is touching the floor (or has just left it) and the key
-      // has been released (or has been pressed a moment before landing)
-      if (
-        this.jumpAssist.canJumpFromGround(now, this.isOnFloor()) &&
-        (!this.isPressingJump ||
-          this.jumpAssist.hasBufferedPress(now, isJumpPress))
-      ) {
-        this.jumpAssist.notifyJumped();
-
-        if (this.body.blocked.right || this.body.blocked.left) {
-          const bounds: Phaser.Geom.Rectangle = this.getBodyBounds();
-          let upperTile: Phaser.Tilemaps.Tile | null = null;
-          let footTile: Phaser.Tilemaps.Tile | null = null;
-
-          const isLeft = this.body.blocked.left;
-          const x = isLeft
-            ? bounds.centerX - TILE_SIZE
-            : bounds.centerX + TILE_SIZE;
-
-          const xTile = Math.floor(x / TILE_SIZE);
-
-          const layers: Phaser.Tilemaps.TilemapLayer[] = this.scene.worldLayer;
-
-          const bottom = Math.floor((bounds.centerY - 1) / TILE_SIZE);
-
-          for (const layer of layers) {
-            if (upperTile) {
-              break;
-            }
-
-            upperTile = this.scene.map.getTileAt(
-              xTile,
-              bottom,
-              undefined,
-              layer
-            );
-          }
-
-          for (const layer of layers) {
-            if (footTile) {
-              break;
-            }
-
-            footTile = this.scene.map.getTileAt(
-              xTile,
-              bottom + 1,
-              undefined,
-              layer
-            );
-          }
-
-          isClimbing = !upperTile && footTile !== null;
-        }
-
-        if (!isClimbing) {
-          // The Player is actually jumping: a new jump, so no double jump
-          // from a previous one is left (the key may have been held since landing)
-          this.isJumping = true;
-          this.canDoubleJump = false;
-          this.hasDoneDoubleJump = false;
-
-          const velocity = Math.abs(this.body.velocity.x);
-          this.isStandingJumping = velocity <= TILE_SIZE * 2;
-          if (this.isStandingJumping) {
-            this.setMaxVelocity(
-              this.getStandingRunSpeed(),
-              this.getMaxJumpSpeed()
-            );
-          }
-
-          this.setVelocityY(this.getJumpSpeed());
-        } else {
-          this.climb(TILE_SIZE, TILE_SIZE);
-        }
-      } else if (
-        // First check if Player has unlocked double jump
-        this.scene.getInventory().equip(PowerUps.ROCKET) &&
-        // Then check if Player had already performed the action
-        !this.hasDoneDoubleJump &&
-        // Finally check if Player can actually perform the action at the moment
-        this.canDoubleJump
-      ) {
-        this.jumpAssist.notifyJumped();
-
-        // Prevent the Player to perform another double jump
-        this.hasDoneDoubleJump = true;
-        // The Player is actually jumping
-        this.isJumping = true;
-
-        this.isStandingJumping = Math.abs(this.body.velocity.x) <= TILE_SIZE;
-
-        this.setVelocityY(this.getJumpSpeed());
-      }
-    } else if (this.isOnFloor()) {
-      // Reset everything if the player is touching the ground
-      this.isFalling = false;
-      this.isJumping = false;
-
-      this.canDoubleJump = false;
-      this.hasDoneDoubleJump = false;
-    }
-
-    if (this.body.velocity.y === 0 && this.isOnFloor()) {
-      this.isStandingJumping = false;
-    }
-
-    if (!this.isStandingJumping) {
-      this.setMaxVelocity(this.getMaxRunSpeed(), this.getMaxJumpSpeed());
-    }
-
-    this.isClimbing = isClimbing;
-
-    // Check if the user is actually holding the key
-    this.isPressingJump = isJumpPress;
-
-    // Detect if the Player is falling by checking if his y speed is positive
-    if (this.body.velocity.y > 0) {
-      this.isFalling = true;
-      // If the Player is falling, he cannot also jump
-      this.isJumping = false;
-    } else {
-      this.isFalling = false;
-    }
-
-    // Detect if the Player is jumping by checking if his y speed is negative
-    if (this.body.velocity.y < 0) {
-      // Test if the user is pressing the button 'Up'
-      const isUpPress: boolean = this.controls.up;
-      // Detect if the user is not pressing the button to jump
-      if (!isJumpPress && !this.isClimbing && !isUpPress) {
-        // The Player is able to perform a double jump
-        this.canDoubleJump = true;
-
-        const newVelocity = this.body.velocity.y + -(this.body.velocity.y / 2);
-
-        // NOTE: while going up newVelocity is always negative, so the
-        // Math.max makes this cut the jump dead (y speed = 0) instead of
-        // damping it. Use Math.min(newVelocity, 0) for a softer cut.
-        this.setVelocityY(Math.max(newVelocity, 0));
-      }
-    }
-
-    // When the Player is in mid air, he must stand up
-    if (this.body.velocity.y !== 0) {
-      this.canCrouch = false;
-      this.isCrouch = false;
-    }
-  }
-
-  /**
-   * Handle all the movement along the x axis
-   */
-  protected walk(): void {
-    const isRightPress: boolean = this.controls.right;
-    const isLeftPress: boolean = this.controls.left;
-
-    // When the Player is moving, he cannot also be crouch
-    if (isRightPress || isLeftPress) {
-      this.canCrouch = false;
-      this.isCrouch = false;
-    }
-
-    if (isRightPress && !isLeftPress) {
-      this.facingForAim.x = DirectionAxisX.RIGHT;
-    } else if (isLeftPress && !isRightPress) {
-      this.facingForAim.x = DirectionAxisX.LEFT;
-    }
-
-    if (this.isHanging) {
-      // Do not keep pushing with the acceleration of the last frame
-      this.setAccelerationX(0);
-
-      return;
-    }
-
-    if (isRightPress && !isLeftPress) {
-      this.facing.x = DirectionAxisX.RIGHT;
-
-      this.setAccelerationX(
-        getAcceleration(1, this.getRunSpeed(), this.body.velocity.x)
-      );
-    } else if (isLeftPress && !isRightPress) {
-      this.facing.x = DirectionAxisX.LEFT;
-
-      this.setAccelerationX(
-        getAcceleration(-1, this.getRunSpeed(), this.body.velocity.x)
-      );
-    } else {
-      this.setAccelerationX(0);
-
-      // With no button pressed the body slows down with this drag: a short
-      // slide on the floor, a longer one in the air (see horizontalMotion.ts)
-      this.body.setDragX(
-        getDeceleration(this.getMaxRunSpeed(), {
-          isOnFloor: this.isOnFloor(),
-          isSwimming: this.isSwimming,
-        })
-      );
-
-      // Stop it if it is slow enough
-      if (Math.abs(this.body.velocity.x) < this.baseSpeed / 20) {
-        this.setVelocityX(0);
-      }
-    }
-  }
-
-  /**
-   * Handle the dash action
-   */
-  protected dash(): void {
-    const isDashPress: boolean = this.controls.dash;
-
-    if (this.scene.getInventory().equip(PowerUps.DASH)) {
-      const time = this.controls.getDashDuration();
-
-      if (
-        time < 100 &&
-        isDashPress &&
-        this.battery > 0 &&
-        this.facing.x !== DirectionAxisX.CENTER
-      ) {
-        const isRight = this.facing.x === DirectionAxisX.RIGHT;
-        const facing: number = isRight ? 1 : -1;
-
-        this.setMaxVelocity(this.getDashSpeed(), this.getMaxJumpSpeed());
-
-        this.setVelocityX(this.getDashSpeed() * facing);
-
-        --this.battery;
-      } else {
-        this.setMaxVelocity(
-          this.isStandingJumping
-            ? this.getStandingRunSpeed()
-            : this.getMaxRunSpeed(),
-          this.getMaxJumpSpeed()
-        );
-      }
-    }
-  }
-
-  /**
-   * Handle the hang action
-   */
-  protected hang(): void {
-    if (this.scene.getInventory().equip(PowerUps.HOOK)) {
-      if (this.body.velocity.y !== 0 || this.isHanging) {
-        const isDownPress: boolean = this.controls.down;
-
-        // If the Player is hanging from a tile, he can jump down
-        if (isDownPress) {
-          this.isHanging = false;
-          this.body.setAllowGravity(true);
-          return;
-        }
-
-        let side: DirectionAxisX.LEFT | DirectionAxisX.RIGHT | undefined;
-
-        if (this.facing.x === DirectionAxisX.LEFT) {
-          side = DirectionAxisX.LEFT;
-        } else if (this.facing.x === DirectionAxisX.RIGHT) {
-          side = DirectionAxisX.RIGHT;
-        }
-
-        if (typeof side !== "undefined") {
-          // The tile the Player is touching with the hand, if it can be grabbed
-          const ledge = this.sensors.findLedge(side);
-
-          if (ledge) {
-            this.isHanging = true;
-            // Prevent the Player to slide down
-            this.body.setAllowGravity(false);
-
-            this.setGravity(0);
-            this.setVelocityY(0);
-            // Align the body to the current tile
-            this.setNewPosition(null, ledge.pixelY);
-          } else {
-            this.isHanging = false;
-
-            this.body.setAllowGravity(true);
-          }
-        }
-      }
-    }
-  }
-
-  protected climbLadders(): void {
-    const isOnTopOfLadder = this.sensors.isOnLadderTop();
-
-    this.isOnLadder = this.scene.physics.overlap(
-      this,
-      this.scene.stairsLayer,
-      undefined,
-      (hero, object: unknown) => {
-        const ladder = object as Phaser.Tilemaps.Tile;
-
-        return ladder.index > -1;
-      }
-    );
-
-    const isDownPressed: boolean = this.controls.down;
-
-    const isUpPressed: boolean = this.controls.up;
-
-    if (this.isOnLadder || isOnTopOfLadder) {
-      if (this.isOnFloor() || !this.isOnLadder) {
-        if (this.isAttachOnLadder) {
-          this.isAttachOnLadder = false;
-        }
-      }
-
-      if (isDownPressed || (isUpPressed && this.isOnLadder)) {
-        const speed = isDownPressed ? 1 : -1;
-        this.setVelocityY(this.getLadderClimbSpeed() * speed);
-
-        this.isAttachOnLadder = true;
-      }
-    } else {
-      this.isAttachOnLadder = false;
-    }
-
-    if (this.isAttachOnLadder) {
-      this.setGravity(0);
-      this.body.setAllowGravity(false);
-
-      if (!isUpPressed && !isDownPressed) {
-        this.setVelocityY(0);
-      }
-    } else {
-      this.body.setAllowGravity(true);
-    }
-  }
-
   protected climb(x: number, y?: number): void {
     const x1: number = x;
     let y1: number | undefined = y;
@@ -1162,33 +690,10 @@ export class Player extends SpriteCollidable {
       x: `${sign}=${x1}`,
       y: `-=${y1}`,
       onComplete: () => {
+        this.movement.finishClimb();
         this.canInteract = true;
       },
     });
-  }
-
-  /**
-   * Handle the crouch action
-   */
-  protected crouch(): void {
-    // Test if the Player can crouch in the current state and position
-    if (this.canCrouch) {
-      const isDownPressed: boolean = this.controls.justPressed(
-        ControllerKey.DOWN
-      );
-
-      const isUpPressed: boolean = this.controls.up;
-
-      if (isDownPressed && !this.isCrouch) {
-        if (!this.isAimingDiagonal || this.previousFacing.y === this.facing.y) {
-          this.isCrouch = true;
-        }
-      } else if (isUpPressed && this.isCrouch) {
-        this.isCrouch = false;
-      }
-    }
-
-    this.canCrouch = true;
   }
 
   /**
@@ -1201,7 +706,7 @@ export class Player extends SpriteCollidable {
     let offsetX!: number;
     let offsetY!: number;
 
-    if (!this.isHanging && this.isCrouch) {
+    if (!this.movement.isHanging && this.movement.isCrouch) {
       if (!this.isBodySmall) {
         // Shrink his body to fit with the animation
         offsetX = (this.width - Player.BODY_SMALL_WIDTH) * (1 - this.originX);
@@ -1305,10 +810,10 @@ export class Player extends SpriteCollidable {
   protected animate(): void {
     const action = getAnimationAction({
       isOnFloor: this.isOnFloor(),
-      isCrouch: this.isCrouch,
-      isHanging: this.isHanging,
-      isJumping: this.isJumping,
-      isStandingJumping: this.isStandingJumping,
+      isCrouch: this.movement.isCrouch,
+      isHanging: this.movement.isHanging,
+      isJumping: this.movement.isJumping,
+      isStandingJumping: this.movement.isStandingJumping,
       isAimingDiagonal: this.isAimingDiagonal,
       wasAimingDiagonal: this.wasAimingDiagonal,
       velocityX: this.body.velocity.x,
@@ -1370,8 +875,8 @@ export class Player extends SpriteCollidable {
       hasRocket: inventory.equip(PowerUps.ROCKET),
       hasBoots: inventory.equip(PowerUps.BOOTS),
       hasBooster: inventory.equip(PowerUps.BOOSTER),
-      canWallJump: this.canWallJump,
-      canDoubleJump: this.canDoubleJump,
+      canWallJump: this.movement.canWallJump,
+      canDoubleJump: this.movement.canDoubleJump,
     };
   }
 
@@ -1408,6 +913,123 @@ export class Player extends SpriteCollidable {
   }
 
   /**
+   * Running against a wall: is there a ledge above to climb onto? (a tile on
+   * the level of the feet in the next column, and none above it)
+   *
+   * @param {boolean} isLeft The wall is on the left
+   */
+  private hasLedgeToClimb(isLeft: boolean): boolean {
+    const bounds: Phaser.Geom.Rectangle = this.getBodyBounds();
+
+    const x = isLeft ? bounds.centerX - TILE_SIZE : bounds.centerX + TILE_SIZE;
+    const xTile = Math.floor(x / TILE_SIZE);
+    const bottom = Math.floor((bounds.centerY - 1) / TILE_SIZE);
+
+    const findTile = (row: number): Phaser.Tilemaps.Tile | null => {
+      for (const layer of this.scene.worldLayer) {
+        const tile = this.scene.map.getTileAt(xTile, row, undefined, layer);
+
+        if (tile) {
+          return tile;
+        }
+      }
+
+      return null;
+    };
+
+    return !findTile(bottom) && findTile(bottom + 1) !== null;
+  }
+
+  /**
+   * What the movement needs from the Player: what it feels and what it can do
+   */
+  private createMovementHost(): MovementHost {
+    const player = this;
+
+    return {
+      get now() {
+        return player.scene.time.now;
+      },
+      get input() {
+        return player.controls;
+      },
+      get facing() {
+        return player.facing;
+      },
+      get facingForAim() {
+        return player.facingForAim;
+      },
+      get previousFacing() {
+        return player.previousFacing;
+      },
+      get isAimingDiagonal() {
+        return player.isAimingDiagonal;
+      },
+      get isSwimming() {
+        return player.isSwimming;
+      },
+      get velocity() {
+        return player.body.velocity;
+      },
+      get blocked() {
+        return player.body.blocked;
+      },
+      get baseSpeed() {
+        return player.baseSpeed;
+      },
+      get battery() {
+        return player.battery;
+      },
+      set battery(value: number) {
+        player.battery = value;
+      },
+      isOnFloor: () => this.isOnFloor(),
+      equip: (item) => this.scene.getInventory().equip(item),
+      isTouchingWall: (side) => this.sensors.isTouchingWall(side),
+      findLedge: (side) => this.sensors.findLedge(side),
+      isOnLadderTop: () => this.sensors.isOnLadderTop(),
+      overlapsLadder: () =>
+        this.scene.physics.overlap(
+          this,
+          this.scene.stairsLayer,
+          undefined,
+          (hero, object: unknown) => (object as Phaser.Tilemaps.Tile).index > -1
+        ),
+      hasLedgeToClimb: (isLeft) => this.hasLedgeToClimb(isLeft),
+      getJumpSpeed: (applyMultiplier) => this.getJumpSpeed(applyMultiplier),
+      getMaxJumpSpeed: () => this.getMaxJumpSpeed(),
+      getRunSpeed: () => this.getRunSpeed(),
+      getStandingRunSpeed: () => this.getStandingRunSpeed(),
+      getMaxRunSpeed: () => this.getMaxRunSpeed(),
+      getDashSpeed: () => this.getDashSpeed(),
+      getLadderClimbSpeed: () => this.getLadderClimbSpeed(),
+      setVelocity: (x, y) => {
+        this.setVelocity(x, y);
+      },
+      setVelocityX: (x) => {
+        this.setVelocityX(x);
+      },
+      setVelocityY: (y) => {
+        this.setVelocityY(y);
+      },
+      setAccelerationX: (x) => {
+        this.setAccelerationX(x);
+      },
+      setDragX: (x) => {
+        this.body.setDragX(x);
+      },
+      setMaxVelocity: (x, y) => {
+        this.setMaxVelocity(x, y);
+      },
+      setAllowGravity: (allow) => {
+        this.body.setAllowGravity(allow);
+      },
+      moveTo: (x, y) => this.setNewPosition(x, y ?? undefined),
+      climb: (x, y) => this.climb(x, y),
+    };
+  }
+
+  /**
    * Put the Player somewhere else, standing still (a door, a save point...)
    *
    * @param {number} x The x coordinate of the Player, like the spawn point
@@ -1418,7 +1040,7 @@ export class Player extends SpriteCollidable {
     this.body.updateCenter();
 
     this.setAccelerationX(0);
-    this.isHanging = false;
+    this.movement.reset();
     this.body.setAllowGravity(true);
   }
 
