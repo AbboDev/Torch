@@ -9,14 +9,8 @@ import { PowerUps } from "@/miscellaneous/Inventory";
 import { PlayerSensors } from "@/entities/player/PlayerSensors";
 import { Arsenal } from "@/entities/weapons/Arsenal";
 import { BulletConfig } from "@/entities/bullets/Bullet";
-import {
-  DASH_SPEED_MULTIPLIER,
-  MovementContext,
-  getJumpSpeedMultiplier,
-  getRunSpeed,
-  getRunSpeedMultiplier,
-  HIGH_JUMP_SPEED_MULTIPLIER,
-} from "@/entities/player/movement";
+import { MovementContext } from "@/entities/player/movement";
+import { PlayerSpeeds } from "@/entities/player/PlayerSpeeds";
 import { computeAim } from "@/entities/player/aim";
 import { MovementHost } from "@/entities/player/movement/host";
 import { PlayerMovement } from "@/entities/player/movement/PlayerMovement";
@@ -201,6 +195,13 @@ export class Player extends SpriteCollidable {
   private baseSpeed: number;
 
   /**
+   * How fast the Player goes
+   *
+   * @type {PlayerSpeeds}
+   */
+  private speeds: PlayerSpeeds;
+
+  /**
    * What the Player is touching around the body: walls, ledges, ladders
    * and moving platforms
    *
@@ -312,6 +313,9 @@ export class Player extends SpriteCollidable {
     };
 
     this.baseSpeed = this.scene.getWorldGravity().y / 2;
+    this.speeds = new PlayerSpeeds(this.baseSpeed, () =>
+      this.getMovementContext()
+    );
 
     this.scene.add.existing(this);
     this.scene.physics.world.enable(this);
@@ -320,7 +324,10 @@ export class Player extends SpriteCollidable {
       .setOrigin(0.5, 0)
       .setCollideWorldBounds(true)
       .setBounce(0)
-      .setMaxVelocity(this.getMaxRunSpeed(), this.getMaxJumpSpeed());
+      .setMaxVelocity(
+        this.speeds.getMaxRunSpeed(),
+        this.speeds.getMaxJumpSpeed()
+      );
 
     this.body
       .setAllowGravity(true)
@@ -328,7 +335,7 @@ export class Player extends SpriteCollidable {
       // The drag is a deceleration in px/s², decided every frame in walk()
       .setDamping(false)
       .setDragX(
-        getDeceleration(this.getMaxRunSpeed(), {
+        getDeceleration(this.speeds.getMaxRunSpeed(), {
           isOnFloor: true,
           isSwimming: false,
         })
@@ -810,12 +817,6 @@ export class Player extends SpriteCollidable {
     }
   }
 
-  public getJumpSpeed(applyMultiplier = true): number {
-    return (
-      -this.baseSpeed * (applyMultiplier ? this.getJumpSpeedMultiplier() : 1)
-    );
-  }
-
   /**
    * What the Player owns and is doing, as needed by the speed rules
    */
@@ -832,38 +833,6 @@ export class Player extends SpriteCollidable {
       canWallJump: this.movement.canWallJump,
       canDoubleJump: this.movement.canDoubleJump,
     };
-  }
-
-  protected getJumpSpeedMultiplier(): number {
-    return getJumpSpeedMultiplier(this.getMovementContext());
-  }
-
-  public getMaxJumpSpeed(): number {
-    return this.baseSpeed * HIGH_JUMP_SPEED_MULTIPLIER;
-  }
-
-  public getRunSpeed(): number {
-    return getRunSpeed(this.baseSpeed, this.getMovementContext());
-  }
-
-  public getStandingRunSpeed(): number {
-    return TILE_SIZE * 4;
-  }
-
-  public getLadderClimbSpeed(): number {
-    return TILE_SIZE * 3;
-  }
-
-  public getDashSpeed(): number {
-    return this.baseSpeed * DASH_SPEED_MULTIPLIER;
-  }
-
-  public getMaxRunSpeed(): number {
-    return this.baseSpeed * this.getRunSpeedMultiplier();
-  }
-
-  public getRunSpeedMultiplier(): number {
-    return getRunSpeedMultiplier(this.getMovementContext());
   }
 
   /**
@@ -950,13 +919,14 @@ export class Player extends SpriteCollidable {
           (hero, object: unknown) => (object as Phaser.Tilemaps.Tile).index > -1
         ),
       hasLedgeToClimb: (isLeft) => this.hasLedgeToClimb(isLeft),
-      getJumpSpeed: (applyMultiplier) => this.getJumpSpeed(applyMultiplier),
-      getMaxJumpSpeed: () => this.getMaxJumpSpeed(),
-      getRunSpeed: () => this.getRunSpeed(),
-      getStandingRunSpeed: () => this.getStandingRunSpeed(),
-      getMaxRunSpeed: () => this.getMaxRunSpeed(),
-      getDashSpeed: () => this.getDashSpeed(),
-      getLadderClimbSpeed: () => this.getLadderClimbSpeed(),
+      getJumpSpeed: (applyMultiplier) =>
+        this.speeds.getJumpSpeed(applyMultiplier),
+      getMaxJumpSpeed: () => this.speeds.getMaxJumpSpeed(),
+      getRunSpeed: () => this.speeds.getRunSpeed(),
+      getStandingRunSpeed: () => this.speeds.getStandingRunSpeed(),
+      getMaxRunSpeed: () => this.speeds.getMaxRunSpeed(),
+      getDashSpeed: () => this.speeds.getDashSpeed(),
+      getLadderClimbSpeed: () => this.speeds.getLadderClimbSpeed(),
       setVelocity: (x, y) => {
         this.setVelocity(x, y);
       },
