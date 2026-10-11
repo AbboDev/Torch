@@ -21,6 +21,7 @@ import { MovementContext } from "@/entities/player/movement";
 import { PlayerSpeeds } from "@/entities/player/PlayerSpeeds";
 import { PlayerAim } from "@/entities/player/PlayerAim";
 import { MovementHost } from "@/entities/player/movement/host";
+import { createMovementHost } from "@/entities/player/movement/createMovementHost";
 import { PlayerMovement } from "@/entities/player/movement/PlayerMovement";
 import { MovementState } from "@/entities/player/movement/state";
 import {
@@ -283,8 +284,6 @@ export class Player extends SpriteCollidable {
       this
     );
 
-    this.movementHost = this.createMovementHost();
-
     // Keep the Player on the slopes of the map
     this.scene.slopes.track(this.body);
     this.once(Phaser.GameObjects.Events.DESTROY, () => {
@@ -297,6 +296,24 @@ export class Player extends SpriteCollidable {
       wallHeight: this.body.halfHeight,
       ladderWidth: this.body.width,
       sweptLedgeDetection: Player.SWEPT_LEDGE_DETECTION,
+    });
+
+    this.movementHost = createMovementHost({
+      sprite: this,
+      controls: this.controls,
+      aim: this.aim,
+      stats: this.stats,
+      speeds: this.speeds,
+      sensors: this.sensors,
+      shape: this.shape,
+      baseSpeed: this.baseSpeed,
+      now: () => this.scene.time.now,
+      equip: (item) => this.scene.getInventory().equip(item),
+      isSwimming: () => this.isSwimming,
+      isOnFloor: () => this.isOnFloor(),
+      overlapsLadder: () => this.overlapsLadder(),
+      hasLedgeToClimb: (towardsLeft) => this.hasLedgeToClimb(towardsLeft),
+      climb: (x, y) => this.climb(x, y),
     });
 
     this.torchLight = this.scene.lights
@@ -513,6 +530,18 @@ export class Player extends SpriteCollidable {
   }
 
   /**
+   * The body overlaps a tile of a ladder
+   */
+  private overlapsLadder(): boolean {
+    return this.scene.physics.overlap(
+      this,
+      this.scene.stairsLayer,
+      undefined,
+      (hero, object: unknown) => (object as Phaser.Tilemaps.Tile).index > -1
+    );
+  }
+
+  /**
    * Is the Player in a liquid, and which one
    */
   private detectLiquid(): LiquidDetection {
@@ -564,96 +593,6 @@ export class Player extends SpriteCollidable {
     };
 
     return !findTile(bottom) && findTile(bottom + 1) !== null;
-  }
-
-  /**
-   * What the movement needs from the Player: what it feels and what it can do
-   */
-  private createMovementHost(): MovementHost {
-    const player = this;
-
-    return {
-      get now() {
-        return player.scene.time.now;
-      },
-      get input() {
-        return player.controls;
-      },
-      get facing() {
-        return player.aim.facing;
-      },
-      get facingForAim() {
-        return player.aim.facingForAim;
-      },
-      get previousFacing() {
-        return player.aim.previousFacing;
-      },
-      get isAimingDiagonal() {
-        return player.aim.isAimingDiagonal;
-      },
-      get isSwimming() {
-        return player.isSwimming;
-      },
-      get velocity() {
-        return player.body.velocity;
-      },
-      get blocked() {
-        return player.body.blocked;
-      },
-      get baseSpeed() {
-        return player.baseSpeed;
-      },
-      get battery() {
-        return player.stats.battery;
-      },
-      set battery(value: number) {
-        player.stats.battery = value;
-      },
-      isOnFloor: () => this.isOnFloor(),
-      equip: (item) => this.scene.getInventory().equip(item),
-      isTouchingWall: (side) => this.sensors.isTouchingWall(side),
-      findLedge: (side) => this.sensors.findLedge(side),
-      isOnLadderTop: () => this.sensors.isOnLadderTop(),
-      overlapsLadder: () =>
-        this.scene.physics.overlap(
-          this,
-          this.scene.stairsLayer,
-          undefined,
-          (hero, object: unknown) => (object as Phaser.Tilemaps.Tile).index > -1
-        ),
-      hasLedgeToClimb: (isLeft) => this.hasLedgeToClimb(isLeft),
-      getJumpSpeed: (applyMultiplier) =>
-        this.speeds.getJumpSpeed(applyMultiplier),
-      getMaxJumpSpeed: () => this.speeds.getMaxJumpSpeed(),
-      getRunSpeed: () => this.speeds.getRunSpeed(),
-      getStandingRunSpeed: () => this.speeds.getStandingRunSpeed(),
-      getMaxRunSpeed: () => this.speeds.getMaxRunSpeed(),
-      getDashSpeed: () => this.speeds.getDashSpeed(),
-      getLadderClimbSpeed: () => this.speeds.getLadderClimbSpeed(),
-      setVelocity: (x, y) => {
-        this.setVelocity(x, y);
-      },
-      setVelocityX: (x) => {
-        this.setVelocityX(x);
-      },
-      setVelocityY: (y) => {
-        this.setVelocityY(y);
-      },
-      setAccelerationX: (x) => {
-        this.setAccelerationX(x);
-      },
-      setDragX: (x) => {
-        this.body.setDragX(x);
-      },
-      setMaxVelocity: (x, y) => {
-        this.setMaxVelocity(x, y);
-      },
-      setAllowGravity: (allow) => {
-        this.body.setAllowGravity(allow);
-      },
-      moveTo: (x, y) => this.shape.moveTo(x, y),
-      climb: (x, y) => this.climb(x, y),
-    };
   }
 
   /**
