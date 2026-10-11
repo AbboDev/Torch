@@ -6,6 +6,11 @@ import {
 } from "@/miscellaneous/Direction";
 import { ControllerKey } from "@/miscellaneous/Controller";
 import { PowerUps } from "@/miscellaneous/Inventory";
+import { BatteryRecharger } from "@/entities/player/BatteryRecharger";
+import {
+  LiquidDetection,
+  PlayerLiquids,
+} from "@/entities/player/PlayerLiquids";
 import { PlayerWeapons } from "@/entities/player/PlayerWeapons";
 import { PlayerBody } from "@/entities/player/PlayerBody";
 import { PlayerSensors } from "@/entities/player/PlayerSensors";
@@ -30,27 +35,6 @@ import { PLAYER_DEPTH } from "@/config/depths";
 import { TILE_SIZE } from "@/config/tiles";
 
 export class Player extends SpriteCollidable {
-  /**
-   * Last battery level
-   *
-   * @type {Number}
-   */
-  public lastBattery: number = 0;
-
-  /**
-   * The timeout after which the battery start recharging
-   *
-   * @type {Phaser.Time.TimerEvent}
-   */
-  private batteryTimeoutTimer!: Phaser.Time.TimerEvent;
-
-  /**
-   * The timer which fill up the battery
-   *
-   * @type {Phaser.Time.TimerEvent}
-   */
-  private batteryRechargeTimer!: Phaser.Time.TimerEvent;
-
   /**
    * The light emitted by Player
    *
@@ -107,6 +91,20 @@ export class Player extends SpriteCollidable {
    * @type {PlayerSpeeds}
    */
   private speeds: PlayerSpeeds;
+
+  /**
+   * Fills the battery up again when it is not used
+   *
+   * @type {BatteryRecharger}
+   */
+  private recharger: BatteryRecharger;
+
+  /**
+   * The Player in a liquid: swimming and the damage of acid and lava
+   *
+   * @type {PlayerLiquids}
+   */
+  private liquids: PlayerLiquids;
 
   /**
    * The weapons: change them, shoot, spend ammo
@@ -210,20 +208,6 @@ export class Player extends SpriteCollidable {
   }
 
   /**
-   * Determinate if Player is swimming in a liquid
-   *
-   * @type {boolean}
-   */
-  public isSwimming: boolean = false;
-
-  /**
-   * The timer which apply damage from liquids
-   *
-   * @type {Phaser.Time.TimerEvent}
-   */
-  private liquidDamageTimer!: Phaser.Time.TimerEvent;
-
-  /**
    * Create the Player
    *
    * @param {MapScene} scene - scene creating the player.
@@ -286,6 +270,18 @@ export class Player extends SpriteCollidable {
 
     const bounds = this.getBodyBounds();
 
+    this.recharger = new BatteryRecharger(
+      this.scene.time,
+      () => this.scene.getInventory().hasBattery(),
+      this.stats
+    );
+    this.liquids = new PlayerLiquids(
+      () => this.detectLiquid(),
+      (config) => this.scene.time.addEvent(config),
+      this.stats,
+      this
+    );
+
     this.movementHost = this.createMovementHost();
 
     // Keep the Player on the slopes of the map
@@ -309,6 +305,14 @@ export class Player extends SpriteCollidable {
 
     // TODO: activate after create normal maps for sprite
     // this.setPipeline('Light2D');
+  }
+
+  /**
+   * Determinate if Player is in a liquid
+   */
+  public get isSwimming(): boolean {
+    // Asked by the speeds while the constructor is still running
+    return this.liquids?.isSwimming ?? false;
   }
 
   /**
@@ -373,7 +377,7 @@ export class Player extends SpriteCollidable {
       );
 
       // Handle logic when the player is in a liquid
-      this.swim();
+      this.liquids.update();
 
       // Handle jump, walk, dash, hang and the ladders climb
       this.movement.updateMotion(this.movementHost);
@@ -392,7 +396,7 @@ export class Player extends SpriteCollidable {
     }
 
     // Handle the battery recharge process
-    this.updateBattery();
+    this.recharger.update();
 
     // Apply the position correction requested during this update
     this.shape.applyRequestedPosition();
@@ -403,146 +407,11 @@ export class Player extends SpriteCollidable {
     // Change the current animation based on previous operations
     this.animate();
 
-    this.lastBattery = this.stats.battery;
+    this.recharger.remember();
 
     // Debug the player after all the update cycle
     if (this.scene.physics.world.drawDebug) {
       this.debug();
-    }
-  }
-
-  /**
-   * Handle the battery recharge process
-   */
-  protected updateBattery(): void {
-    // The Player should have at least the battery powerup
-    if (!this.scene.getInventory().hasBattery()) {
-      return;
-    }
-
-    // If the battery is already at full capacity, skip reload
-    if (this.stats.battery >= this.stats.maxBattery) {
-      return;
-    }
-
-    // Check if the timeout was not init
-    let canTimeoutStarts: boolean =
-      typeof this.batteryTimeoutTimer === "undefined";
-    if (!canTimeoutStarts) {
-      // If the timeout was init, test if is completed
-      canTimeoutStarts = this.batteryTimeoutTimer.getProgress() === 1;
-    }
-
-    // Check if the timer was not init
-    let canTimerStarts: boolean =
-      typeof this.batteryRechargeTimer === "undefined";
-    if (!canTimerStarts) {
-      // If the timer was init, test if is completed
-      canTimerStarts = this.batteryRechargeTimer.getProgress() === 1;
-    }
-
-    // If the Player use the battery, restart the timeout
-    const restartTimer: boolean = this.stats.battery < this.lastBattery;
-
-    if (restartTimer) {
-      // Restart timeout if init
-      if (this.batteryTimeoutTimer) {
-        this.batteryTimeoutTimer.destroy();
-        this.batteryTimeoutTimer.remove();
-      }
-
-      // Restart timer if init
-      if (this.batteryRechargeTimer) {
-        this.batteryRechargeTimer.destroy();
-        this.batteryRechargeTimer.remove();
-      }
-    }
-
-    if ((canTimeoutStarts && canTimerStarts) || restartTimer) {
-      this.batteryTimeoutTimer = this.scene.time.delayedCall(5000, () => {
-        const config: Phaser.Types.Time.TimerEventConfig = {
-          delay: 100,
-          loop: true,
-          callback: () => {
-            ++this.stats.battery;
-
-            // Stop recharging if reached the max level
-            if (this.stats.battery === this.stats.maxBattery) {
-              this.batteryRechargeTimer.destroy();
-              this.batteryRechargeTimer.remove();
-            }
-          },
-        };
-
-        // Start the timer only after a certain amount of time
-        this.batteryRechargeTimer = this.scene.time.addEvent(config);
-      });
-    }
-  }
-
-  /**
-   * Handle all the events inside liquids
-   */
-  protected swim(): void {
-    let liquidName: string | null = null;
-
-    this.isSwimming = this.scene.physics.overlap(
-      this,
-      this.scene.liquidsLayer,
-      undefined,
-      (hero, object: unknown) => {
-        const liquid = object as Phaser.Tilemaps.Tile;
-        if (liquid.index > -1) {
-          liquidName = liquid.properties.liquid;
-          return true;
-        }
-
-        return false;
-      }
-    );
-
-    if (this.isSwimming && liquidName) {
-      if (liquidName === "acid" || liquidName === "lava") {
-        const config: Phaser.Types.Time.TimerEventConfig = {
-          startAt: 0,
-          delay: 200,
-          loop: true,
-          args: [liquidName],
-          callback: (liquid: any) => {
-            if (liquid === "acid") {
-              this.stats.battery -= 2;
-              this.stats.life -= 3;
-
-              if (this.isTinted) {
-                this.clearTint();
-              } else {
-                this.setTint(0x00ff00, 0xff00ff, 0x00ff00);
-              }
-            } else {
-              this.stats.life -= 2;
-
-              if (this.isTinted) {
-                this.clearTint();
-              } else {
-                this.setTint(0xffff00, 0xffff00, 0xff0000, 0xff0000);
-              }
-            }
-          },
-        };
-
-        if (!this.liquidDamageTimer) {
-          this.liquidDamageTimer = this.scene.time.addEvent(config);
-        } else if (this.liquidDamageTimer.paused) {
-          this.liquidDamageTimer.reset(config);
-          this.liquidDamageTimer.paused = false;
-        }
-      }
-    } else if (this.liquidDamageTimer) {
-      this.liquidDamageTimer.paused = true;
-
-      if (this.isTinted) {
-        this.clearTint();
-      }
     }
   }
 
@@ -640,6 +509,32 @@ export class Player extends SpriteCollidable {
       canWallJump: this.movement.canWallJump,
       canDoubleJump: this.movement.canDoubleJump,
     };
+  }
+
+  /**
+   * Is the Player in a liquid, and which one
+   */
+  private detectLiquid(): LiquidDetection {
+    let liquid = null as string | null;
+
+    const swimming = this.scene.physics.overlap(
+      this,
+      this.scene.liquidsLayer,
+      undefined,
+      (hero, object: unknown) => {
+        const tile = object as Phaser.Tilemaps.Tile;
+
+        if (tile.index > -1) {
+          liquid = tile.properties.liquid;
+
+          return true;
+        }
+
+        return false;
+      }
+    );
+
+    return { swimming, liquid };
   }
 
   /**
