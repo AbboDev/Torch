@@ -6,6 +6,7 @@ import {
 } from "@/miscellaneous/Direction";
 import { ControllerKey } from "@/miscellaneous/Controller";
 import { PowerUps } from "@/miscellaneous/Inventory";
+import { collidesWithTile } from "@/world/oneWayTiles";
 import { BatteryRecharger } from "@/entities/player/BatteryRecharger";
 import {
   LiquidDetection,
@@ -685,35 +686,15 @@ export class Player extends SpriteCollidable {
   ): boolean {
     const tile: Phaser.Tilemaps.Tile = object as Phaser.Tilemaps.Tile;
 
-    switch (tile.layer.name) {
-      case "platforms":
-        if (tile.index >= 0) {
-          const bounds: Phaser.Geom.Rectangle = this.getBodyBounds();
-          if (bounds.bottom - 1 < tile.pixelY) {
-            return true;
-          }
-        }
-        return false;
-      case "stairs":
-        if (tile.index >= 0) {
-          const isDownPressed: boolean = this.scene
-            .getController()
-            .isKeyPressed(ControllerKey.DOWN);
-
-          const bounds: Phaser.Geom.Rectangle = this.getBodyBounds();
-          const adjacentTile: Phaser.Tilemaps.Tile | null =
-            this.scene.map.getTileAt(tile.x, tile.y - 1, false, "stairs");
-
-          if (bounds.bottom - 1 < tile.pixelY && !adjacentTile) {
-            return !isDownPressed;
-          }
-        }
-        return false;
-
-      default:
-        break;
-    }
-
-    return tile.index >= 0;
+    return collidesWithTile({
+      layer: tile.layer.name,
+      index: tile.index,
+      tileTop: tile.pixelY,
+      feetBottom: () => this.getBodyBounds().bottom,
+      isDownPressed: () =>
+        this.scene.getController().isKeyPressed(ControllerKey.DOWN),
+      hasTileAbove: () =>
+        !!this.scene.map.getTileAt(tile.x, tile.y - 1, false, "stairs"),
+    });
   }
 }
