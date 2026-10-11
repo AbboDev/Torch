@@ -6,6 +6,7 @@ import {
 } from "@/miscellaneous/Direction";
 import { ControllerKey } from "@/miscellaneous/Controller";
 import { PowerUps } from "@/miscellaneous/Inventory";
+import { PlayerBody } from "@/entities/player/PlayerBody";
 import { PlayerSensors } from "@/entities/player/PlayerSensors";
 import { Arsenal } from "@/entities/weapons/Arsenal";
 import { BulletConfig } from "@/entities/bullets/Bullet";
@@ -88,13 +89,6 @@ export class Player extends SpriteCollidable {
   private arsenal: Arsenal;
 
   /**
-   * The correct position where the Player where collocated
-   *
-   * @type {Phaser.Math.Vector2}
-   */
-  private adjustTo?: Phaser.Math.Vector2;
-
-  /**
    * Check if the user had previously
    * performed a shoot without releasing the key
    *
@@ -124,34 +118,6 @@ export class Player extends SpriteCollidable {
   static SHOT_HEIGHT: number = TILE_SIZE + 2;
 
   /**
-   * The standard body width
-   *
-   * @type {Number}
-   */
-  static BODY_WIDTH: number = TILE_SIZE;
-
-  /**
-   * The standard body height
-   *
-   * @type {Number}
-   */
-  static BODY_HEIGHT: number = TILE_SIZE * 2;
-
-  /**
-   * The body width when it's crouch or jumping
-   *
-   * @type {Number}
-   */
-  static BODY_SMALL_WIDTH: number = TILE_SIZE;
-
-  /**
-   * The body height when it's crouch or jumping
-   *
-   * @type {Number}
-   */
-  static BODY_SMALL_HEIGHT: number = (Player.BODY_HEIGHT / 4) * 3;
-
-  /**
    * The default movement speed based on game gravity
    *
    * @type {Number}
@@ -164,6 +130,13 @@ export class Player extends SpriteCollidable {
    * @type {PlayerSpeeds}
    */
   private speeds: PlayerSpeeds;
+
+  /**
+   * The shape of the body and the corrections of its position
+   *
+   * @type {PlayerBody}
+   */
+  private shape: PlayerBody;
 
   /**
    * Where the Player looks and aims
@@ -238,10 +211,19 @@ export class Player extends SpriteCollidable {
 
   /**
    * Determinate if Player has smaller collision box
-   *
-   * @type {boolean}
    */
-  public isBodySmall: boolean = false;
+  public get isBodySmall(): boolean {
+    return this.shape.isSmall;
+  }
+
+  /**
+   * The bounds of the body, whatever the origin of the sprite
+   *
+   * @return {Phaser.Geom.Rectangle} The bounds of the body
+   */
+  public getBodyBounds(): Phaser.Geom.Rectangle {
+    return this.shape.getBounds();
+  }
 
   /**
    * Determinate if Player is swimming in a liquid
@@ -301,12 +283,10 @@ export class Player extends SpriteCollidable {
           isOnFloor: true,
           isSwimming: false,
         })
-      )
-      .setOffset(
-        (this.width - Player.BODY_WIDTH) * (1 - this.originX),
-        (this.height - Player.BODY_HEIGHT) * (1 - this.originY)
-      )
-      .setSize(Player.BODY_WIDTH, Player.BODY_HEIGHT, false);
+      );
+
+    this.shape = new PlayerBody(this);
+    this.shape.init();
 
     this.arsenal = new Arsenal(this.scene);
     this.controls = new PlayerInput(this.scene.getController());
@@ -408,7 +388,7 @@ export class Player extends SpriteCollidable {
       this.movement.updateMotion(this.movementHost);
 
       // Handle the player body resizing
-      this.resizeBody();
+      this.shape.resize(!this.movement.isHanging && this.movement.isCrouch);
 
       // Handle the crouch action and settle the state of the movement
       this.movement.updateCrouch(this.movementHost);
@@ -424,7 +404,7 @@ export class Player extends SpriteCollidable {
     this.updateBattery();
 
     // Apply the position correction requested during this update
-    this.adjustPosition();
+    this.shape.applyRequestedPosition();
 
     // Keep the torch attached to the body
     this.updateTorch();
@@ -602,60 +582,6 @@ export class Player extends SpriteCollidable {
   }
 
   /**
-   * Handle all the Player body resizing based on current state
-   */
-  protected resizeBody(): void {
-    // Check if the Player is in mid air, but with an sufficient x speed
-
-    let updateBody = false;
-    let offsetX!: number;
-    let offsetY!: number;
-
-    if (!this.movement.isHanging && this.movement.isCrouch) {
-      if (!this.isBodySmall) {
-        // Shrink his body to fit with the animation
-        offsetX = (this.width - Player.BODY_SMALL_WIDTH) * (1 - this.originX);
-        offsetY = (this.height - Player.BODY_SMALL_HEIGHT) * (1 - this.originY);
-
-        updateBody = true;
-      }
-    } else if (this.isBodySmall) {
-      // Reset the body to his original shape
-      offsetX = (this.width - Player.BODY_WIDTH) * (1 - this.originX);
-      offsetY = (this.height - Player.BODY_HEIGHT) * (1 - this.originY);
-
-      updateBody = true;
-    }
-
-    if (updateBody) {
-      const previousOffset = this.body.offset.clone();
-
-      this.body
-        .setOffset(offsetX, offsetY)
-        .setSize(
-          this.isBodySmall ? Player.BODY_WIDTH : Player.BODY_SMALL_WIDTH,
-          this.isBodySmall ? Player.BODY_HEIGHT : Player.BODY_SMALL_HEIGHT,
-          false
-        )
-        .updateCenter();
-
-      if (this.adjustTo) {
-        const clone = this.adjustTo.clone();
-        clone.add(
-          new Phaser.Math.Vector2(
-            previousOffset.x - offsetX,
-            previousOffset.y - offsetY
-          )
-        );
-
-        this.setNewPosition(clone);
-      }
-
-      this.isBodySmall = !this.isBodySmall;
-    }
-  }
-
-  /**
    * Handle all the ranged combat actions
    */
   protected handleWeapons(time: any): void {
@@ -690,23 +616,6 @@ export class Player extends SpriteCollidable {
     }
 
     this.isPressingShot = isShootPress;
-  }
-
-  /**
-   * Adjust the current body position
-   */
-  protected adjustPosition(): void {
-    if (this.adjustTo) {
-      if (this.adjustTo.x !== -1) {
-        this.body.x = this.adjustTo.x;
-      }
-
-      if (this.adjustTo.y !== -1) {
-        this.body.y = this.adjustTo.y;
-      }
-
-      delete this.adjustTo;
-    }
   }
 
   /**
@@ -892,7 +801,7 @@ export class Player extends SpriteCollidable {
       setAllowGravity: (allow) => {
         this.body.setAllowGravity(allow);
       },
-      moveTo: (x, y) => this.setNewPosition(x, y ?? undefined),
+      moveTo: (x, y) => this.shape.moveTo(x, y),
       climb: (x, y) => this.climb(x, y),
     };
   }
@@ -910,33 +819,6 @@ export class Player extends SpriteCollidable {
     this.setAccelerationX(0);
     this.movement.reset();
     this.body.setAllowGravity(true);
-  }
-
-  /**
-   * Ask to move the body to a new position at the end of the update
-   * (see adjustPosition). A coordinate left as null is not changed.
-   *
-   * @param {number|Phaser.Math.Vector2|null} x The new x, or a full position
-   * @param {number} y The new y
-   */
-  private setNewPosition(
-    x: number | Phaser.Math.Vector2 | null,
-    y?: number
-  ): void {
-    if (x instanceof Phaser.Math.Vector2) {
-      this.adjustTo = x;
-    } else if (!this.adjustTo) {
-      this.adjustTo = new Phaser.Math.Vector2(x ?? -1, y ?? -1);
-    } else {
-      // 0 is a valid coordinate: only null/undefined mean "leave it as is"
-      if (x !== null) {
-        this.adjustTo.set(x, this.adjustTo.y);
-      }
-
-      if (y !== undefined) {
-        this.adjustTo.set(this.adjustTo.x, y);
-      }
-    }
   }
 
   /**
@@ -958,23 +840,6 @@ export class Player extends SpriteCollidable {
     });
 
     return new Phaser.Math.Vector2(x, y);
-  }
-
-  /**
-   * Get the bounds of the current GameObject body, regardless of its origin
-   *
-   * @return {Phaser.Geom.Rectangle} The bounds of the body
-   */
-  public getBodyBounds(): Phaser.Geom.Rectangle {
-    // Get the current sprite bounds
-    const bounds: Phaser.Geom.Rectangle = this.getBounds();
-
-    return new Phaser.Geom.Rectangle(
-      bounds.left + (this.width - this.body.width) * (1 - this.originX),
-      bounds.top + (this.height - this.body.height) * (1 - this.originY),
-      this.body.width,
-      this.body.height
-    );
   }
 
   public isOnFloor(): boolean {
