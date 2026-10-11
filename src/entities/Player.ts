@@ -6,13 +6,13 @@ import {
 } from "@/miscellaneous/Direction";
 import { ControllerKey } from "@/miscellaneous/Controller";
 import { PowerUps } from "@/miscellaneous/Inventory";
+import { PlayerWeapons } from "@/entities/player/PlayerWeapons";
 import { PlayerBody } from "@/entities/player/PlayerBody";
 import { PlayerSensors } from "@/entities/player/PlayerSensors";
 import { Arsenal } from "@/entities/weapons/Arsenal";
 import { BulletConfig } from "@/entities/bullets/Bullet";
 import { MovementContext } from "@/entities/player/movement";
 import { PlayerSpeeds } from "@/entities/player/PlayerSpeeds";
-import { getShotPosition } from "@/entities/player/aim";
 import { PlayerAim } from "@/entities/player/PlayerAim";
 import { MovementHost } from "@/entities/player/movement/host";
 import { PlayerMovement } from "@/entities/player/movement/PlayerMovement";
@@ -81,22 +81,6 @@ export class Player extends SpriteCollidable {
   private movementHost: MovementHost;
 
   /**
-   * The Phaser weapons of this scene. Which weapons the Player owns,
-   * and which one is active, lives in the Inventory (the game state).
-   *
-   * @type {Arsenal}
-   */
-  private arsenal: Arsenal;
-
-  /**
-   * Check if the user had previously
-   * performed a shoot without releasing the key
-   *
-   * @type {Boolean}
-   */
-  private isPressingShot: boolean = false;
-
-  /**
    * The max distance from wall where the player can yet perform a wall jump
    *
    * @type {Number}
@@ -111,13 +95,6 @@ export class Player extends SpriteCollidable {
   static SWEPT_LEDGE_DETECTION: boolean = false;
 
   /**
-   * The Y position to subtract from current Y to spawn bullets
-   *
-   * @type {Number}
-   */
-  static SHOT_HEIGHT: number = TILE_SIZE + 2;
-
-  /**
    * The default movement speed based on game gravity
    *
    * @type {Number}
@@ -130,6 +107,13 @@ export class Player extends SpriteCollidable {
    * @type {PlayerSpeeds}
    */
   private speeds: PlayerSpeeds;
+
+  /**
+   * The weapons: change them, shoot, spend ammo
+   *
+   * @type {PlayerWeapons}
+   */
+  private weapons: PlayerWeapons;
 
   /**
    * The shape of the body and the corrections of its position
@@ -288,8 +272,15 @@ export class Player extends SpriteCollidable {
     this.shape = new PlayerBody(this);
     this.shape.init();
 
-    this.arsenal = new Arsenal(this.scene);
     this.controls = new PlayerInput(this.scene.getController());
+    this.weapons = new PlayerWeapons(
+      this.scene.getInventory(),
+      new Arsenal(this.scene),
+      this,
+      this.controls,
+      this.aim,
+      this.stats
+    );
 
     this.body.updateCenter();
 
@@ -396,7 +387,7 @@ export class Player extends SpriteCollidable {
       // The user can shoot only if the Player has at least one range weapon
       if (this.scene.getInventory().hasAtLeastOneRangeWeapon()) {
         // Handle all the ranged combat actions
-        this.handleWeapons(time);
+        this.weapons.update(time);
       }
     }
 
@@ -579,43 +570,6 @@ export class Player extends SpriteCollidable {
         this.canInteract = true;
       },
     });
-  }
-
-  /**
-   * Handle all the ranged combat actions
-   */
-  protected handleWeapons(time: any): void {
-    if (this.controls.justPressed(ControllerKey.Y)) {
-      this.scene.getInventory().switchToNextWeapon();
-    }
-
-    if (!this.isPressingShot) {
-      this.arsenal.resetShoot();
-    }
-
-    const isShootPress: boolean = this.controls.shoot;
-
-    // The user have to press Shot button and the player should not facing front
-    if (
-      isShootPress &&
-      this.aim.facingForAim.x !== DirectionAxisX.CENTER &&
-      this.stats.ammo > 0
-    ) {
-      const config: BulletConfig = {
-        facing: this.aim.facingForAim,
-        diagonal: this.aim.isAimingDiagonal,
-        position: this.getShotPosition(),
-      };
-
-      const weapon = this.arsenal.getCurrent();
-      const wasFired = weapon ? weapon.fireBullet(time, config) : false;
-
-      if (wasFired) {
-        --this.stats.ammo;
-      }
-    }
-
-    this.isPressingShot = isShootPress;
   }
 
   /**
@@ -819,27 +773,6 @@ export class Player extends SpriteCollidable {
     this.setAccelerationX(0);
     this.movement.reset();
     this.body.setAllowGravity(true);
-  }
-
-  /**
-   * Where the bullets appear
-   *
-   * @return {Phaser.Math.Vector2} The position of the bullet
-   */
-  public getShotPosition(): Phaser.Math.Vector2 {
-    const bounds = this.getBounds();
-    const { x, y } = getShotPosition({
-      top: bounds.top,
-      bottom: bounds.bottom,
-      centerX: bounds.centerX,
-      x: this.x,
-      width: this.width,
-      facingForAim: this.aim.facingForAim,
-      isAimingDiagonal: this.aim.isAimingDiagonal,
-      shotHeight: Player.SHOT_HEIGHT,
-    });
-
-    return new Phaser.Math.Vector2(x, y);
   }
 
   public isOnFloor(): boolean {
