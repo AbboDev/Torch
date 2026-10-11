@@ -11,7 +11,8 @@ import { Arsenal } from "@/entities/weapons/Arsenal";
 import { BulletConfig } from "@/entities/bullets/Bullet";
 import { MovementContext } from "@/entities/player/movement";
 import { PlayerSpeeds } from "@/entities/player/PlayerSpeeds";
-import { computeAim } from "@/entities/player/aim";
+import { getShotPosition } from "@/entities/player/aim";
+import { PlayerAim } from "@/entities/player/PlayerAim";
 import { MovementHost } from "@/entities/player/movement/host";
 import { PlayerMovement } from "@/entities/player/movement/PlayerMovement";
 import { MovementState } from "@/entities/player/movement/state";
@@ -94,43 +95,6 @@ export class Player extends SpriteCollidable {
   private adjustTo?: Phaser.Math.Vector2;
 
   /**
-   * Where the Player is watching
-   *
-   * @type {Facing}
-   */
-  private facing: Facing;
-
-  /**
-   * Where the Player is aiming
-   *
-   * @type {Facing}
-   */
-  private facingForAim: Facing;
-
-  /**
-   * Where the Player was watching
-   *
-   * @type {Facing}
-   */
-  private previousFacing!: Facing;
-
-  /**
-   * If the Player is aim diagonally
-   *
-   *
-   * @type {Boolean}
-   */
-  private isAimingDiagonal: boolean = false;
-
-  /**
-   * If the Player was aiming diagonally
-   *
-   *
-   * @type {Boolean}
-   */
-  private wasAimingDiagonal: boolean = false;
-
-  /**
    * Check if the user had previously
    * performed a shoot without releasing the key
    *
@@ -200,6 +164,13 @@ export class Player extends SpriteCollidable {
    * @type {PlayerSpeeds}
    */
   private speeds: PlayerSpeeds;
+
+  /**
+   * Where the Player looks and aims
+   *
+   * @type {PlayerAim}
+   */
+  private aim = new PlayerAim();
 
   /**
    * What the Player is touching around the body: walls, ledges, ladders
@@ -302,15 +273,6 @@ export class Player extends SpriteCollidable {
     super(scene, x, y, "hero_idle_center");
 
     this.currentRoom = currentRoom;
-
-    this.facing = {
-      y: DirectionAxisY.MIDDLE,
-      x: DirectionAxisX.CENTER,
-    };
-    this.facingForAim = {
-      y: DirectionAxisY.MIDDLE,
-      x: DirectionAxisX.CENTER,
-    };
 
     this.baseSpeed = this.scene.getWorldGravity().y / 2;
     this.speeds = new PlayerSpeeds(this.baseSpeed, () =>
@@ -424,11 +386,20 @@ export class Player extends SpriteCollidable {
     // Read the buttons once, so the whole update sees the same state
     this.controls.poll();
 
-    this.previousFacing = { ...this.facing };
+    this.aim.remember();
 
     if (this.canInteract) {
       // Handle current aim direction based on facing
-      this.tiltAim();
+      this.aim.update(
+        {
+          aim: this.controls.aim,
+          up: this.controls.up,
+          down: this.controls.down,
+          left: this.controls.left,
+          right: this.controls.right,
+        },
+        this.body.velocity.y
+      );
 
       // Handle logic when the player is in a liquid
       this.swim();
@@ -539,33 +510,6 @@ export class Player extends SpriteCollidable {
   }
 
   /**
-   * Handle current aim direction based on facing
-   */
-  protected tiltAim(): void {
-    const aim = computeAim(
-      {
-        aim: this.controls.aim,
-        up: this.controls.up,
-        down: this.controls.down,
-        left: this.controls.left,
-        right: this.controls.right,
-      },
-      {
-        facingY: this.facing.y as DirectionAxisY,
-        facingForAimY: this.facingForAim.y as DirectionAxisY,
-        isAimingDiagonal: this.isAimingDiagonal,
-        wasAimingDiagonal: this.wasAimingDiagonal,
-      },
-      this.body.velocity.y
-    );
-
-    this.facing.y = aim.facingY;
-    this.facingForAim.y = aim.facingForAimY;
-    this.isAimingDiagonal = aim.isAimingDiagonal;
-    this.wasAimingDiagonal = aim.wasAimingDiagonal;
-  }
-
-  /**
    * Handle all the events inside liquids
    */
   protected swim(): void {
@@ -641,7 +585,7 @@ export class Player extends SpriteCollidable {
 
     this.canInteract = false;
 
-    const sign: string = this.facing.x === DirectionAxisX.LEFT ? "-" : "+";
+    const sign: string = this.aim.facing.x === DirectionAxisX.LEFT ? "-" : "+";
     this.scene.tweens.add({
       targets: this,
       ease: "Linear",
@@ -728,12 +672,12 @@ export class Player extends SpriteCollidable {
     // The user have to press Shot button and the player should not facing front
     if (
       isShootPress &&
-      this.facingForAim.x !== DirectionAxisX.CENTER &&
+      this.aim.facingForAim.x !== DirectionAxisX.CENTER &&
       this.stats.ammo > 0
     ) {
       const config: BulletConfig = {
-        facing: this.facingForAim,
-        diagonal: this.isAimingDiagonal,
+        facing: this.aim.facingForAim,
+        diagonal: this.aim.isAimingDiagonal,
         position: this.getShotPosition(),
       };
 
@@ -775,13 +719,13 @@ export class Player extends SpriteCollidable {
       isHanging: this.movement.isHanging,
       isJumping: this.movement.isJumping,
       isStandingJumping: this.movement.isStandingJumping,
-      isAimingDiagonal: this.isAimingDiagonal,
-      wasAimingDiagonal: this.wasAimingDiagonal,
+      isAimingDiagonal: this.aim.isAimingDiagonal,
+      wasAimingDiagonal: this.aim.wasAimingDiagonal,
       velocityX: this.body.velocity.x,
-      facingY: this.facing.y,
+      facingY: this.aim.facing.y,
     });
 
-    const animation = getAnimationKey(action, this.facing.x);
+    const animation = getAnimationKey(action, this.aim.facing.x);
     const doNewAnimation: boolean = animation !== this.anims.getName();
 
     if (doNewAnimation) {
@@ -877,16 +821,16 @@ export class Player extends SpriteCollidable {
         return player.controls;
       },
       get facing() {
-        return player.facing;
+        return player.aim.facing;
       },
       get facingForAim() {
-        return player.facingForAim;
+        return player.aim.facingForAim;
       },
       get previousFacing() {
-        return player.previousFacing;
+        return player.aim.previousFacing;
       },
       get isAimingDiagonal() {
-        return player.isAimingDiagonal;
+        return player.aim.isAimingDiagonal;
       },
       get isSwimming() {
         return player.isSwimming;
@@ -996,33 +940,24 @@ export class Player extends SpriteCollidable {
   }
 
   /**
-   * Calculate the y coordinate where the bullet should spawn
+   * Where the bullets appear
    *
-   * @return {number} The calculated Y coordinate
+   * @return {Phaser.Math.Vector2} The position of the bullet
    */
   public getShotPosition(): Phaser.Math.Vector2 {
     const bounds = this.getBounds();
-    let width: number = bounds.centerX;
-    let height: number = bounds.top + Player.SHOT_HEIGHT;
+    const { x, y } = getShotPosition({
+      top: bounds.top,
+      bottom: bounds.bottom,
+      centerX: bounds.centerX,
+      x: this.x,
+      width: this.width,
+      facingForAim: this.aim.facingForAim,
+      isAimingDiagonal: this.aim.isAimingDiagonal,
+      shotHeight: Player.SHOT_HEIGHT,
+    });
 
-    if (this.facingForAim.y !== DirectionAxisY.MIDDLE) {
-      if (this.facingForAim.y === DirectionAxisY.UP) {
-        height = bounds.top;
-      } else if (this.isAimingDiagonal) {
-        height = bounds.bottom - Player.SHOT_HEIGHT;
-      } else {
-        height = bounds.bottom;
-      }
-
-      if (this.isAimingDiagonal) {
-        width =
-          this.x +
-          (this.width / 2) *
-            (this.facingForAim.x === DirectionAxisX.RIGHT ? 1 : -1);
-      }
-    }
-
-    return new Phaser.Math.Vector2(width, height);
+    return new Phaser.Math.Vector2(x, y);
   }
 
   /**

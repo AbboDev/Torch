@@ -1,4 +1,8 @@
-import { DirectionAxisY } from "@/miscellaneous/Direction";
+import {
+  DirectionAxisX,
+  DirectionAxisY,
+  Facing,
+} from "@/miscellaneous/Direction";
 
 export interface AimInput {
   /** The dedicated aim button */
@@ -53,4 +57,47 @@ export function computeAim(
     isAimingDiagonal: aim || isAimingWhileMoving,
     wasAimingDiagonal: current.isAimingDiagonal,
   };
+}
+
+export interface ShotPlace {
+  /** The sprite of the Player: its bounds, position and width */
+  top: number;
+  bottom: number;
+  centerX: number;
+  x: number;
+  width: number;
+  facingForAim: Facing;
+  isAimingDiagonal: boolean;
+  /** The distance from the top of the sprite to the gun, aiming straight */
+  shotHeight: number;
+}
+
+/**
+ * Where a bullet appears: at the height of the gun aiming straight, at the
+ * top aiming up, at the bottom aiming down, and at one side of the Player when
+ * aiming diagonally.
+ */
+export function getShotPosition(place: ShotPlace): { x: number; y: number } {
+  const { top, bottom, facingForAim, isAimingDiagonal } = place;
+
+  let x = place.centerX;
+  let y = top + place.shotHeight;
+
+  if (facingForAim.y !== DirectionAxisY.MIDDLE) {
+    if (facingForAim.y === DirectionAxisY.UP) {
+      y = top;
+    } else if (isAimingDiagonal) {
+      y = bottom - place.shotHeight;
+    } else {
+      y = bottom;
+    }
+
+    if (isAimingDiagonal) {
+      x =
+        place.x +
+        (place.width / 2) * (facingForAim.x === DirectionAxisX.RIGHT ? 1 : -1);
+    }
+  }
+
+  return { x, y };
 }
