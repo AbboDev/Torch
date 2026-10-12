@@ -37,7 +37,7 @@ export class MemoryStorage implements StorageBackend {
   }
 }
 
-const defaultBackend = (): StorageBackend => {
+export const defaultBackend = (): StorageBackend => {
   try {
     const storage = globalThis.localStorage;
     // Some browsers throw as soon as the storage is touched (private mode)
