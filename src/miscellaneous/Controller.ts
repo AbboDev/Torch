@@ -1,89 +1,133 @@
-import * as Phaser from "phaser";
+import { ButtonState } from "@/input/ButtonState";
+import { ControllerKey } from "@/input/ControllerKey";
+import {
+  DEFAULT_KEY_BINDINGS,
+  KeyBindings,
+  getButtonsOf,
+} from "@/input/bindings";
 
-export enum ControllerKey {
-  UP = "Up",
-  DOWN = "Down",
-  LEFT = "Left",
-  RIGHT = "Right",
-  A = "A",
-  B = "B",
-  X = "X",
-  Y = "Y",
-  L = "L",
-  START = "Start",
-  SELECT = "Select",
-  DEBUG = "Debug",
+export { ControllerKey };
+
+/** What the Controller needs from a keyboard event */
+interface KeyboardEventLike {
+  key: string;
+  code: string;
+  repeat: boolean;
+  altKey: boolean;
+  ctrlKey: boolean;
+  metaKey: boolean;
+  target: unknown;
+  preventDefault(): void;
 }
 
-const KEY_CODES: Record<ControllerKey, number> = {
-  [ControllerKey.UP]: Phaser.Input.Keyboard.KeyCodes.UP,
-  [ControllerKey.DOWN]: Phaser.Input.Keyboard.KeyCodes.DOWN,
-  [ControllerKey.LEFT]: Phaser.Input.Keyboard.KeyCodes.LEFT,
-  [ControllerKey.RIGHT]: Phaser.Input.Keyboard.KeyCodes.RIGHT,
-  [ControllerKey.A]: Phaser.Input.Keyboard.KeyCodes.X,
-  [ControllerKey.B]: Phaser.Input.Keyboard.KeyCodes.C,
-  [ControllerKey.X]: Phaser.Input.Keyboard.KeyCodes.Z,
-  [ControllerKey.Y]: Phaser.Input.Keyboard.KeyCodes.S,
-  [ControllerKey.L]: Phaser.Input.Keyboard.KeyCodes.A,
-  [ControllerKey.START]: Phaser.Input.Keyboard.KeyCodes.ENTER,
-  [ControllerKey.SELECT]: Phaser.Input.Keyboard.KeyCodes.SHIFT,
-  [ControllerKey.DEBUG]: Phaser.Input.Keyboard.KeyCodes.BACK_SLASH,
-};
+/** The part of `window` the Controller listens to */
+export interface KeyEventTarget {
+  addEventListener(type: string, listener: (event: any) => void): void;
+  removeEventListener(type: string, listener: (event: any) => void): void;
+}
 
+/** A text field: the keys typed in it are not for the game */
+function isTextField(target: unknown): boolean {
+  const element = target as { tagName?: string; isContentEditable?: boolean };
+
+  return (
+    ["INPUT", "TEXTAREA", "SELECT"].includes(element?.tagName ?? "") ||
+    element?.isContentEditable === true
+  );
+}
+
+/**
+ * All the user inputs, for every scene of the game.
+ *
+ * It listens to the keyboard of the browser by itself: it belongs to the
+ * game, not to a scene, so scenes can be started, stopped and restarted
+ * without touching it. Which keys are which buttons is data (`bindings`),
+ * ready for a screen to change them.
+ */
 export class Controller {
-  private keys = new Map<ControllerKey, Phaser.Input.Keyboard.Key>();
-  private pressed = new Set<ControllerKey>();
-  private static instance: Controller;
+  private readonly state = new ButtonState<ControllerKey>();
 
-  private constructor(protected scene: Phaser.Scene) {
-    const { keyboard } = this.scene.input;
-    if (!keyboard) {
-      throw new Error("Keyboard input is unavailable");
+  private bindings: KeyBindings;
+
+  private readonly onKeyDown = (event: KeyboardEventLike): void => {
+    const buttons = getButtonsOf(event, this.bindings);
+    if (buttons.length === 0) {
+      return;
     }
 
-    for (const [key, code] of Object.entries(KEY_CODES) as [
-      ControllerKey,
-      number,
-    ][]) {
-      const input = keyboard.addKey(code);
-      input.on("up", () => this.pressed.delete(key));
-      this.keys.set(key, input);
+    // Do not scroll the page with the arrows, but leave alone the shortcuts
+    // of the browser and the text fields
+    const isShortcut = event.altKey || event.ctrlKey || event.metaKey;
+    if (!isShortcut && !isTextField(event.target)) {
+      event.preventDefault();
     }
+
+    if (event.repeat) {
+      return;
+    }
+
+    for (const button of buttons) {
+      this.state.press(button, this.clock());
+    }
+  };
+
+  private readonly onKeyUp = (event: KeyboardEventLike): void => {
+    for (const button of getButtonsOf(event, this.bindings)) {
+      this.state.release(button);
+    }
+  };
+
+  /** A key released while the window had no focus would stay down forever */
+  private readonly onBlur = (): void => {
+    this.state.releaseAll();
+  };
+
+  public constructor(
+    private readonly target: KeyEventTarget,
+    bindings: Partial<KeyBindings> = {},
+    private readonly clock: () => number = () => performance.now()
+  ) {
+    this.bindings = { ...DEFAULT_KEY_BINDINGS, ...bindings };
+
+    target.addEventListener("keydown", this.onKeyDown);
+    target.addEventListener("keyup", this.onKeyUp);
+    target.addEventListener("blur", this.onBlur);
   }
 
-  public static getInstance(scene: Phaser.Scene): Controller {
-    if (!Controller.instance) {
-      Controller.instance = new Controller(scene);
-    }
-
-    return Controller.instance;
+  public isKeyPressed(key: ControllerKey): boolean {
+    return this.state.isDown(key);
   }
 
-  public isKeyPressed(key: ControllerKey, duration?: number): boolean {
-    const input = this.keys.get(key);
-    if (!input) {
-      return false;
-    }
-
-    if (duration) {
-      const keyboard = this.scene.input.keyboard;
-      return keyboard ? keyboard.checkDown(input, duration) : false;
-    }
-
-    return input.isDown;
-  }
-
+  /** True once per press, then false until the button is released */
   public isKeyPressedForFirstTime(key: ControllerKey): boolean {
-    if (!this.isKeyPressed(key) || this.pressed.has(key)) {
-      return false;
-    }
-
-    this.pressed.add(key);
-    return true;
+    return this.state.justPressed(key);
   }
 
+  /** For how long the button has been down, in milliseconds */
   public getKeyDuration(key: ControllerKey): number {
-    const input = this.keys.get(key);
-    return input ? input.getDuration() : 0;
+    return this.state.duration(key, this.clock());
+  }
+
+  public getBindings(): KeyBindings {
+    return this.bindings;
+  }
+
+  /** Choose the keyboard keys of a button */
+  public setBinding(key: ControllerKey, keys: readonly string[]): void {
+    this.bindings = { ...this.bindings, [key]: keys };
+    this.state.release(key);
+  }
+
+  public resetBindings(): void {
+    this.bindings = { ...DEFAULT_KEY_BINDINGS };
+    this.state.releaseAll();
+  }
+
+  /** Stop listening to the keyboard */
+  public destroy(): void {
+    this.target.removeEventListener("keydown", this.onKeyDown);
+    this.target.removeEventListener("keyup", this.onKeyUp);
+    this.target.removeEventListener("blur", this.onBlur);
+    this.state.releaseAll();
   }
 }

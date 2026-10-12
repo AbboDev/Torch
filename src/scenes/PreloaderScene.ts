@@ -1,5 +1,5 @@
 import * as Phaser from "phaser";
-import { Player } from "@/entities/Player";
+import { PlayerAssets } from "@/entities/player/PlayerAssets";
 import { GunBullet } from "@/entities/bullets/GunBullet";
 import { BowArrow } from "@/entities/bullets/BowArrow";
 import { RifleBullet } from "@/entities/bullets/RifleBullet";
@@ -59,7 +59,7 @@ export class PreloaderScene extends Phaser.Scene {
       .image("full_liquid_tiles", "assets/tilesets/full_liquids.png")
       .tilemapTiledJSON("chozodia_map", "assets/maps/chozodia.json");
 
-    Player.preload(this);
+    PlayerAssets.preload(this);
     GunBullet.preload(this);
     BowArrow.preload(this);
     RifleBullet.preload(this);
@@ -86,10 +86,9 @@ export class PreloaderScene extends Phaser.Scene {
   }
 
   public create(): void {
-    Player.create(this);
+    PlayerAssets.create(this);
 
     this.scene
-      .launch("gateway")
       .launch("inventory")
       .sleep("inventory")
       .launch("main")

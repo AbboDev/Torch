@@ -1,6 +1,5 @@
 import * as Phaser from "phaser";
 import { PreloaderScene } from "@/scenes/PreloaderScene";
-import { HandlerScene } from "@/scenes/HandlerScene";
 import { MainScene } from "@/scenes/MainScene";
 import { HUDScene } from "@/scenes/HUDScene";
 import { InventoryScene } from "@/scenes/InventoryScene";
@@ -16,6 +15,7 @@ const config: Phaser.Types.Core.GameConfig = {
 
   // WebGL garantisce le migliori prestazioni per shader, filtri e luci 32-bit  parent: "canvas",
   type: Phaser.WEBGL,
+  parent: "canvas",
   backgroundColor: "#000000",
   version: "0.0.1",
 
@@ -44,13 +44,13 @@ const config: Phaser.Types.Core.GameConfig = {
   render: {
     clearBeforeRender: true,
     // Disattiva l'anti-aliasing (smooth interpolation) su tutte le texture
-    pixelArt: true,
+  pixelArt: true,
     // Disattiva l'anti-aliasing sul canvas WebGL
     antialias: false,
     // Arrotonda le posizioni degli sprite a interi per evitare sfocature durante il movimento/mira
     roundPixels: true,
   },
-  scene: [PreloaderScene, HandlerScene, MainScene, HUDScene, InventoryScene],
+  scene: [PreloaderScene, MainScene, HUDScene, InventoryScene],
 
   disableContextMenu: true,
 

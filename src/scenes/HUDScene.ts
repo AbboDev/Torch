@@ -1,10 +1,8 @@
 import * as Phaser from "phaser";
 import { DataScene } from "@/scenes/DataScene";
 import { TILE_SIZE } from "@/config/tiles";
-import { Bow } from "@/entities/weapons/Bow";
-import { Gun } from "@/entities/weapons/Gun";
-import { Rifle } from "@/entities/weapons/Rifle";
-import { Weapon } from "@/entities/weapons/Weapon";
+import { StatKey } from "@/state/GameState";
+import { WEAPON_META } from "@/config/weapons";
 
 export class HUDScene extends DataScene {
   private life!: Phaser.GameObjects.Image;
@@ -38,25 +36,11 @@ export class HUDScene extends DataScene {
       fontSize: `${TILE_SIZE}px`,
     };
 
-    let life = 0;
-    if (this.registry.has("life")) {
-      life = this.registry.get("life") as number;
-    }
-
-    let battery = 0;
-    if (this.registry.has("battery")) {
-      battery = this.registry.get("battery") as number;
-    }
-
-    let ammo = 0;
-    if (this.registry.has("ammo")) {
-      ammo = this.registry.get("ammo") as number;
-    }
-
-    let maxAmmo = 0;
-    if (this.registry.has("maxAmmo")) {
-      maxAmmo = this.registry.get("maxAmmo") as number;
-    }
+    const state = this.getGameState();
+    const life = state.get("life");
+    const battery = state.get("battery");
+    const ammo = state.get("ammo");
+    const maxAmmo = state.get("maxAmmo");
 
     let offset: number = TILE_SIZE * 0.5;
 
@@ -131,17 +115,20 @@ export class HUDScene extends DataScene {
       .setOrigin(0);
 
     const mainScene = this.scene.get("main");
-    mainScene.events.addListener("debugPlayer", (data: any) => {
+    const onDebugPlayer = (data: any) => {
       const x = data.position.x.toFixed(3);
       const y = data.position.y.toFixed(3);
       const Vx = data.velocity.x.toFixed(3);
       const Vy = data.velocity.y.toFixed(3);
 
       this.debugger.setText(`x: ${x} | y: ${y} | Vx: ${Vx} | Vy: ${Vy}`);
+    };
+    mainScene.events.on("debugPlayer", onDebugPlayer);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      mainScene.events.off("debugPlayer", onDebugPlayer);
     });
 
-    const gateway = this.scene.get("gateway");
-    gateway.events.addListener("changedWeapon", (weapon: Weapon) => {
+    this.watchState("weapon", () => {
       this.currentWeapon.setText(this.getWeaponGraphic());
     });
   }
@@ -152,28 +139,25 @@ export class HUDScene extends DataScene {
     this.debugger.setVisible(this.physics.world.drawDebug);
   }
 
-  protected updateData(
-    _parent: Phaser.Game,
-    key: string,
-    data: string | number
-  ): void {
-    let maxAmmo = 0;
-    if (this.registry.has("maxAmmo")) {
-      maxAmmo = this.registry.get("maxAmmo") as number;
-    }
+  protected updateData(key: StatKey, _value: number): void {
+    // Always read from the state so that, for instance, a change of
+    // maxLife does not overwrite the life counter with the wrong number
+    const state = this.getGameState();
 
     switch (key) {
       case "ammo":
       case "maxAmmo":
-        this.ammoCounter.setText(`${data.toString()} / ${maxAmmo.toString()}`);
+        this.ammoCounter.setText(
+          `${state.get("ammo")} / ${state.get("maxAmmo")}`
+        );
         break;
       case "life":
       case "maxLife":
-        this.lifeCounter.setText(data.toString());
+        this.lifeCounter.setText(state.get("life").toString());
         break;
       case "battery":
       case "maxBattery":
-        this.batteryCounter.setText(data.toString());
+        this.batteryCounter.setText(state.get("battery").toString());
         break;
       default:
         break;
@@ -181,20 +165,8 @@ export class HUDScene extends DataScene {
   }
 
   private getWeaponGraphic(): string {
-    let currentWeaponString: string = "N";
-    if (this.getInventory().hasAtLeastOneRangeWeapon()) {
-      const currentWeapon: Weapon | null =
-        this.getInventory().getCurrentWeapon();
+    const weapon = this.getInventory().getCurrentWeaponId();
 
-      if (currentWeapon instanceof Gun) {
-        currentWeaponString = "G";
-      } else if (currentWeapon instanceof Rifle) {
-        currentWeaponString = "R";
-      } else if (currentWeapon instanceof Bow) {
-        currentWeaponString = "B";
-      }
-    }
-
-    return currentWeaponString;
+    return weapon ? WEAPON_META[weapon].hud : "N";
   }
 }

@@ -1,456 +1,102 @@
 import * as Phaser from "phaser";
-import {
-  Facing,
-  DirectionAxisY,
-  DirectionAxisX,
-} from "@/miscellaneous/Direction";
+import { DirectionAxisX } from "@/miscellaneous/Direction";
 import { ControllerKey } from "@/miscellaneous/Controller";
-import {
-  PowerUps
-} from "@/miscellaneous/Inventory";
-import { Hitbox, AreaPosition } from "@/entities/hitboxes/Hitbox";
-import { Bow } from "@/entities/weapons/Bow";
-import { Gun } from "@/entities/weapons/Gun";
-import { Rifle } from "@/entities/weapons/Rifle";
-import { Weapon } from "@/entities/weapons/Weapon";
-import { BulletConfig } from "@/entities/bullets/Bullet";
-import { SpriteCollidable } from "@/entities/collidables/SpriteCollidable";
-import { MapScene } from "@/scenes/MapScene";
+import { PowerUps } from "@/miscellaneous/Inventory";
 import { PLAYER_DEPTH } from "@/config/depths";
 import { TILE_SIZE } from "@/config/tiles";
+import { SpriteCollidable } from "@/entities/collidables/SpriteCollidable";
+import { Arsenal } from "@/entities/weapons/Arsenal";
+import {
+  getAnimationAction,
+  getAnimationKey,
+} from "@/entities/player/animation";
+import { BatteryRecharger } from "@/entities/player/BatteryRecharger";
+import { getDeceleration } from "@/entities/player/horizontalMotion";
+import { MovementContext } from "@/entities/player/movement";
+import { createMovementHost } from "@/entities/player/movement/createMovementHost";
+import { MovementHost } from "@/entities/player/movement/host";
+import { PlayerMovement } from "@/entities/player/movement/PlayerMovement";
+import { MovementState } from "@/entities/player/movement/state";
+import { PlayerAim } from "@/entities/player/PlayerAim";
+import { PlayerBody } from "@/entities/player/PlayerBody";
+import { PlayerInput } from "@/entities/player/PlayerInput";
+import {
+  LiquidDetection,
+  PlayerLiquids,
+} from "@/entities/player/PlayerLiquids";
+import { PlayerSensors } from "@/entities/player/PlayerSensors";
+import { PlayerSpeeds } from "@/entities/player/PlayerSpeeds";
+import { PlayerWeapons } from "@/entities/player/PlayerWeapons";
+import { MapScene } from "@/scenes/MapScene";
+import { PlayerStats } from "@/state/GameState";
+import { hasLedgeToClimb } from "@/world/ledgeClimb";
+import { collidesWithTile } from "@/world/oneWayTiles";
+import { trackRoom } from "@/world/roomChange";
 
+/**
+ * The hero. It is a sprite with a body, and the pieces which make it work:
+ * the buttons, the aim, the movement (a state machine), the sensors, the speeds,
+ * the weapons, the battery and the liquids. This class connects them, and
+ * does what needs Phaser itself: the room, the animation, the light.
+ */
 export class Player extends SpriteCollidable {
-  /**
-   * Current health points
-   *
-   * @type {Number}
-   */
-  private _life: number = 99;
-
-  /**
-   * Maximum health points
-   *
-   * @type {Number}
-   */
-  private _maxLife: number = 99;
-
-  /**
-   * Current ammo
-   *
-   * @type {Number}
-   */
-  private _ammo: number = 30;
-
-  /**
-   * Maximum ammo
-   *
-   * @type {Number}
-   */
-  private _maxAmmo: number = 30;
-
-  /**
-   * Current battery level
-   *
-   * @type {Number}
-   */
-  private _battery: number = 0;
-
-  /**
-   * Last battery level
-   *
-   * @type {Number}
-   */
-  public lastBattery: number = 0;
-
-  /**
-   * Maximum battery level
-   *
-   * @type {Number}
-   */
-  private _maxBattery: number = 99;
-
-  /**
-   * The timeout after which the battery start recharging
-   *
-   * @type {Phaser.Time.TimerEvent}
-   */
-  private batteryTimeoutTimer!: Phaser.Time.TimerEvent;
-
-  /**
-   * The timer which fill up the battery
-   *
-   * @type {Phaser.Time.TimerEvent}
-   */
-  private batteryRechargeTimer!: Phaser.Time.TimerEvent;
-
-  /**
-   * The light emitted by Player
-   *
-   * @type {Phaser.GameObjects.Light}
-   */
-  private torchLight: Phaser.GameObjects.Light;
-
-  /**
-   * The Gun associated to Player
-   *
-   * @type {Gun}
-   */
-  public gun!: Gun;
-
-  /**
-   * The Rifle associated to Player
-   *
-   * @type {Rifle}
-   */
-  public rifle!: Rifle;
-
-  /**
-   * The Rifle associated to Player
-   *
-   * @type {Bow}
-   */
-  public bow!: Bow;
-
-  /**
-   * The correct position where the Player where collocated
-   *
-   * @type {Phaser.Math.Vector2}
-   */
-  private adjustTo?: Phaser.Math.Vector2;
-
-  /**
-   * Where the Player is watching
-   *
-   * @type {Facing}
-   */
-  private facing: Facing;
-
-  /**
-   * Where the Player is aiming
-   *
-   * @type {Facing}
-   */
-  private facingForAim: Facing;
-
-  /**
-   * Where the Player was watching
-   *
-   * @type {Facing}
-   */
-  private previousFacing!: Facing;
-
-  /**
-   * If the Player is aim diagonally
-   *
-   *
-   * @type {Boolean}
-   */
-  private isAimingDiagonal: boolean = false;
-
-  /**
-   * If the Player was aiming diagonally
-   *
-   *
-   * @type {Boolean}
-   */
-  private wasAimingDiagonal: boolean = false;
-
-  /**
-   * The Player is jumping
-   *
-   * @type {Boolean}
-   */
-  private isJumping: boolean = false;
-
-  /**
-   * The Player is jumping
-   *
-   * @type {Boolean}
-   */
-  private isStandingJumping: boolean = false;
-
-  /**
-   * The Player is falling
-   *
-   * @type {Boolean}
-   */
-  private isFalling: boolean = false;
-
-  /**
-   * The Player is climbing a tile
-   *
-   * @type {Boolean}
-   */
-  private isClimbing: boolean = false;
-
-  /**
-   * The Player can now perform the double jump
-   *
-   * @type {Boolean}
-   */
-  private canDoubleJump: boolean = false;
-
-  /**
-   * The Player had actually performed the double jump
-   *
-   * @type {Boolean}
-   */
-  private hasDoneDoubleJump: boolean = false;
-
-  /**
-   * The Player can now perform a wall jump
-   *
-   * @type {Boolean}
-   */
-  private canWallJump: boolean = false;
-
-  /**
-   * The Player had actually performed the wall jump
-   *
-   * @type {Boolean}
-   */
-  private hasDoneWallJump: boolean = false;
-
-  /**
-   * Check if the user had previously
-   * performed a jump without releasing the key
-   *
-   * @type {Boolean}
-   */
-  private isPressingJump: boolean = false;
-
-  /**
-   * Check if the user had previously
-   * performed a shoot without releasing the key
-   *
-   * @type {Boolean}
-   */
-  private isPressingShot: boolean = false;
-
-  /**
-   * Check if the user had previously
-   * performed a dash without releasing the key
-   *
-   * @type {Boolean}
-   */
-  private isPressingDash: boolean = false;
-
-  /**
-   * Default multiplier of jump speed
-   *
-   * @type {Number}
-   */
-  static JUMP_SPEED_MULTIPLIER: number = 1.25;
-
-  /**
-   * Multiplier of jump speed offers by dedicated powerup
-   *
-   * @type {Number}
-   */
-  static WALL_JUMP_SPEED_MULTIPLIER: number = 1.1;
-
-  /**
-   * Multiplier of jump speed offers by dedicated powerup
-   *
-   * @type {Number}
-   */
-  static HIGH_JUMP_SPEED_MULTIPLIER: number = 1.5;
-
-  /**
-   * Default multiplier of run speed
-   *
-   * @type {Number}
-   */
-  static RUN_SPEED_MULTIPLIER: number = 0.75;
-
-  /**
-   * Multiplier of dash speed offers by dedicated powerup
-   *
-   * @type {Number}
-   */
-  static DASH_SPEED_MULTIPLIER: number = 2;
-
-  /**
-   * Multiplier of run speed offers by dedicated powerup
-   *
-   * @type {Number}
-   */
-  static BOOSTED_RUN_SPEED_MULTIPLIER: number = 1.5;
-
-  /**
-   * Multiplier of swim x speed when not active the dedicated powerup
-   *
-   * @type {Number}
-   */
-  static SWIM_X_SPEED_MULTIPLIER: number = 0.5;
-
-  /**
-   * Multiplier of swim y speed when not active the dedicated powerup
-   *
-   * @type {Number}
-   */
-  static SWIM_Y_SPEED_MULTIPLIER: number = 1;
-
-  /**
-   * The max distance from wall where the player can yet perform a wall jump
-   *
-   * @type {Number}
-   */
+  /** The max distance from a wall where the Player can still wall jump */
   static WALL_DETECTION_DISTANCE: number = TILE_SIZE / 4;
 
   /**
-   * The Y position to subtract from current Y to spawn bullets
-   *
-   * @type {Number}
+   * When falling fast the hand sensor can travel more than the height of the
+   * area where a ledge can be grabbed in a single frame, and skip it.
+   * Turn this on to look for ledges along the whole path of the sensor.
    */
-  static SHOT_HEIGHT: number = TILE_SIZE + 2;
+  static SWEPT_LEDGE_DETECTION: boolean = false;
 
-  /**
-   * The standard body width
-   *
-   * @type {Number}
-   */
-  static BODY_WIDTH: number = TILE_SIZE;
-
-  /**
-   * The standard body height
-   *
-   * @type {Number}
-   */
-  static BODY_HEIGHT: number = TILE_SIZE * 2;
-
-  /**
-   * The body width when it's crouch or jumping
-   *
-   * @type {Number}
-   */
-  static BODY_SMALL_WIDTH: number = TILE_SIZE;
-
-  /**
-   * The body height when it's crouch or jumping
-   *
-   * @type {Number}
-   */
-  static BODY_SMALL_HEIGHT: number = (Player.BODY_HEIGHT / 4) * 3;
-
-  /**
-   * The default movement speed based on game gravity
-   *
-   * @type {Number}
-   */
-  private baseSpeed: number;
-
-  /**
-   * The hitbox dedicated to detect overlapping with walls on the left
-   *
-   * @type {Hitbox}
-   */
-  private leftWallHitbox: Hitbox;
-
-  /**
-   * The hitbox dedicated to detect overlapping with walls on the right
-   *
-   * @type {Hitbox}
-   */
-  private rightWallHitbox: Hitbox;
-
-  /**
-   * The hitbox dedicated to detect overlapping with tiles on the left
-   *
-   * @type {Hitbox}
-   */
-  private leftHangHitbox: Hitbox;
-
-  /**
-   * The hitbox dedicated to detect overlapping with tiles on the right
-   *
-   * @type {Hitbox}
-   */
-  private rightHangHitbox: Hitbox;
-
-  /**
-   * The hitbox dedicated to detect if there's a ladder under Player feet
-   *
-   * @type {Hitbox}
-   */
-  private ladderHitbox: Hitbox;
-
-  /**
-   * The current room number
-   *
-   * @type {number}
-   */
+  /** The current room number */
   public currentRoom: number = 0;
 
-  /**
-   * The previous room number
-   *
-   * @type {number | null}
-   */
+  /** The previous room number */
   public previousRoom: number | null = null;
 
-  /**
-   * Check if the user can interact with Player
-   *
-   * @type {boolean}
-   */
+  /** The user can control the Player (not while it climbs a ledge) */
   public canInteract: boolean = true;
 
-  /**
-   * Determinate if Player is crouch
-   *
-   * @type {boolean}
-   */
-  public isCrouch: boolean = false;
+  /** The default movement speed, based on the gravity of the game */
+  private baseSpeed: number;
+
+  /** How fast the Player goes */
+  private speeds: PlayerSpeeds;
+
+  /** The buttons of the Player, read once per update */
+  private controls: PlayerInput;
+
+  /** Where the Player looks and aims */
+  private aim = new PlayerAim();
+
+  /** The shape of the body and the corrections of its position */
+  private shape: PlayerBody;
+
+  /** What the Player touches around the body: walls, ledges, ladders, platforms */
+  private sensors: PlayerSensors;
 
   /**
-   * Determinate if Player can crouch
-   *
-   * @type {boolean}
+   * What the Player is doing with its body (standing, crouching, in the air,
+   * hanging, on a ladder, climbing a ledge), and how it moves
    */
-  public canCrouch: boolean = true;
+  private movement = new PlayerMovement();
 
-  /**
-   * Determinate if Player has smaller collision box
-   *
-   * @type {boolean}
-   */
-  public isBodySmall: boolean = false;
+  /** What the movement needs from the Player */
+  private movementHost: MovementHost;
 
-  /**
-   * Determinate if Player is hanging on a tile
-   *
-   * @type {boolean}
-   */
-  public isHanging: boolean = false;
+  /** The weapons: change them, shoot, spend ammo */
+  private weapons: PlayerWeapons;
 
-  /**
-   * Determinate if Player is swimming in a liquid
-   *
-   * @type {boolean}
-   */
-  public isSwimming: boolean = false;
+  /** Fills the battery up again when it is not used */
+  private recharger: BatteryRecharger;
 
-  /**
-   * Determinate if Player is near a ladder
-   *
-   * @type {boolean}
-   */
-  public isOnLadder: boolean = false;
+  /** The Player in a liquid: swimming and the damage of acid and lava */
+  private liquids: PlayerLiquids;
 
-  /**
-   * Determinate if Player is grabbing a ladder
-   *
-   * @type {boolean}
-   */
-  public isAttachOnLadder: boolean = false;
-
-  /**
-   * The timer which apply damage from liquids
-   *
-   * @type {Phaser.Time.TimerEvent}
-   */
-  private liquidDamageTimer!: Phaser.Time.TimerEvent;
+  /** The light emitted by Player */
+  private torchLight: Phaser.GameObjects.Light;
 
   /**
    * Create the Player
@@ -458,6 +104,7 @@ export class Player extends SpriteCollidable {
    * @param {MapScene} scene - scene creating the player.
    * @param {number} x - Start location x value.
    * @param {number} y - Start location y value.
+   * @param {number} currentRoom - The room it starts in.
    */
   public constructor(
     public scene: MapScene,
@@ -469,17 +116,12 @@ export class Player extends SpriteCollidable {
 
     this.currentRoom = currentRoom;
 
-    this.facing = {
-      y: DirectionAxisY.MIDDLE,
-      x: DirectionAxisX.CENTER,
-    };
-    this.facingForAim = {
-      y: DirectionAxisY.MIDDLE,
-      x: DirectionAxisX.CENTER,
-    };
-
     this.baseSpeed = this.scene.getWorldGravity().y / 2;
+    this.speeds = new PlayerSpeeds(this.baseSpeed, () =>
+      this.getMovementContext()
+    );
 
+    // The sprite and its body
     this.scene.add.existing(this);
     this.scene.physics.world.enable(this);
 
@@ -487,68 +129,86 @@ export class Player extends SpriteCollidable {
       .setOrigin(0.5, 0)
       .setCollideWorldBounds(true)
       .setBounce(0)
-      .setMaxVelocity(this.getMaxRunSpeed(), this.getMaxJumpSpeed());
+      .setMaxVelocity(
+        this.speeds.getMaxRunSpeed(),
+        this.speeds.getMaxJumpSpeed()
+      );
 
     this.body
       .setAllowGravity(true)
       .setAllowDrag(true)
-      .setDragX(0.9)
-      .setOffset(
-        (this.width - Player.BODY_WIDTH) * (1 - this.originX),
-        (this.height - Player.BODY_HEIGHT) * (1 - this.originY)
-      )
-      .setSize(Player.BODY_WIDTH, Player.BODY_HEIGHT, false);
+      // The drag is a deceleration in px/s², decided every frame by the movement
+      .setDamping(false)
+      .setDragX(
+        getDeceleration(this.speeds.getMaxRunSpeed(), {
+          isOnFloor: true,
+          isSwimming: false,
+        })
+      );
 
-    this.body.useDamping = true;
-
-    this.gun = new Gun(this.scene);
-    this.rifle = new Rifle(this.scene);
-    this.bow = new Bow(this.scene);
-
+    this.shape = new PlayerBody(this);
+    this.shape.init();
     this.body.updateCenter();
 
+    // The pieces
+    this.controls = new PlayerInput(this.scene.getController());
+
+    this.sensors = new PlayerSensors(this.scene, this.body, {
+      wallDistance: Player.WALL_DETECTION_DISTANCE,
+      // The wall sensors keep the height of the standing body
+      wallHeight: this.body.halfHeight,
+      ladderWidth: this.body.width,
+      sweptLedgeDetection: Player.SWEPT_LEDGE_DETECTION,
+    });
+
+    this.movementHost = createMovementHost({
+      sprite: this,
+      controls: this.controls,
+      aim: this.aim,
+      stats: this.stats,
+      speeds: this.speeds,
+      sensors: this.sensors,
+      shape: this.shape,
+      baseSpeed: this.baseSpeed,
+      now: () => this.scene.time.now,
+      equip: (item) => this.scene.getInventory().equip(item),
+      isSwimming: () => this.isSwimming,
+      isOnFloor: () => this.isOnFloor(),
+      overlapsLadder: () => this.overlapsLadder(),
+      hasLedgeToClimb: (towardsLeft) => this.hasLedgeToClimb(towardsLeft),
+      climb: (x, y) => this.climb(x, y),
+    });
+
+    this.weapons = new PlayerWeapons(
+      this.scene.getInventory(),
+      new Arsenal(this.scene),
+      this,
+      this.controls,
+      this.aim,
+      this.stats
+    );
+
+    this.recharger = new BatteryRecharger(
+      this.scene.time,
+      () => this.scene.getInventory().hasBattery(),
+      this.stats
+    );
+
+    this.liquids = new PlayerLiquids(
+      () => this.detectLiquid(),
+      (config) => this.scene.time.addEvent(config),
+      this.stats,
+      this
+    );
+
+    // Keep the Player on the slopes of the map
+    this.scene.slopes.track(this.body);
+    this.once(Phaser.GameObjects.Events.DESTROY, () => {
+      this.scene.slopes.untrack(this.body);
+    });
+
+    // The torch
     const bounds = this.getBodyBounds();
-
-    this.leftWallHitbox = new Hitbox(
-      this.scene,
-      bounds.left - Player.WALL_DETECTION_DISTANCE / 2,
-      bounds.centerY,
-      Player.WALL_DETECTION_DISTANCE,
-      this.body.halfHeight
-    );
-
-    this.rightWallHitbox = new Hitbox(
-      this.scene,
-      bounds.right + Player.WALL_DETECTION_DISTANCE / 2,
-      bounds.centerY,
-      Player.WALL_DETECTION_DISTANCE,
-      this.body.halfHeight
-    );
-
-    this.leftHangHitbox = new Hitbox(
-      this.scene,
-      bounds.left - Player.WALL_DETECTION_DISTANCE / 2 - 1,
-      bounds.top + Player.WALL_DETECTION_DISTANCE / 2 + 1,
-      Player.WALL_DETECTION_DISTANCE,
-      Player.WALL_DETECTION_DISTANCE
-    );
-
-    this.rightHangHitbox = new Hitbox(
-      this.scene,
-      bounds.right + Player.WALL_DETECTION_DISTANCE / 2 + 1,
-      bounds.top + Player.WALL_DETECTION_DISTANCE / 2 + 1,
-      Player.WALL_DETECTION_DISTANCE,
-      Player.WALL_DETECTION_DISTANCE
-    );
-
-    this.ladderHitbox = new Hitbox(
-      this.scene,
-      bounds.centerX,
-      bounds.bottom,
-      this.body.width,
-      2
-    );
-
     this.torchLight = this.scene.lights
       .addLight(bounds.centerX, bounds.centerY, TILE_SIZE * 8)
       .setIntensity(this.scene.getInventory().equip(PowerUps.TORCH) ? 3 : 0)
@@ -556,182 +216,55 @@ export class Player extends SpriteCollidable {
 
     // TODO: activate after create normal maps for sprite
     // this.setPipeline('Light2D');
-
-    this.scene.registry
-      .set("ammo", this.ammo)
-      .set("maxAmmo", this.maxAmmo)
-      .set("life", this.life)
-      .set("maxLife", this.maxLife)
-      .set("battery", this.battery)
-      .set("maxBattery", this.maxBattery);
   }
 
-  public get life(): number {
-    return this._life;
+  /** The stats of the Player (life, ammo, battery...), kept in the game state */
+  public get stats(): PlayerStats {
+    return this.scene.getGameState().player;
   }
 
-  public set life(value: number) {
-    let newValue: number = value;
-    if (newValue < 0) {
-      newValue = 0;
-    }
-
-    this._life = newValue;
-    this.scene.registry.set("life", this._life);
+  /** What the Player is doing with its body */
+  public get movementState(): MovementState {
+    return this.movement.state;
   }
 
-  public get maxLife(): number {
-    return this._maxLife;
+  public get isCrouch(): boolean {
+    return this.movement.isCrouch;
   }
 
-  public set maxLife(value: number) {
-    this._maxLife = value;
-    this.scene.registry.set("maxLife", this._maxLife);
+  /** Hanging from the edge of a ledge */
+  public get isHanging(): boolean {
+    return this.movement.isHanging;
   }
 
-  public get ammo(): number {
-    return this._ammo;
+  /** Near a ladder */
+  public get isOnLadder(): boolean {
+    return this.movement.isOnLadder;
   }
 
-  public set ammo(value: number) {
-    this._ammo = value;
-    this.scene.registry.set("ammo", this._ammo);
+  /** Holding a ladder */
+  public get isAttachOnLadder(): boolean {
+    return this.movement.isAttachOnLadder;
   }
 
-  public get maxAmmo(): number {
-    return this._maxAmmo;
+  /** In a liquid */
+  public get isSwimming(): boolean {
+    // Asked by the speeds while the constructor is still running
+    return this.liquids?.isSwimming ?? false;
   }
 
-  public set maxAmmo(value: number) {
-    this._maxAmmo = value;
-    this.scene.registry.set("maxAmmo", this._maxAmmo);
+  /** The body has the smaller shape of crouching */
+  public get isBodySmall(): boolean {
+    return this.shape.isSmall;
   }
 
-  public get battery(): number {
-    return this._battery;
-  }
-
-  public set battery(value: number) {
-    let newValue: number = value;
-    if (newValue < 0) {
-      newValue = 0;
-    }
-
-    this._battery = newValue;
-    this.scene.registry.set("battery", this._battery);
-  }
-
-  public get maxBattery(): number {
-    return this._maxBattery;
-  }
-
-  public set maxBattery(value: number) {
-    this._maxBattery = value;
-    this.scene.registry.set("maxBattery", this._maxBattery);
-  }
-
-  public static preload(scene: Phaser.Scene): void {
-    scene.load.atlas(
-      "hero",
-      "assets/sprites/hero.png",
-      "assets/sprites/hero.json"
-    );
-  }
-
-  public static create(scene: Phaser.Scene): void {
-    const spriteSize: Phaser.Types.Loader.FileTypes.ImageFrameConfig = {
-      frameWidth: TILE_SIZE * 2,
-      frameHeight: TILE_SIZE * 3,
-    };
-
-    const idleAnimations = [
-      "idle",
-      "crouch_idle",
-      "hang",
-      "aim_up",
-      "aim_up_diagonal",
-      "aim_down_diagonal",
-    ];
-    for (let idleAnimation of idleAnimations) {
-      const animations = [`${idleAnimation}_left`, `${idleAnimation}_right`];
-
-      if (idleAnimation.indexOf("idle") !== -1) {
-        animations.push(`${idleAnimation}_center`);
-      }
-
-      for (const animation of animations) {
-        const key = `hero_${animation}`;
-        scene.textures.addSpriteSheetFromAtlas(key, {
-          atlas: "hero",
-          frame: key,
-          ...spriteSize,
-        });
-
-        scene.anims.create({
-          key: `hero_${animation}_animation`,
-          frames: scene.anims.generateFrameNumbers(key, {
-            start: 0,
-          }),
-          frameRate: 4,
-          repeat: -1,
-        });
-      }
-    }
-
-    const fastAnimations = ["walk", "jump"];
-    for (let fastAnimation of fastAnimations) {
-      const animations = [`${fastAnimation}_left`, `${fastAnimation}_right`];
-
-      for (const animation of animations) {
-        const key = `hero_${animation}`;
-        scene.textures.addSpriteSheetFromAtlas(key, {
-          atlas: "hero",
-          frame: key,
-          ...spriteSize,
-        });
-
-        scene.anims.create({
-          key: `hero_${animation}_animation`,
-          frames: scene.anims.generateFrameNumbers(key, {
-            start: 0,
-          }),
-          frameRate: 20,
-          repeat: -1,
-        });
-      }
-    }
-
-    const jumpAnimations = ["jump_idle", "fall_idle"];
-    const textures = [
-      `${jumpAnimations[0]}_left`,
-      `${jumpAnimations[0]}_right`,
-    ];
-    for (const texture of textures) {
-      const key = `hero_${texture}`;
-      scene.textures.addSpriteSheetFromAtlas(key, {
-        atlas: "hero",
-        frame: key,
-        ...spriteSize,
-      });
-    }
-
-    for (let jumpAnimation of jumpAnimations) {
-      const animations = [`${jumpAnimation}_left`, `${jumpAnimation}_right`];
-      const isJump = jumpAnimation.indexOf("jump") !== -1;
-
-      for (let index = 0; index < animations.length; index++) {
-        const animation = animations[index];
-
-        scene.anims.create({
-          key: `hero_${animation}_animation`,
-          frames: scene.anims.generateFrameNumbers(`hero_${textures[index]}`, {
-            start: isJump ? 0 : 2,
-            end: isJump ? 1 : 3,
-          }),
-          duration: 300,
-        });
-      }
-    }
+  /**
+   * The bounds of the body, whatever the origin of the sprite
+   *
+   * @return {Phaser.Geom.Rectangle} The bounds of the body
+   */
+  public getBodyBounds(): Phaser.Geom.Rectangle {
+    return this.shape.getBounds();
   }
 
   /**
@@ -744,84 +277,81 @@ export class Player extends SpriteCollidable {
     super.preUpdate(time, delta);
 
     const bounds = this.getBodyBounds();
-    const roomNumber = this.scene.setCurrentRoom(
-      bounds.centerX,
-      bounds.centerY
+    const room = trackRoom(
+      this.currentRoom,
+      this.previousRoom,
+      this.scene.setCurrentRoom(
+        bounds.centerX,
+        bounds.centerY,
+        this.currentRoom
+      )
     );
 
     // Update player room variables
-    if (roomNumber !== null && roomNumber !== this.currentRoom) {
-      this.previousRoom = this.currentRoom;
-      this.currentRoom = roomNumber;
-      this.scene.isChangingRoom = true;
-    } else {
-      this.scene.isChangingRoom = false;
-    }
+    this.currentRoom = room.current;
+    this.previousRoom = room.previous;
+    this.scene.isChangingRoom = room.changed;
   }
 
   /**
+   * Every frame: read the buttons, move, shoot, then draw
+   *
    * @param {any} time
    * @param {number} delta
    */
   public update(time: any, delta: number): void {
     super.update();
 
-    this.previousFacing = { ...this.facing };
+    // Read the buttons once, so the whole update sees the same state
+    this.controls.poll();
+
+    this.aim.remember();
 
     if (this.canInteract) {
       // Handle current aim direction based on facing
-      this.tiltAim();
+      this.aim.update(
+        {
+          aim: this.controls.aim,
+          up: this.controls.up,
+          down: this.controls.down,
+          left: this.controls.left,
+          right: this.controls.right,
+        },
+        this.body.velocity.y
+      );
 
       // Handle logic when the player is in a liquid
-      this.swim();
+      this.liquids.update();
 
-      // Prevent jump when is facing forward
-      if (this.facing.x !== DirectionAxisX.CENTER) {
-        // Handle all the movement along the y axis
-        this.jump();
-      }
+      // Handle jump, walk, dash, hang and the ladders climb
+      this.movement.updateMotion(this.movementHost);
 
-      // Handle all the movement along the x axis
-      this.walk();
+      // Handle the player body resizing: smaller when crouching
+      this.shape.resize(this.movement.isCrouch);
 
-      // Handle the dash action
-      this.dash();
-
-      // Handle the hang action
-      this.hang();
-
-      // Handle the ladders climb action
-      this.climbLadders();
-
-      // Handle the player body resizing
-      this.resizeBody();
-
-      // Prevent crouch when is facing forward
-      if (this.facing.x !== DirectionAxisX.CENTER) {
-        // Handle the crouch action
-        this.crouch();
-      }
+      // Handle the crouch action and settle the state of the movement
+      this.movement.updateCrouch(this.movementHost);
 
       // The user can shoot only if the Player has at least one range weapon
       if (this.scene.getInventory().hasAtLeastOneRangeWeapon()) {
         // Handle all the ranged combat actions
-        this.handleWeapons(time);
+        this.weapons.update(time);
       }
     }
 
     // Handle the battery recharge process
-    this.updateBattery();
+    this.recharger.update();
 
-    // Change the current animation based on previous operations
-    this.adjustPosition();
+    // Apply the position correction requested during this update
+    this.shape.applyRequestedPosition();
 
-    // Change the current animation based on previous operations
-    this.updateHitboxes();
+    // Keep the torch attached to the body
+    this.updateTorch();
 
     // Change the current animation based on previous operations
     this.animate();
 
-    this.lastBattery = this.battery;
+    this.recharger.remember();
 
     // Debug the player after all the update cycle
     if (this.scene.physics.world.drawDebug) {
@@ -830,836 +360,48 @@ export class Player extends SpriteCollidable {
   }
 
   /**
-   * Handle the battery recharge process
+   * Pull the Player up a ledge: it moves to the side it looks at and up, and
+   * can not be controlled until it has arrived
+   *
+   * @param {number} x The distance to the side
+   * @param {number} y The distance up (default: as x)
    */
-  protected updateBattery(): void {
-    // The Player should have at least the battery powerup
-    if (!this.scene.getInventory().hasBattery()) {
-      return;
-    }
-
-    // If the battery is already at full capacity, skip reload
-    if (this.battery >= this.maxBattery) {
-      return;
-    }
-
-    // Check if the timeout was not init
-    let canTimeoutStarts: boolean =
-      typeof this.batteryTimeoutTimer === "undefined";
-    if (!canTimeoutStarts) {
-      // If the timeout was init, test if is completed
-      canTimeoutStarts = this.batteryTimeoutTimer.getProgress() === 1;
-    }
-
-    // Check if the timer was not init
-    let canTimerStarts: boolean =
-      typeof this.batteryRechargeTimer === "undefined";
-    if (!canTimerStarts) {
-      // If the timer was init, test if is completed
-      canTimerStarts = this.batteryRechargeTimer.getProgress() === 1;
-    }
-
-    // If the Player use the battery, restart the timeout
-    const restartTimer: boolean = this.battery < this.lastBattery;
-
-    if (restartTimer) {
-      // Restart timeout if init
-      if (this.batteryTimeoutTimer) {
-        this.batteryTimeoutTimer.destroy();
-        this.batteryTimeoutTimer.remove();
-      }
-
-      // Restart timer if init
-      if (this.batteryRechargeTimer) {
-        this.batteryRechargeTimer.destroy();
-        this.batteryRechargeTimer.remove();
-      }
-    }
-
-    if ((canTimeoutStarts && canTimerStarts) || restartTimer) {
-      this.batteryTimeoutTimer = this.scene.time.delayedCall(5000, () => {
-        const config: Phaser.Types.Time.TimerEventConfig = {
-          delay: 100,
-          loop: true,
-          callback: () => {
-            ++this.battery;
-
-            // Stop recharging if reached the max level
-            if (this.battery === this.maxBattery) {
-              this.batteryRechargeTimer.destroy();
-              this.batteryRechargeTimer.remove();
-            }
-          },
-        };
-
-        // Start the timer only after a certain amount of time
-        this.batteryRechargeTimer = this.scene.time.addEvent(config);
-      });
-    }
-  }
-
-  /**
-   * Handle current aim direction based on facing
-   */
-  protected tiltAim(): void {
-    const isAimPress: boolean = this.scene
-      .getController()
-      .isKeyPressed(ControllerKey.L);
-
-    const isUpPressed: boolean = this.scene
-      .getController()
-      .isKeyPressed(ControllerKey.UP);
-
-    const isDownPressed: boolean = this.scene
-      .getController()
-      .isKeyPressed(ControllerKey.DOWN);
-
-    const isLeftPressed: boolean = this.scene
-      .getController()
-      .isKeyPressed(ControllerKey.LEFT);
-
-    const isRightPressed: boolean = this.scene
-      .getController()
-      .isKeyPressed(ControllerKey.RIGHT);
-
-    const isAimingWhileMoving =
-      (isLeftPressed || isRightPressed) && (isUpPressed || isDownPressed);
-
-    this.wasAimingDiagonal = this.isAimingDiagonal;
-
-    if (isUpPressed || (isAimPress && !this.isAimingDiagonal)) {
-      this.facing.y = DirectionAxisY.UP;
-      this.facingForAim.y = DirectionAxisY.UP;
-    } else if (
-      isDownPressed &&
-      (this.body.velocity.y !== 0 || isAimPress || isAimingWhileMoving)
-    ) {
-      this.facing.y = DirectionAxisY.DOWN;
-      this.facingForAim.y = DirectionAxisY.DOWN;
-    } else if (!this.isAimingDiagonal) {
-      this.facing.y = DirectionAxisY.MIDDLE;
-      this.facingForAim.y = DirectionAxisY.MIDDLE;
-    }
-
-    this.isAimingDiagonal = isAimPress || isAimingWhileMoving;
-  }
-
-  /**
-   * Handle all the events inside liquids
-   */
-  protected swim(): void {
-    let liquidName: string | null = null;
-
-    this.isSwimming = this.scene.physics.overlap(
-      this,
-      this.scene.liquidsLayer,
-      undefined,
-      (hero, object: unknown) => {
-        const liquid = object as Phaser.Tilemaps.Tile;
-        if (liquid.index > -1) {
-          liquidName = liquid.properties.liquid;
-          return true;
-        }
-
-        return false;
-      }
-    );
-
-    if (this.isSwimming && liquidName) {
-      if (liquidName === "acid" || liquidName === "lava") {
-        const config: Phaser.Types.Time.TimerEventConfig = {
-          startAt: 0,
-          delay: 200,
-          loop: true,
-          args: [liquidName],
-          callback: (liquid: any) => {
-            if (liquid === "acid") {
-              this.battery -= 2;
-              this.life -= 3;
-
-              if (this.isTinted) {
-                this.clearTint();
-              } else {
-                this.setTint(0x00ff00, 0xff00ff, 0x00ff00);
-              }
-            } else {
-              this.life -= 2;
-
-              if (this.isTinted) {
-                this.clearTint();
-              } else {
-                this.setTint(0xffff00, 0xffff00, 0xff0000, 0xff0000);
-              }
-            }
-          },
-        };
-
-        if (!this.liquidDamageTimer) {
-          this.liquidDamageTimer = this.scene.time.addEvent(config);
-        } else if (this.liquidDamageTimer.paused) {
-          this.liquidDamageTimer.reset(config);
-          this.liquidDamageTimer.paused = false;
-        }
-      }
-    } else if (this.liquidDamageTimer) {
-      this.liquidDamageTimer.paused = true;
-
-      if (this.isTinted) {
-        this.clearTint();
-      }
-    }
-  }
-
-  /**
-   * Handle all the movement along the y axis
-   */
-  protected jump(): void {
-    // Test if the user is pressing the button 'A'
-    const isJumpPress: boolean = this.scene
-      .getController()
-      .isKeyPressed(ControllerKey.A);
-
-    // First check if Player has unlocked wall jump
-    if (this.scene.getInventory().equip(PowerUps.GLOVE)) {
-      // Test if the Player is near walls
-      const walls: boolean[] = this.isTouchingWalls() as boolean[];
-      const wallsCount = walls.filter((wall) => wall);
-
-      // Perform wall jump only if the Player
-      // is not on the ground and is touching only one wall
-      this.canWallJump = !this.isOnFloor() && wallsCount.length === 1;
-      this.hasDoneWallJump = false;
-
-      if (this.canWallJump) {
-        // The user have to press again the jump key to perform the action
-        if (!this.isPressingJump && isJumpPress) {
-          let sign = 0;
-
-          if (
-            // The Player is touching a wall on left
-            walls[0] &&
-            // The user is moving on the opposite side of wall (right)
-            this.scene.getController().isKeyPressed(ControllerKey.RIGHT)
-          ) {
-            sign = 1;
-          } else if (
-            // The Player is touching a wall on right
-            walls[1] &&
-            // The user is moving on the opposite side of wall (left)
-            this.scene.getController().isKeyPressed(ControllerKey.LEFT)
-          ) {
-            sign = -1;
-          }
-
-          // Test if both the actions are corrects
-          if (sign !== 0) {
-            // The Player is actually performing a jump
-            this.isJumping = true;
-
-            // The Player has done a wall jump
-            this.hasDoneWallJump = true;
-
-            // Then push the player on the opposite side of wall and to the ceil
-            this.setVelocity(
-              Math.abs(this.getJumpSpeed(false)) * 2 * sign,
-              this.getJumpSpeed()
-            );
-          }
-        }
-      }
-    }
-
-    let isClimbing = false;
-    if (this.isHanging) {
-      if (!this.isPressingJump) {
-        const isUpPress: boolean = this.scene
-          .getController()
-          .isKeyPressed(ControllerKey.UP);
-
-        isClimbing = isUpPress || isJumpPress;
-
-        if (isClimbing) {
-          this.climb(TILE_SIZE, TILE_SIZE * 2);
-        }
-      }
-    } else if (isJumpPress) {
-      // If the Player is touching the floor and the key has been release
-      if (this.isOnFloor() && !this.isPressingJump) {
-        if (this.body.blocked.right || this.body.blocked.left) {
-          const bounds: Phaser.Geom.Rectangle = this.getBodyBounds();
-          let hasFreeUpperTile: Phaser.Tilemaps.Tile | null = null;
-          let hasTileOnFoot: Phaser.Tilemaps.Tile | null = null;
-
-          const isLeft = this.body.blocked.left;
-          const x = isLeft
-            ? bounds.centerX - TILE_SIZE
-            : bounds.centerX + TILE_SIZE;
-
-          const xTile = Math.floor(x / TILE_SIZE);
-
-          let layers: Phaser.Tilemaps.TilemapLayer[] = this.scene.worldLayer;
-          if (!Array.isArray(layers)) {
-            layers = [layers];
-          }
-
-          const bottom = Math.floor((bounds.centerY - 1) / TILE_SIZE);
-
-          for (const layer of layers) {
-            if (hasFreeUpperTile) {
-              break;
-            }
-
-            hasFreeUpperTile = this.scene.map.getTileAt(
-              xTile,
-              bottom,
-              undefined,
-              layer
-            );
-          }
-
-          for (const layer of layers) {
-            if (hasTileOnFoot) {
-              break;
-            }
-
-            hasTileOnFoot = this.scene.map.getTileAt(
-              xTile,
-              bottom + 1,
-              undefined,
-              layer
-            );
-          }
-
-          isClimbing = !hasFreeUpperTile && hasTileOnFoot !== null;
-        }
-
-        if (!isClimbing) {
-          // The Player is actually jumping
-          this.isJumping = true;
-
-          const velocity = Math.abs(this.body.velocity.x);
-          this.isStandingJumping = velocity <= TILE_SIZE * 2;
-          if (this.isStandingJumping) {
-            this.setMaxVelocity(
-              this.getStandingRunSpeed(),
-              this.getMaxJumpSpeed()
-            );
-          }
-
-          this.setVelocityY(this.getJumpSpeed());
-        } else {
-          this.climb(TILE_SIZE, TILE_SIZE);
-        }
-      } else if (
-        // First check if Player has unlocked double jump
-        this.scene.getInventory().equip(PowerUps.ROCKET) &&
-        // Then check if Player had already performed the action
-        !this.hasDoneDoubleJump &&
-        // Finally check if Player can actually perform the action at the moment
-        this.canDoubleJump
-      ) {
-        // Prevent the Player to perform another double jump
-        this.hasDoneDoubleJump = true;
-        // The Player is actually jumping
-        this.isJumping = true;
-
-        this.isStandingJumping = Math.abs(this.body.velocity.x) <= TILE_SIZE;
-
-        this.setVelocityY(this.getJumpSpeed());
-      }
-    } else if (this.isOnFloor()) {
-      // Reset everything if the player is touching the ground
-      this.isFalling = false;
-      this.isJumping = false;
-
-      this.canDoubleJump = false;
-      this.hasDoneDoubleJump = false;
-    }
-
-    if (this.body.velocity.y === 0 && this.isOnFloor()) {
-      this.isStandingJumping = false;
-    }
-
-    if (!this.isStandingJumping) {
-      this.setMaxVelocity(this.getMaxRunSpeed(), this.getMaxJumpSpeed());
-    }
-
-    this.isClimbing = isClimbing;
-
-    // Check if the user is actually holding the key
-    this.isPressingJump = isJumpPress;
-
-    // Detect if the Player is falling by checking if his y speed is positive
-    if (this.body.velocity.y > 0) {
-      this.isFalling = true;
-      // If the Player is falling, he cannot also jump
-      this.isJumping = false;
-    } else {
-      this.isFalling = false;
-    }
-
-    // Detect if the Player is jumping by checking if his y speed is negative
-    if (this.body.velocity.y < 0) {
-      // Test if the user is pressing the button 'A'
-      const isUpPress: boolean = this.scene
-        .getController()
-        .isKeyPressed(ControllerKey.UP);
-      // Detect if the user is not pressing the button to jump
-      if (!isJumpPress && !this.isClimbing && !isUpPress) {
-        // The Player is able to perform a double jump
-        this.canDoubleJump = true;
-
-        const newVelocity = this.body.velocity.y + -(this.body.velocity.y / 2);
-
-        // The Player slowly stop to jump and perform a linear fall
-        this.setVelocityY(Math.max(newVelocity, 0));
-      }
-    }
-
-    // When the Player is in mid air, he must stand up
-    if (this.body.velocity.y !== 0) {
-      this.canCrouch = false;
-      this.isCrouch = false;
-    }
-  }
-
-  /**
-   * Handle all the movement along the x axis
-   */
-  protected walk(): void {
-    const isRightPress: boolean = this.scene
-      .getController()
-      .isKeyPressed(ControllerKey.RIGHT);
-    const isLeftPress: boolean = this.scene
-      .getController()
-      .isKeyPressed(ControllerKey.LEFT);
-
-    // When the Player is moving, he cannot also be crouch
-    if (isRightPress || isLeftPress) {
-      this.canCrouch = false;
-      this.isCrouch = false;
-    }
-
-    if (isRightPress && !isLeftPress) {
-      this.facingForAim.x = DirectionAxisX.RIGHT;
-    } else if (isLeftPress && !isRightPress) {
-      this.facingForAim.x = DirectionAxisX.LEFT;
-    }
-
-    if (this.isHanging) {
-      return;
-    }
-
-    if (isRightPress && !isLeftPress) {
-      this.facing.x = DirectionAxisX.RIGHT;
-
-      this.setAccelerationX(this.getRunSpeed());
-    } else if (isLeftPress && !isRightPress) {
-      this.facing.x = DirectionAxisX.LEFT;
-
-      this.setAccelerationX(-this.getRunSpeed());
-    } else {
-      this.setAccelerationX(0);
-
-      // Simulate a little slide onto the floor for a bit
-      // and stop it if match certain X speed
-      if (Math.abs(this.body.velocity.x) < this.baseSpeed / 20) {
-        this.setVelocityX(0);
-      }
-    }
-  }
-
-  /**
-   * Handle the dash action
-   */
-  protected dash(): void {
-    const isDashPress: boolean = this.scene
-      .getController()
-      .isKeyPressed(ControllerKey.X);
-
-    if (this.scene.getInventory().equip(PowerUps.DASH)) {
-      const time = this.scene.getController().getKeyDuration(ControllerKey.X);
-
-      if (
-        time < 100 &&
-        isDashPress &&
-        this.battery > 0 &&
-        this.facing.x !== DirectionAxisX.CENTER
-      ) {
-        const isRight = this.facing.x === DirectionAxisX.RIGHT;
-        const facing: number = isRight ? 1 : -1;
-
-        this.setMaxVelocity(this.getDashSpeed(), this.getMaxJumpSpeed());
-
-        this.setVelocityX(this.getDashSpeed() * facing);
-
-        --this.battery;
-      } else {
-        this.setMaxVelocity(
-          this.isStandingJumping
-            ? this.getStandingRunSpeed()
-            : this.getMaxRunSpeed(),
-          this.getMaxJumpSpeed()
-        );
-      }
-    }
-
-    this.isPressingDash = isDashPress;
-  }
-
-  /**
-   * Handle the hang action
-   */
-  protected hang(): void {
-    if (this.scene.getInventory().equip(PowerUps.HOOK)) {
-      if (this.body.velocity.y !== 0 || this.isHanging) {
-        const isDownPress: boolean = this.scene
-          .getController()
-          .isKeyPressed(ControllerKey.DOWN);
-
-        // If the Player is hanging from a tile, he can jump down
-        if (isDownPress) {
-          this.isHanging = false;
-          this.body.setAllowGravity(true);
-          return;
-        }
-
-        let hitbox!: Hitbox;
-        let isTouchingTiles = false;
-        let hasTileOnHand = false;
-
-        if (this.facing.x === DirectionAxisX.LEFT) {
-          hitbox = this.leftHangHitbox;
-        } else if (this.facing.x === DirectionAxisX.RIGHT) {
-          hitbox = this.rightHangHitbox;
-        }
-
-        if (typeof hitbox !== "undefined") {
-          // Test if Player's hitbox is touching a tile
-          isTouchingTiles = hitbox.overlapTilesArea(AreaPosition.TOP_HALF);
-          let currentTile!: Phaser.Tilemaps.Tile;
-
-          if (isTouchingTiles) {
-            // If the Player is touching a tile test which tiles
-            // are inside the hitbox area
-
-            let tiles: Phaser.Tilemaps.Tile[] = [];
-
-            let layers: Phaser.Tilemaps.TilemapLayer[] = this.scene.worldLayer;
-            if (!Array.isArray(layers)) {
-              layers = [layers];
-            }
-
-            let lastLayer!: Phaser.Tilemaps.TilemapLayer;
-            for (const layer of layers) {
-              if (
-                tiles.length > 0 ||
-                ["stairs", "platforms"].indexOf(layer.layer.name) > -1
-                // The Player should not be able to hang on stairs nor one way platforms
-              ) {
-                break;
-              }
-
-              tiles =
-                this.scene.map.getTilesWithinShape(
-                  hitbox.getBounds(),
-                  {
-                    isNotEmpty: true,
-                  },
-                  undefined,
-                  layer
-                ) ?? [];
-
-              lastLayer = layer;
-            }
-
-            if (tiles.length === 1) {
-              [currentTile] = tiles;
-              // Check if there is a tile upper the current one
-              const upperTile = this.scene.map.getTileAt(
-                currentTile.x,
-                currentTile.y - 1,
-                undefined,
-                lastLayer
-              );
-              hasTileOnHand = upperTile === null;
-            }
-          }
-
-          if (hasTileOnHand) {
-            this.isHanging = true;
-            // Prevent the Player to slide down
-            this.body.setAllowGravity(false);
-
-            this.setGravity(0);
-            this.setVelocityY(0);
-            // Align the body to the current tile
-            this.setNewPosition(null, currentTile.pixelY);
-          } else {
-            this.isHanging = false;
-
-            this.body.setAllowGravity(true);
-          }
-        }
-      }
-    }
-  }
-
-  protected climbLadders(): void {
-    const isOnTopOfLadder = this.ladderHitbox.overlapTilesArea(
-      AreaPosition.TOP_HALF,
-      this.scene.stairsLayer,
-      false
-    );
-
-    this.isOnLadder = this.scene.physics.overlap(
-      this,
-      this.scene.stairsLayer,
-      undefined,
-      (hero, object: unknown) => {
-        const ladder = object as Phaser.Tilemaps.Tile;
-
-        return ladder.index > -1;
-      }
-    );
-
-    const isDownPressed: boolean = this.scene
-      .getController()
-      .isKeyPressed(ControllerKey.DOWN);
-
-    const isUpPressed: boolean = this.scene
-      .getController()
-      .isKeyPressed(ControllerKey.UP);
-
-    if (this.isOnLadder || isOnTopOfLadder) {
-      if (this.isOnFloor() || !this.isOnLadder) {
-        if (this.isAttachOnLadder) {
-          this.isAttachOnLadder = false;
-        }
-      }
-
-      if (isDownPressed || (isUpPressed && this.isOnLadder)) {
-        const speed = isDownPressed ? 1 : -1;
-        this.setVelocityY(this.getLadderClimbSpeed() * speed);
-
-        this.isAttachOnLadder = true;
-      }
-    } else {
-      this.isAttachOnLadder = false;
-    }
-
-    if (this.isAttachOnLadder) {
-      this.setGravity(0);
-      this.body.setAllowGravity(false);
-
-      if (!isUpPressed && !isDownPressed) {
-        this.setVelocityY(0);
-      }
-    } else {
-      this.body.setAllowGravity(true);
-    }
-  }
-
-  protected climb(x: number, y?: number): void {
-    const x1: number = x;
-    let y1: number | undefined = y;
-
-    if (typeof y === "undefined") {
-      y1 = x1;
-    }
-
+  protected climb(x: number, y: number = x): void {
     this.canInteract = false;
 
-    const sign: string = this.facing.x === DirectionAxisX.LEFT ? "-" : "+";
+    const sign: string = this.aim.facing.x === DirectionAxisX.LEFT ? "-" : "+";
     this.scene.tweens.add({
       targets: this,
       ease: "Linear",
       duration: 150,
       repeat: 0,
       yoyo: false,
-      x: `${sign}=${x1}`,
-      y: `-=${y1}`,
+      x: `${sign}=${x}`,
+      y: `-=${y}`,
       onComplete: () => {
+        this.movement.finishClimb();
         this.canInteract = true;
       },
     });
   }
 
   /**
-   * Handle the crouch action
-   */
-  protected crouch(): void {
-    // Test if the Player can crouch in the current state and position
-    if (this.canCrouch) {
-      const isDownPressed: boolean = this.scene
-        .getController()
-        .isKeyPressedForFirstTime(ControllerKey.DOWN);
-
-      const isUpPressed: boolean = this.scene
-        .getController()
-        .isKeyPressed(ControllerKey.UP);
-
-      if (isDownPressed && !this.isCrouch) {
-        if (!this.isAimingDiagonal || this.previousFacing.y === this.facing.y) {
-          this.isCrouch = true;
-        }
-      } else if (isUpPressed && this.isCrouch) {
-        this.isCrouch = false;
-      }
-    }
-
-    this.canCrouch = true;
-  }
-
-  /**
-   * Handle all the Player body resizing based on current state
-   */
-  protected resizeBody(): void {
-    // Check if the Player is in mid air, but with an sufficient x speed
-
-    let updateBody = false;
-    let offsetX!: number;
-    let offsetY!: number;
-
-    if (!this.isHanging && this.isCrouch) {
-      if (!this.isBodySmall) {
-        // Shrink his body to fit with the animation
-        offsetX = (this.width - Player.BODY_SMALL_WIDTH) * (1 - this.originX);
-        offsetY = (this.height - Player.BODY_SMALL_HEIGHT) * (1 - this.originY);
-
-        updateBody = true;
-      }
-    } else if (this.isBodySmall) {
-      // Reset the body to his original shape
-      offsetX = (this.width - Player.BODY_WIDTH) * (1 - this.originX);
-      offsetY = (this.height - Player.BODY_HEIGHT) * (1 - this.originY);
-
-      updateBody = true;
-    }
-
-    if (updateBody) {
-      const previousOffset = this.body.offset.clone();
-
-      this.body
-        .setOffset(offsetX, offsetY)
-        .setSize(
-          this.isBodySmall ? Player.BODY_WIDTH : Player.BODY_SMALL_WIDTH,
-          this.isBodySmall ? Player.BODY_HEIGHT : Player.BODY_SMALL_HEIGHT,
-          false
-        )
-        .updateCenter();
-
-      if (this.adjustTo) {
-        const clone = this.adjustTo.clone();
-        clone.add(
-          new Phaser.Math.Vector2(
-            previousOffset.x - offsetX,
-            previousOffset.y - offsetY
-          )
-        );
-
-        this.setNewPosition(clone);
-      }
-
-      this.isBodySmall = !this.isBodySmall;
-    }
-  }
-
-  /**
-   * Handle all the ranged combat actions
-   */
-  protected handleWeapons(time: any): void {
-    if (this.scene.getController().isKeyPressedForFirstTime(ControllerKey.Y)) {
-      this.scene.getInventory().switchToNextWeapon();
-    }
-
-    if (!this.isPressingShot) {
-      this.scene.getInventory().resetWeaponsShoot();
-    }
-
-    const isShootPress: boolean = this.scene
-      .getController()
-      .isKeyPressed(ControllerKey.B);
-
-    // The user have to press Shot button and the player should not facing front
-    if (
-      isShootPress &&
-      this.facingForAim.x !== DirectionAxisX.CENTER &&
-      this.ammo > 0
-    ) {
-      const config: BulletConfig = {
-        facing: this.facingForAim,
-        diagonal: this.isAimingDiagonal,
-        position: this.getShotPosition(),
-      };
-
-      const weapon: Weapon = this.scene
-        .getInventory()
-        .getCurrentWeapon() as Weapon;
-      const wasFired = weapon.fireBullet(time, config);
-
-      if (wasFired) {
-        --this.ammo;
-      }
-    }
-
-    this.isPressingShot = isShootPress;
-  }
-
-  /**
-   * Adjust the current body position
-   */
-  protected adjustPosition(): void {
-    if (this.adjustTo) {
-      if (this.adjustTo.x !== -1) {
-        this.body.x = this.adjustTo.x;
-      }
-
-      if (this.adjustTo.y !== -1) {
-        this.body.y = this.adjustTo.y;
-      }
-
-      delete this.adjustTo;
-    }
-  }
-
-  /**
    * Change the current animation based on previous operations
    */
   protected animate(): void {
-    let action = "";
+    const action = getAnimationAction({
+      isOnFloor: this.isOnFloor(),
+      isCrouch: this.movement.isCrouch,
+      isHanging: this.movement.isHanging,
+      isJumping: this.movement.isJumping,
+      isStandingJumping: this.movement.isStandingJumping,
+      isAimingDiagonal: this.aim.isAimingDiagonal,
+      wasAimingDiagonal: this.aim.wasAimingDiagonal,
+      velocityX: this.body.velocity.x,
+      facingY: this.aim.facing.y,
+    });
 
-    if (this.isOnFloor()) {
-      if (this.isCrouch) {
-        action = "crouch_idle";
-      } else if (this.body.velocity.x !== 0) {
-        if (this.isAimingDiagonal) {
-          action = `aim_${this.facing.y}_diagonal`;
-        } else {
-          action = "walk";
-        }
-      } else if (this.isAimingDiagonal) {
-        action = `aim_${this.facing.y}_diagonal`;
-      } else if (
-        this.facing.y === DirectionAxisY.UP &&
-        // Avoid going from diagonal to up while leaving aim
-        !this.wasAimingDiagonal
-      ) {
-        action = `aim_${this.facing.y}`;
-      } else {
-        action = "idle";
-      }
-    } else if (this.isHanging) {
-      action = "hang";
-    } else if (!this.isStandingJumping) {
-      action = "jump";
-    } else if (this.isJumping) {
-      action = "jump_idle";
-    } else {
-      action = "fall_idle";
-    }
-
-    const animation = `hero_${action}_${this.facing.x}_animation`;
+    const animation = getAnimationKey(action, this.aim.facing.x);
     const doNewAnimation: boolean = animation !== this.anims.getName();
 
     if (doNewAnimation) {
@@ -1671,36 +413,10 @@ export class Player extends SpriteCollidable {
     }
   }
 
-  protected updateHitboxes(): void {
+  protected updateTorch(): void {
     this.body.updateCenter();
 
     const bounds = this.getBodyBounds();
-
-    this.leftWallHitbox.alignToParent(
-      this,
-      bounds.left - Player.WALL_DETECTION_DISTANCE / 2,
-      bounds.centerY
-    );
-
-    this.rightWallHitbox.alignToParent(
-      this,
-      bounds.right + Player.WALL_DETECTION_DISTANCE / 2,
-      bounds.centerY
-    );
-
-    this.leftHangHitbox.alignToParent(
-      this,
-      bounds.left - Player.WALL_DETECTION_DISTANCE / 2 - 1,
-      bounds.top + Player.WALL_DETECTION_DISTANCE / 2 + 1
-    );
-
-    this.rightHangHitbox.alignToParent(
-      this,
-      bounds.right + Player.WALL_DETECTION_DISTANCE / 2 + 1,
-      bounds.top + Player.WALL_DETECTION_DISTANCE / 2 + 1
-    );
-
-    this.ladderHitbox.alignToParent(this, bounds.centerX, bounds.bottom);
 
     this.torchLight.setPosition(bounds.centerX, bounds.centerY);
   }
@@ -1721,195 +437,98 @@ export class Player extends SpriteCollidable {
     }
   }
 
-  public getJumpSpeed(applyMultiplier = true): number {
-    return (
-      -this.baseSpeed * (applyMultiplier ? this.getJumpSpeedMultiplier() : 1)
+  /**
+   * What the Player owns and is doing, as needed by the speed rules
+   */
+  protected getMovementContext(): MovementContext {
+    const inventory = this.scene.getInventory();
+
+    return {
+      isSwimming: this.isSwimming,
+      hasFan: inventory.equip(PowerUps.FAN),
+      hasGlove: inventory.equip(PowerUps.GLOVE),
+      hasRocket: inventory.equip(PowerUps.ROCKET),
+      hasBoots: inventory.equip(PowerUps.BOOTS),
+      hasBooster: inventory.equip(PowerUps.BOOSTER),
+      canWallJump: this.movement.canWallJump,
+      canDoubleJump: this.movement.canDoubleJump,
+    };
+  }
+
+  /**
+   * The body overlaps a tile of a ladder
+   */
+  private overlapsLadder(): boolean {
+    return this.scene.physics.overlap(
+      this,
+      this.scene.stairsLayer,
+      undefined,
+      (hero, object: unknown) => (object as Phaser.Tilemaps.Tile).index > -1
     );
   }
 
-  protected getJumpSpeedMultiplier(): number {
-    if (this.isSwimming && !this.scene.getInventory().equip(PowerUps.FAN)) {
-      return Player.SWIM_Y_SPEED_MULTIPLIER;
-    }
-
-    if (this.scene.getInventory().equip(PowerUps.GLOVE) && this.canWallJump) {
-      return Player.WALL_JUMP_SPEED_MULTIPLIER;
-    }
-
-    if (
-      this.scene.getInventory().equip(PowerUps.ROCKET) &&
-      this.canDoubleJump
-    ) {
-      return Player.JUMP_SPEED_MULTIPLIER;
-    }
-
-    if (this.scene.getInventory().equip(PowerUps.BOOTS)) {
-      return Player.HIGH_JUMP_SPEED_MULTIPLIER;
-    }
-
-    return Player.JUMP_SPEED_MULTIPLIER;
-  }
-
-  public getMaxJumpSpeed(): number {
-    return this.baseSpeed * Player.HIGH_JUMP_SPEED_MULTIPLIER;
-  }
-
-  public getRunSpeed(): number {
-    return this.isSwimming && !this.scene.getInventory().equip(PowerUps.FAN)
-      ? this.baseSpeed * Player.SWIM_X_SPEED_MULTIPLIER
-      : this.baseSpeed * 2;
-  }
-
-  public getStandingRunSpeed(): number {
-    return TILE_SIZE * 4;
-  }
-
-  public getLadderClimbSpeed(): number {
-    return TILE_SIZE * 3;
-  }
-
-  public getDashSpeed(): number {
-    return this.baseSpeed * Player.DASH_SPEED_MULTIPLIER;
-  }
-
-  public getMaxRunSpeed(): number {
-    return this.baseSpeed * this.getRunSpeedMultiplier();
-  }
-
-  public getRunSpeedMultiplier(): number {
-    if (this.isSwimming && !this.scene.getInventory().equip(PowerUps.FAN)) {
-      return Player.SWIM_X_SPEED_MULTIPLIER;
-    }
-
-    if (this.scene.getInventory().equip(PowerUps.BOOSTER)) {
-      return Player.BOOSTED_RUN_SPEED_MULTIPLIER;
-    }
-
-    return Player.RUN_SPEED_MULTIPLIER;
-  }
-
   /**
-   * Detect if the required Hitbox is overlapping at least one tile
-   *
-   * @param  {DirectionAxisX} direction The direction where to test
-   * the overlapping. If not specified, both direction are tested
-   *
-   * @return {boolean|boolean[]} True if a least one tile
-   * per direction is overlapped
+   * Is the Player in a liquid, and which one
    */
-  public isTouchingWalls(direction?: DirectionAxisX): boolean | boolean[] {
-    let hitbox: Hitbox;
+  private detectLiquid(): LiquidDetection {
+    let liquid = null as string | null;
 
-    switch (direction) {
-      case DirectionAxisX.LEFT:
-        hitbox = this.leftWallHitbox;
-        break;
-      case DirectionAxisX.RIGHT:
-        hitbox = this.rightWallHitbox;
-        break;
+    const swimming = this.scene.physics.overlap(
+      this,
+      this.scene.liquidsLayer,
+      undefined,
+      (hero, object: unknown) => {
+        const tile = object as Phaser.Tilemaps.Tile;
 
-      default:
-        return [
-          this.isTouchingWalls(DirectionAxisX.LEFT) as boolean,
-          this.isTouchingWalls(DirectionAxisX.RIGHT) as boolean,
-        ];
-    }
+        if (tile.index > -1) {
+          liquid = tile.properties.liquid;
 
-    return hitbox.overlapTiles();
-  }
+          return true;
+        }
 
-  /**
-   * Calculate the y coordinate where the bullet should spawn
-   *
-   * @return {number} The calculated Y coordinate
-   */
-  private setNewPosition(
-    x: number | Phaser.Math.Vector2 | null,
-    y?: number
-  ): void {
-    if (x instanceof Phaser.Math.Vector2) {
-      this.adjustTo = x;
-    } else if (!this.adjustTo) {
-      this.adjustTo = new Phaser.Math.Vector2(x || -1, y || -1);
-    } else {
-      if (x) {
-        this.adjustTo.set(x, this.adjustTo.y);
+        return false;
       }
-
-      if (y) {
-        this.adjustTo.set(this.adjustTo.x, y);
-      }
-    }
-  }
-
-  /**
-   * Calculate the y coordinate where the bullet should spawn
-   *
-   * @return {number} The calculated Y coordinate
-   */
-  public getShotPosition(): Phaser.Math.Vector2 {
-    const bounds = this.getBounds();
-    let width: number = bounds.centerX;
-    let height: number = bounds.top + Player.SHOT_HEIGHT;
-
-    if (this.facingForAim.y !== DirectionAxisY.MIDDLE) {
-      if (this.facingForAim.y === DirectionAxisY.UP) {
-        height = bounds.top;
-      } else if (this.isAimingDiagonal) {
-        height = bounds.bottom - Player.SHOT_HEIGHT;
-      } else {
-        height = bounds.bottom;
-      }
-
-      if (this.isAimingDiagonal) {
-        width =
-          this.x +
-          (this.width / 2) *
-            (this.facingForAim.x === DirectionAxisX.RIGHT ? 1 : -1);
-      }
-    }
-
-    return new Phaser.Math.Vector2(width, height);
-  }
-
-  /**
-   * Get the bounds of the current GameObject body, regardless of its origin
-   *
-   * @return {Phaser.Geom.Rectangle} The bounds of the body
-   */
-  public getBodyBounds(): Phaser.Geom.Rectangle {
-    // Get the current sprite bounds
-    const bounds: Phaser.Geom.Rectangle = this.getBounds();
-
-    return new Phaser.Geom.Rectangle(
-      bounds.left + (this.width - this.body.width) * (1 - this.originX),
-      bounds.top + (this.height - this.body.height) * (1 - this.originY),
-      this.body.width,
-      this.body.height
     );
+
+    return { swimming, liquid };
   }
 
-  public getBodyOffset(width?: number, height?: number): Phaser.Math.Vector2 {
-    if (typeof height === "undefined") {
-      if (typeof width === "undefined") {
-        width = Player.BODY_WIDTH;
-        height = Player.BODY_HEIGHT;
-      } else {
-        height = width;
-      }
-    }
+  /**
+   * Running against a wall: is there a ledge above to climb onto?
+   *
+   * @param {boolean} isLeft The wall is on the left
+   */
+  private hasLedgeToClimb(isLeft: boolean): boolean {
+    const bounds = this.getBodyBounds();
 
-    return new Phaser.Math.Vector2(
-      (this.width - (width as number)) * (1 - this.originX),
-      (this.height - height) * (1 - this.originY)
-    );
+    return hasLedgeToClimb({
+      isLeft,
+      centerX: bounds.centerX,
+      centerY: bounds.centerY,
+      tileSize: TILE_SIZE,
+      hasTile: (column, row) =>
+        this.scene.worldLayer.some(
+          (layer) => !!this.scene.map.getTileAt(column, row, undefined, layer)
+        ),
+    });
+  }
+  /**
+   * Put the Player somewhere else, standing still (a door, a save point...)
+   *
+   * @param {number} x The x coordinate of the Player, like the spawn point
+   * @param {number} y The y coordinate of the Player
+   */
+  public teleportTo(x: number, y: number): void {
+    this.body.reset(x, y);
+    this.body.updateCenter();
+
+    this.setAccelerationX(0);
+    this.movement.reset();
+    this.body.setAllowGravity(true);
   }
 
   public isOnFloor(): boolean {
-    return (
-      this.body.onFloor() ||
-      this.scene.physics.collide(this.ladderHitbox, this.scene.platforms)
-    );
+    return this.body.onFloor() || this.sensors.isOnPlatform();
   }
 
   protected postCollision(
@@ -1923,35 +542,15 @@ export class Player extends SpriteCollidable {
   ): boolean {
     const tile: Phaser.Tilemaps.Tile = object as Phaser.Tilemaps.Tile;
 
-    switch (tile.layer.name) {
-      case "platforms":
-        if (tile.index >= 0) {
-          const bounds: Phaser.Geom.Rectangle = this.getBodyBounds();
-          if (bounds.bottom - 1 < tile.pixelY) {
-            return true;
-          }
-        }
-        return false;
-      case "stairs":
-        if (tile.index >= 0) {
-          const isDownPressed: boolean = this.scene
-            .getController()
-            .isKeyPressed(ControllerKey.DOWN);
-
-          const bounds: Phaser.Geom.Rectangle = this.getBodyBounds();
-          const adjacentTile: Phaser.Tilemaps.Tile | null =
-            this.scene.map.getTileAt(tile.x, tile.y - 1, false, "stairs");
-
-          if (bounds.bottom - 1 < tile.pixelY && !adjacentTile) {
-            return !isDownPressed;
-          }
-        }
-        return false;
-
-      default:
-        break;
-    }
-
-    return tile.index >= 0;
+    return collidesWithTile({
+      layer: tile.layer.name,
+      index: tile.index,
+      tileTop: tile.pixelY,
+      feetBottom: () => this.getBodyBounds().bottom,
+      isDownPressed: () =>
+        this.scene.getController().isKeyPressed(ControllerKey.DOWN),
+      hasTileAbove: () =>
+        !!this.scene.map.getTileAt(tile.x, tile.y - 1, false, "stairs"),
+    });
   }
 }

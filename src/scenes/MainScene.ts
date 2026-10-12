@@ -1,17 +1,24 @@
 import * as Phaser from "phaser";
 import { MapScene } from "@/scenes/MapScene";
 import { ControllerKey } from "@/miscellaneous/Controller";
+import { SLOPES_LAYER_NAME, renderSlopesDebug } from "@/world/slopesLayer";
+import { RoomBackground } from "@/world/RoomBackground";
+import { RoomTransition } from "@/world/RoomTransition";
+import { DoorTransition } from "@/world/DoorTransition";
+import { Door, DoorTrigger, findDoorAt, parseDoors } from "@/world/doors";
+import { toBounds } from "@/world/scroll";
+import { getRoomProperty } from "@/world/rooms";
+import { DEV_LOADOUT } from "@/config/dev";
+import { applyDevLoadout } from "@/miscellaneous/devLoadout";
 import { TiledObject } from "@/entities/scenarios/TiledObject";
 import { Platform } from "@/entities/scenarios/Platform";
 import { Player } from "@/entities/Player";
-import { Bow } from "@/entities/weapons/Bow";
-import { Gun } from "@/entities/weapons/Gun";
-import { Rifle } from "@/entities/weapons/Rifle";
 import {
   BACKGROUND_DEPTH,
   BELOW_LAYER_DEPTH,
   ABOVE_LAYER_DEPTH,
   WORLD_LAYER_DEPTH,
+  SLOPES_LAYER_DEPTH,
   STAIRS_LAYER_DEPTH,
   GLOBAL_ABOVE_LAYER_DEPTH,
 } from "@/config/depths";
@@ -29,6 +36,34 @@ const DEBUG_COLLISION_COLORS = {
 export class MainScene extends MapScene {
   private hero!: Player;
 
+  /**
+   * The background of the current room
+   */
+  private background!: RoomBackground;
+
+  /**
+   * The scroll of the camera between two rooms
+   */
+  private roomTransition!: RoomTransition;
+
+  /**
+   * The doors of the map (objects of type "door" in Tiled, see world/doors.ts)
+   */
+  private doors: Door[] = [];
+
+  private doorTrigger = new DoorTrigger();
+
+  /**
+   * The fade to black when the Player goes through a door
+   */
+  private doorTransition!: DoorTransition;
+
+  /**
+   * The save points found in the map: objects of type "save_point" in the
+   * "objects" layer of Tiled. Their name is the id stored in the save.
+   */
+  private savePoints: TiledObject[] = [];
+
   public constructor() {
     super({
       active: false,
@@ -44,17 +79,24 @@ export class MainScene extends MapScene {
 
     // Get the objects layer of the current loaded map for found
     // the main spawn point and rooms
-    (this.map.getObjectLayer("objects")?.objects ?? []).forEach(
-      (object: TiledObject) => {
-        if (object.type === "room") {
-          this.rooms.push(object);
-        }
+    const mapObjects: TiledObject[] =
+      this.map.getObjectLayer("objects")?.objects ?? [];
 
-        if (object.name === "spawn_point") {
-          this.spawnPoint = object;
-        }
+    this.doors = parseDoors(mapObjects);
+
+    mapObjects.forEach((object: TiledObject) => {
+      if (object.type === "room") {
+        this.rooms.push(object);
       }
-    );
+
+      if (object.type === "save_point") {
+        this.savePoints.push(object);
+      }
+
+      if (object.name === "spawn_point") {
+        this.spawnPoint = object;
+      }
+    });
 
     if (!this.spawnPoint) {
       throw "No Spawn Point detected";
@@ -129,6 +171,22 @@ export class MainScene extends MapScene {
       .setDepth(WORLD_LAYER_DEPTH)
       .setLighting(true);
 
+    // The slopes are optional: not every map has them
+    if (this.map.layers.some((layer) => layer.name === SLOPES_LAYER_NAME)) {
+      const slopesLayer = createLayer(SLOPES_LAYER_NAME, tileset)
+        .setDepth(SLOPES_LAYER_DEPTH)
+        .setLighting(true)
+        // Only for the bullets: the Player does not collide with its tiles
+        .setCollisionByProperty({ collides: true });
+
+      this.setupSlopes(slopesLayer);
+
+      const grid = this.slopes.getGrid();
+      if (grid) {
+        renderSlopesDebug(this.collisionDebugGraphics, grid);
+      }
+    }
+
     (this.map.getObjectLayer("scenario_elements")?.objects ?? []).forEach(
       (object: TiledObject) => {
         if (object.type === "platform") {
@@ -150,15 +208,42 @@ export class MainScene extends MapScene {
       this.map.heightInPixels
     );
 
-    const x: number = this.spawnPoint.x || 0;
-    const y: number = this.spawnPoint.y || 0;
+    // Restart from the last used save point, if any, otherwise from the start
+    const savedPointId = this.getGameState().getSavePoint();
+    const start: TiledObject =
+      this.savePoints.find((point) => point.name === savedPointId) ??
+      this.spawnPoint;
+
+    const x: number = start.x || 0;
+    const y: number = start.y || 0;
 
     const roomNumber: number = this.setCurrentRoom(x, y);
 
-    this.getInventory()
-      .pushWeapon(new Gun(this))
-      .pushWeapon(new Rifle(this))
-      .pushWeapon(new Bow(this));
+    if (DEV_LOADOUT) {
+      applyDevLoadout(this.getInventory());
+    }
+
+    this.background = new RoomBackground(this);
+    this.roomTransition = new RoomTransition({
+      camera: this.cameras.main,
+      addTween: (config) => this.tweens.add(config),
+      // Exactly where startFollow will center the camera when the Player
+      // takes control again: it would jump there otherwise
+      getFocus: () => ({ x: this.hero.x, y: this.hero.y }),
+      freeze: () => this.freeze(),
+      unfreeze: () => this.unfreeze(),
+      follow: () => {
+        this.cameras.main.startFollow(this.hero);
+      },
+    });
+
+    this.doorTransition = new DoorTransition({
+      freeze: () => this.freeze(),
+      unfreeze: () => this.unfreeze(),
+      fadeOut: (duration, done) => this.fadeCamera(true, duration, done),
+      fadeIn: (duration, done) => this.fadeCamera(false, duration, done),
+      enter: (target) => this.enterRoomAt(target.x, target.y),
+    });
 
     this.hero = new Player(this, x, y, roomNumber);
 
@@ -183,8 +268,10 @@ export class MainScene extends MapScene {
     this.hero.update(time, delta);
     // this.cameras.main.centerOnY(this.hero.y - TILE_SIZE * 4.5);
 
+    this.updateDoors();
+
     if (this.isChangingRoom && this.rooms.length > 0) {
-      this.boundsCamera(this.hero.currentRoom);
+      this.startRoomTransition(this.hero.previousRoom, this.hero.currentRoom);
     }
 
     const isStartPressed: boolean =
@@ -195,42 +282,105 @@ export class MainScene extends MapScene {
     }
   }
 
-  protected boundsCamera(room: number): void {
-    // Start a fadeOut animation before change room
-    this.cameras.main.fadeOut(
-      250,
-      0,
-      0,
-      0,
-      (cameraIn: Phaser.Cameras.Scene2D.Camera, progressIn: number) => {
-        // Prevent Player to do anything
-        this.hero.canInteract = false;
-        // Pause all the physics events
-        this.physics.pause();
+  /**
+   * Prevent the Player to do anything and pause all the physics events
+   */
+  private freeze(): void {
+    this.hero.canInteract = false;
+    this.physics.pause();
+  }
 
-        if (progressIn === 1) {
-          // Change camera boundaries when fade out complete
-          this.setupRoom(this.rooms[room]);
+  private unfreeze(): void {
+    this.hero.canInteract = true;
+    this.physics.resume();
+  }
 
-          // Fade back in with new boundaries
-          this.cameras.main.fadeIn(
-            500,
-            0,
-            0,
-            0,
-            (cameraOut: Phaser.Cameras.Scene2D.Camera, progressOut: number) => {
-              if (progressOut === 1) {
-                // The Player can now interact
-                this.hero.canInteract = true;
-                // Resume all the physics events
-                this.physics.resume();
-              }
-            },
-            this
-          );
-        }
-      },
-      this
+  private fadeCamera(out: boolean, duration: number, done: () => void): void {
+    let called = false;
+    const onProgress = (
+      _camera: Phaser.Cameras.Scene2D.Camera,
+      progress: number
+    ) => {
+      if (progress === 1 && !called) {
+        called = true;
+        done();
+      }
+    };
+
+    if (out) {
+      this.cameras.main.fadeOut(duration, 0, 0, 0, onProgress, this);
+    } else {
+      this.cameras.main.fadeIn(duration, 0, 0, 0, onProgress, this);
+    }
+  }
+
+  /**
+   * Put the Player somewhere else in the map: in the room it is there, with
+   * the light, the background and the camera of that room
+   */
+  private enterRoomAt(x: number, y: number): void {
+    this.hero.teleportTo(x, y);
+
+    const body = this.hero.body;
+    const room = this.setCurrentRoom(
+      body.x + body.width / 2,
+      body.y + body.height / 2
+    );
+
+    // The room is already the current one: no scroll for this change
+    this.hero.previousRoom = this.hero.currentRoom;
+    this.hero.currentRoom = room;
+
+    this.setupRoom(this.rooms[room]);
+    this.cameras.main.startFollow(this.hero);
+  }
+
+  /**
+   * Take the Player through the door it is in, if it has to
+   */
+  private updateDoors(): void {
+    if (
+      this.doors.length === 0 ||
+      !this.hero.canInteract ||
+      this.doorTransition.isRunning ||
+      this.roomTransition.isRunning
+    ) {
+      return;
+    }
+
+    const body = this.hero.body;
+    const inside = findDoorAt(
+      this.doors,
+      body.x + body.width / 2,
+      body.y + body.height / 2
+    );
+
+    const door = this.doorTrigger.update(
+      inside,
+      this.getController().isKeyPressed(ControllerKey.UP)
+    );
+
+    if (door) {
+      this.doorTransition.start(door);
+    }
+  }
+
+  /**
+   * Scroll the camera from the room the Player left to the one it entered
+   */
+  protected startRoomTransition(previous: number | null, next: number): void {
+    const room = this.rooms[next];
+    const background = getRoomProperty(room, "background");
+
+    this.roomTransition.start(
+      toBounds(this.rooms[previous ?? next]),
+      toBounds(room),
+      (fadeDuration) =>
+        this.background.show(
+          typeof background === "string" ? background : undefined,
+          room.width || 0,
+          fadeDuration
+        )
     );
   }
 
@@ -242,60 +392,10 @@ export class MainScene extends MapScene {
 
     this.cameras.main.setBounds(roomX, roomY, roomWidth, roomHeight, true);
 
-    let textures: string[] = [];
-    if (room.properties) {
-      for (const property of room.properties) {
-        if (property.name === "background") {
-          textures = this.textures
-            .getTextureKeys()
-            .filter((item) => item.indexOf(property.value as string) !== -1);
-        }
-      }
-    }
-
-    if (textures.length > 0) {
-      this.parallaxes.forEach((item) => {
-        item.destroy();
-      });
-      this.parallaxes = [];
-
-      let index = 0;
-      for (const texture of textures) {
-        if (index === 0) {
-          if (this.background) {
-            this.background.setTexture(texture);
-          } else {
-            this.background = this.add.image(
-              this.scale.width / 2,
-              this.scale.height / 2,
-              texture
-            );
-
-            this.background
-              .setLighting(true)
-              .setScrollFactor(0)
-              .setDepth(BACKGROUND_DEPTH - (textures.length - index));
-          }
-        } else {
-          const background: Phaser.GameObjects.TileSprite = this.add.tileSprite(
-            this.scale.width / 2,
-            this.scale.height / 2,
-            roomWidth,
-            this.textures.get(texture).getSourceImage().height,
-            texture
-          );
-
-          background
-            .setLighting(true)
-            .setScrollFactor(index / textures.length, 0)
-            .setOrigin(0.5, 0.5)
-            .setDepth(BACKGROUND_DEPTH - (textures.length - index));
-
-          this.parallaxes.push(background);
-        }
-
-        index++;
-      }
-    }
+    const background = getRoomProperty(room, "background");
+    this.background.show(
+      typeof background === "string" ? background : undefined,
+      roomWidth
+    );
   }
 }

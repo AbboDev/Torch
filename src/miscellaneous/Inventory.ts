@@ -1,6 +1,4 @@
 import { Switch } from "@/miscellaneous/Switch";
-import { Weapon } from "@/entities/weapons/Weapon";
-import { ContinuousScene } from "@/scenes/ContinuousScene";
 
 export enum PowerUps {
   TORCH = "torch",
@@ -13,208 +11,221 @@ export enum PowerUps {
   DASH = "dash",
 }
 
-export class Inventory {
-  private static instance: Inventory;
+/**
+ * Stable identifiers of the weapons. They are what gets stored in the save
+ * file: the actual Phaser objects live in the `Arsenal` of the current scene.
+ */
+export type WeaponId = "gun" | "rifle" | "bow";
 
-  /**
-   * The Player has the torch
-   *
-   * @type {Boolean}
-   */
-  private torch: Switch = Switch.ENABLE;
+export const WEAPON_IDS: readonly WeaponId[] = ["bow", "gun", "rifle"];
+
+export interface InventorySnapshot {
+  powerUps: Record<PowerUps, Switch>;
+  battery: Switch;
+  weapons: WeaponId[];
+  activeWeapon: number;
+}
+
+export interface InventoryNotifier {
+  weaponChanged(weapon: WeaponId | null): void;
+  powerUpChanged(item: PowerUps, status: Switch): void;
+}
+
+/**
+ * The Player starts with the torch and the hook only: all the other
+ * power-ups are not owned until they are granted (INDETERMINATE).
+ */
+const defaultPowerUps = (): Record<PowerUps, Switch> => ({
+  [PowerUps.TORCH]: Switch.ENABLE,
+  [PowerUps.ROCKET]: Switch.INDETERMINATE,
+  [PowerUps.BOOTS]: Switch.INDETERMINATE,
+  [PowerUps.GLOVE]: Switch.INDETERMINATE,
+  [PowerUps.BOOSTER]: Switch.INDETERMINATE,
+  [PowerUps.FAN]: Switch.INDETERMINATE,
+  [PowerUps.HOOK]: Switch.ENABLE,
+  [PowerUps.DASH]: Switch.INDETERMINATE,
+});
+
+const isSwitch = (value: unknown): value is Switch =>
+  Object.values(Switch).includes(value as Switch);
+
+const isWeaponId = (value: unknown): value is WeaponId =>
+  WEAPON_IDS.includes(value as WeaponId);
+
+/**
+ * Plain data: no Phaser objects, no reference to any scene.
+ * It is owned by the `GameState`, which also takes care of save/load.
+ */
+export class Inventory {
+  private powerUps: Record<PowerUps, Switch> = defaultPowerUps();
 
   /**
    * The Player has obtained the battery
-   *
-   * @type {Boolean}
    */
   private battery: Switch = Switch.ENABLE;
 
-  /**
-   * The Player has the ability to do the double jump
-   *
-   * @type {Boolean}
-   */
-  private doubleJump: Switch = Switch.DISABLE;
+  private weapons: WeaponId[] = [];
 
-  /**
-   * The Player has the ability to perform an high jump
-   *
-   * @type {Boolean}
-   */
-  private highJump: Switch = Switch.DISABLE;
+  private activeWeaponIndex = 0;
 
-  /**
-   * The Player has the ability to perform a wall jump
-   *
-   * @type {Boolean}
-   */
-  private wallJump: Switch = Switch.DISABLE;
-
-  /**
-   * The Player has the ability to run quickly
-   *
-   * @type {Boolean}
-   */
-  private boostedRun: Switch = Switch.DISABLE;
-
-  /**
-   * The Player has the ability to move normally into liquid
-   *
-   * @type {Boolean}
-   */
-  private swim: Switch = Switch.DISABLE;
-
-  /**
-   * The Player has the ability to hang to cliffs
-   *
-   * @type {Boolean}
-   */
-  private hang: Switch = Switch.ENABLE;
-
-  /**
-   * The Player has the ability to make an horizontal dash
-   *
-   * @type {Boolean}
-   */
-  private dash: Switch = Switch.DISABLE;
-
-  private weapons: Weapon[] = [];
-
-  private _activeWeaponsIndex: number = 0;
-
-  private constructor(
-    protected scene: ContinuousScene,
-    load?: Inventory
-  ) {
-    console.debug(load);
-  }
-
-  /**
-   * The static method that controls the access to the singleton instance.
-   */
-  public static getInstance(
-    scene: ContinuousScene,
-    load?: Inventory
-  ): Inventory {
-    if (!Inventory.instance) {
-      Inventory.instance = new Inventory(scene, load);
+  public constructor(
+    private readonly notifier: InventoryNotifier = {
+      weaponChanged: () => {},
+      powerUpChanged: () => {},
     }
-
-    return Inventory.instance;
-  }
+  ) {}
 
   public get(item: PowerUps): Switch {
-    return this[item];
+    return this.powerUps[item];
   }
 
+  /** The Player owns the power-up (it may be turned off) */
   public has(item: PowerUps): boolean {
-    return this[item] !== Switch.INDETERMINATE;
+    return this.powerUps[item] !== Switch.INDETERMINATE;
   }
 
+  /** The Player owns the power-up and it is turned on: it can be used */
   public equip(item: PowerUps): boolean {
-    return this[item] === Switch.ENABLE;
-  }
-
-  public carry(item: Weapon): boolean {
-    if (this.hasAtLeastOneRangeWeapon()) {
-      return this.weapons.some((weapon: Weapon) => {
-        // @ts-ignore
-        return (
-          weapon == item ||
-          (typeof item === "function" && weapon instanceof item)
-        );
-      });
-    }
-
-    return false;
-  }
-
-  public getCurrentWeapon(): Weapon | null {
-    return this.getWeapon(this.activeWeaponsIndex);
-  }
-
-  public getWeapon(index: number): Weapon | null {
-    return this.weapons[index];
-  }
-
-  public switchCurrentWeapon(index: number | Weapon): Inventory {
-    if (typeof index !== "number") {
-      index = this.weapons.findIndex((weapon: Weapon) => {
-        // @ts-ignore
-        return weapon == index || weapon instanceof index;
-      });
-    }
-
-    if (index < 0) {
-      this.activeWeaponsIndex = this.weapons.length - 1 || 0;
-    } else if (index >= this.weapons.length) {
-      this.activeWeaponsIndex = 0;
-    } else {
-      this.activeWeaponsIndex = index;
-    }
-
-    return this;
-  }
-
-  public switchToNextWeapon(): Inventory {
-    return this.switchCurrentWeapon(this.activeWeaponsIndex + 1);
-  }
-
-  public switchToPreviousWeapon(): Inventory {
-    return this.switchCurrentWeapon(this.activeWeaponsIndex - 1);
-  }
-
-  public pushWeapon(weapon: Weapon): Inventory {
-    const index: number = this.weapons.push(weapon);
-    this.switchCurrentWeapon(index);
-
-    this.scene.events.emit("changedWeapon", weapon);
-
-    return this;
-  }
-
-  public hasAtLeastOneRangeWeapon(): boolean {
-    return this.weapons.length > 0;
-  }
-
-  public resetWeaponsShoot(): Inventory {
-    if (this.hasAtLeastOneRangeWeapon()) {
-      for (const weapon of this.weapons) {
-        weapon.canShoot();
-      }
-    }
-
-    return this;
+    return this.powerUps[item] === Switch.ENABLE;
   }
 
   public set(item: PowerUps, status: Switch): Inventory {
-    this[item] = status;
+    this.powerUps[item] = status;
+    this.notifier.powerUpChanged(item, status);
 
     return this;
   }
 
-  public invertStatus(item: PowerUps): Switch {
-    if (this[item] === Switch.ENABLE) {
-      this[item] = Switch.DISABLE;
-    } else if (this[item] === Switch.DISABLE) {
-      this[item] = Switch.ENABLE;
+  /**
+   * Hand a power-up to the Player (e.g. when picked up) and turn it on.
+   * One already owned keeps its current status.
+   */
+  public grant(item: PowerUps): Inventory {
+    if (this.has(item)) {
+      return this;
     }
 
-    return this[item];
+    return this.set(item, Switch.ENABLE);
+  }
+
+  /** Turn an owned power-up on or off. One not owned stays as it is. */
+  public invertStatus(item: PowerUps): Switch {
+    if (this.powerUps[item] === Switch.ENABLE) {
+      this.set(item, Switch.DISABLE);
+    } else if (this.powerUps[item] === Switch.DISABLE) {
+      this.set(item, Switch.ENABLE);
+    }
+
+    return this.powerUps[item];
   }
 
   public hasBattery(): boolean {
     return this.battery === Switch.ENABLE;
   }
 
-  public get activeWeaponsIndex(): number {
-    return this._activeWeaponsIndex;
+  public carry(weapon: WeaponId): boolean {
+    return this.weapons.includes(weapon);
   }
 
-  public set activeWeaponsIndex(index: number) {
-    this._activeWeaponsIndex = index;
+  public getWeaponIds(): readonly WeaponId[] {
+    return this.weapons;
+  }
 
-    this.scene.events.emit("changedWeapon", this.getCurrentWeapon());
+  public getCurrentWeaponId(): WeaponId | null {
+    return this.weapons[this.activeWeaponIndex] ?? null;
+  }
+
+  public hasAtLeastOneRangeWeapon(): boolean {
+    return this.weapons.length > 0;
+  }
+
+  /**
+   * Add a weapon to the inventory. Adding a weapon already carried does nothing.
+   *
+   * @param weapon The weapon to add
+   * @param equip  Make it the active one (default: true)
+   */
+  public addWeapon(weapon: WeaponId, equip = true): Inventory {
+    if (this.carry(weapon)) {
+      return this;
+    }
+
+    this.weapons.push(weapon);
+
+    if (equip) {
+      this.activeWeaponIndex = this.weapons.length - 1;
+    }
+
+    this.notifier.weaponChanged(this.getCurrentWeaponId());
+
+    return this;
+  }
+
+  public switchCurrentWeapon(target: number | WeaponId): Inventory {
+    let index = typeof target === "number" ? target : -2;
+    if (typeof target !== "number") {
+      index = this.weapons.indexOf(target);
+      if (index < 0) {
+        // Not carried: keep the current weapon
+        return this;
+      }
+    }
+
+    if (index < 0) {
+      this.activeWeaponIndex = this.weapons.length - 1 || 0;
+    } else if (index >= this.weapons.length) {
+      this.activeWeaponIndex = 0;
+    } else {
+      this.activeWeaponIndex = index;
+    }
+
+    this.notifier.weaponChanged(this.getCurrentWeaponId());
+
+    return this;
+  }
+
+  public switchToNextWeapon(): Inventory {
+    return this.switchCurrentWeapon(this.activeWeaponIndex + 1);
+  }
+
+  public switchToPreviousWeapon(): Inventory {
+    return this.switchCurrentWeapon(this.activeWeaponIndex - 1);
+  }
+
+  public snapshot(): InventorySnapshot {
+    return {
+      powerUps: { ...this.powerUps },
+      battery: this.battery,
+      weapons: [...this.weapons],
+      activeWeapon: this.activeWeaponIndex,
+    };
+  }
+
+  /**
+   * Restore from a (possibly partial or outdated) snapshot, ignoring
+   * anything unknown so an old or hand-edited save cannot break the game.
+   */
+  public restore(snapshot: Partial<InventorySnapshot> | undefined): void {
+    this.powerUps = defaultPowerUps();
+    for (const item of Object.values(PowerUps)) {
+      const stored = snapshot?.powerUps?.[item];
+      if (isSwitch(stored)) {
+        this.powerUps[item] = stored;
+      }
+    }
+
+    this.battery = isSwitch(snapshot?.battery)
+      ? snapshot.battery
+      : Switch.ENABLE;
+
+    this.weapons = [...new Set((snapshot?.weapons ?? []).filter(isWeaponId))];
+
+    const active = snapshot?.activeWeapon;
+    this.activeWeaponIndex =
+      Number.isInteger(active) &&
+      (active as number) >= 0 &&
+      (active as number) < this.weapons.length
+        ? (active as number)
+        : 0;
   }
 }

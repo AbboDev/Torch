@@ -1,16 +1,18 @@
 import * as Phaser from "phaser";
 import { ControllerKey } from "@/miscellaneous/Controller";
 import { Switch } from "@/miscellaneous/Switch";
-import { PowerUps } from "@/miscellaneous/Inventory";
+import { PowerUps, WeaponId } from "@/miscellaneous/Inventory";
 import { ItemSwitch } from "@/hud/ItemSwitch";
 import { DataScene } from "@/scenes/DataScene";
 import { TILE_SIZE } from "@/config/tiles";
-import { Bow } from "@/entities/weapons/Bow";
-import { Gun } from "@/entities/weapons/Gun";
-import { Rifle } from "@/entities/weapons/Rifle";
-import { Weapon } from "@/entities/weapons/Weapon";
+import { WEAPON_META } from "@/config/weapons";
 
-type InventoryButton = [PowerUps | typeof Weapon, ItemSwitch];
+type InventoryItem =
+  { kind: "powerUp"; id: PowerUps } | { kind: "weapon"; id: WeaponId };
+
+type InventoryButton = [InventoryItem, ItemSwitch];
+
+const WEAPON_ORDER: readonly WeaponId[] = ["bow", "gun", "rifle"];
 
 export class InventoryScene extends DataScene {
   private cursor!: Phaser.GameObjects.Triangle;
@@ -89,17 +91,16 @@ export class InventoryScene extends DataScene {
         this.buttons[0] = [];
       }
 
-      this.buttons[0].push([key, button]);
+      this.buttons[0].push([{ kind: "powerUp", id: key }, button]);
       previousY = button.y + TILE_SIZE * 1.5;
     }
 
     previousY = TILE_SIZE * 2;
-    const weaponTypes: Array<typeof Weapon> = [Bow, Gun, Rifle];
-    for (const weaponType of weaponTypes) {
+    for (const weaponId of WEAPON_ORDER) {
       let value = Switch.INDETERMINATE;
-      if (this.getInventory().carry(weaponType as unknown as Weapon)) {
+      if (this.getInventory().carry(weaponId)) {
         value =
-          this.getInventory().getCurrentWeapon() instanceof weaponType
+          this.getInventory().getCurrentWeaponId() === weaponId
             ? Switch.ENABLE
             : Switch.DISABLE;
       }
@@ -108,7 +109,7 @@ export class InventoryScene extends DataScene {
         this,
         TILE_SIZE * 12,
         previousY,
-        weaponType.name,
+        WEAPON_META[weaponId].label,
         value
       );
 
@@ -116,7 +117,7 @@ export class InventoryScene extends DataScene {
         this.buttons[1] = [];
       }
 
-      this.buttons[1].push([weaponType, button]);
+      this.buttons[1].push([{ kind: "weapon", id: weaponId }, button]);
       previousY = button.y + TILE_SIZE * 1.5;
     }
 
@@ -124,14 +125,22 @@ export class InventoryScene extends DataScene {
 
     this.cameras.main.setBackgroundColor("rgba(0, 0, 0, 0.75)");
 
-    const gateway = this.scene.get("gateway");
-    gateway.events.addListener("changedWeapon", (weapon: Weapon) => {
-      for (let index = 0; index < this.buttons[1].length; index++) {
-        const button = this.buttons[1][index];
-        const [key, itemSwitch] = button;
+    // A power-up picked up while the inventory is closed
+    this.watchState("powerUp", (powerUp, status) => {
+      const button = this.buttons[0].find(([item]) => item.id === powerUp);
 
-        // @ts-ignore
-        const isActive: boolean = key === weapon.constructor;
+      button?.[1].emit("selected", status);
+    });
+
+    this.watchState("weapon", (weaponId) => {
+      if (!weaponId) {
+        return;
+      }
+
+      for (let index = 0; index < this.buttons[1].length; index++) {
+        const [item, itemSwitch] = this.buttons[1][index];
+
+        const isActive: boolean = item.id === weaponId;
         const status: Switch = isActive ? Switch.ENABLE : Switch.DISABLE;
 
         if (isActive) {
@@ -260,32 +269,28 @@ export class InventoryScene extends DataScene {
       throw new Error("Invalid tuple");
     }
 
-    const item: PowerUps | typeof Weapon = tuple[0];
+    const [item] = tuple;
     const inventory = this.getInventory();
 
-    if (typeof item === "function" && inventory.carry(item as unknown as Weapon)) {
-      if (inventory.getCurrentWeapon() instanceof item) {
-        return this;
-      }
-
-      inventory.switchCurrentWeapon(item as unknown as Weapon);
-
-      for (const button of this.buttons[horizontal]) {
-        const [currentItem, currentButton] = button;
-
-        let status: Switch = Switch.DISABLE;
-        if (
-          typeof currentItem === "function" &&
-          inventory.getCurrentWeapon() instanceof currentItem
-        ) {
-          status = Switch.ENABLE;
+    if (item.kind === "weapon") {
+      if (inventory.carry(item.id)) {
+        if (inventory.getCurrentWeaponId() === item.id) {
+          return this;
         }
 
-        currentButton.emit("selected", status);
+        inventory.switchCurrentWeapon(item.id);
+
+        for (const [currentItem, currentButton] of this.buttons[horizontal]) {
+          const status: Switch =
+            currentItem.id === inventory.getCurrentWeaponId()
+              ? Switch.ENABLE
+              : Switch.DISABLE;
+
+          currentButton.emit("selected", status);
+        }
       }
-    }
-    else if (typeof item === "string" && inventory.has(item as PowerUps)) {
-      const status: Switch = inventory.invertStatus(item as PowerUps);
+    } else if (inventory.has(item.id)) {
+      const status: Switch = inventory.invertStatus(item.id);
 
       // emit the 'selected' event
       tuple[1].emit("selected", status);

@@ -1,7 +1,15 @@
 import * as Phaser from "phaser";
 import { ContinuousScene } from "@/scenes/ContinuousScene";
 import { ControllerKey } from "@/miscellaneous/Controller";
-import { TiledObject, TiledObjectProperty } from "@/entities/scenarios/TiledObject";
+import { Slopes } from "@/world/Slopes";
+import { createSlopes } from "@/world/slopesLayer";
+import {
+  findRoomIndex,
+  getRoomId,
+  getRoomProperty,
+  resolveRoom,
+} from "@/world/rooms";
+import { TiledObject } from "@/entities/scenarios/TiledObject";
 import { Platform } from "@/entities/scenarios/Platform";
 
 import { DEFAULT_LIGHT } from "@/config/lights";
@@ -13,6 +21,20 @@ export abstract class MapScene extends ContinuousScene {
    * @type {Phaser.Tilemaps.TilemapLayer}
    */
   public collisionsLayer!: Phaser.Tilemaps.TilemapLayer;
+
+  /**
+   * The layer of the slopes (see world/slopeGeometry.ts), if the map has one
+   *
+   * @type {Phaser.Tilemaps.TilemapLayer | null}
+   */
+  public slopesLayer: Phaser.Tilemaps.TilemapLayer | null = null;
+
+  /**
+   * Keeps the bodies on the slopes of the map
+   *
+   * @type {Slopes}
+   */
+  public slopes!: Slopes;
 
   /**
    * The main tilemap layer where all the tiles with only top side collision will be implemented
@@ -99,25 +121,16 @@ export abstract class MapScene extends ContinuousScene {
   public map!: Phaser.Tilemaps.Tilemap;
 
   /**
-   * The current map background
-   *
-   * @type {Phaser.GameObjects.Image}
-   */
-  protected background!: Phaser.GameObjects.Image;
-
-  /**
-   * The current map background parallax
-   *
-   * @type {Phaser.GameObjects.TileSprite}
-   */
-  protected parallaxes: Phaser.GameObjects.TileSprite[] = [];
-
-  /**
    * Check if the Player overlap room bounds for start transition
    *
    * @type {Boolean}
    */
   public isChangingRoom = false;
+
+  /**
+   * Avoid to warn at every frame while the Player is outside every room
+   */
+  private hasWarnedOutsideRooms = false;
 
   public create(): void {
     super.create();
@@ -128,6 +141,8 @@ export abstract class MapScene extends ContinuousScene {
       .setDepth(10000);
 
     this.rooms = [];
+
+    this.setupSlopes(null);
 
     this.platforms = this.add.group({
       active: true,
@@ -165,50 +180,44 @@ export abstract class MapScene extends ContinuousScene {
     this.collisionDebugGraphics.setActive(active).setVisible(active);
   }
 
-  public setCurrentRoom(x: number, y: number): number {
-    const currentRoomNumber: boolean | number = this.getCurrentRoom(x, y);
-
-    if (typeof currentRoomNumber !== "number") {
-      throw "Missing room: player outbound";
+  /**
+   * Find the room of a point, update the lighting for it and remember the visit
+   *
+   * @param x       The x coordinate in the world
+   * @param y       The y coordinate in the world
+   * @param current The room the Player is in now (rooms may overlap)
+   *
+   * @return The index of the room. A point outside every room belongs to the
+   * closest one, so a gap between rooms can't crash the game
+   */
+  public setCurrentRoom(x: number, y: number, current?: number | null): number {
+    if (this.rooms.length === 0) {
+      throw new Error("The map has no rooms");
     }
+
+    const { index, outside } = resolveRoom(this.rooms, x, y, current);
+    const currentRoomNumber = index as number;
+
+    if (outside && !this.hasWarnedOutsideRooms) {
+      console.warn(
+        `Position ${x}, ${y} is outside every room: using ${getRoomId(this.rooms[currentRoomNumber])}`
+      );
+    }
+
+    this.hasWarnedOutsideRooms = outside;
 
     let light = DEFAULT_LIGHT;
     const currentRoom = this.rooms[currentRoomNumber];
-    if (!currentRoom.properties) {
-      currentRoom.properties = [];
+
+    const darkness = getRoomProperty(currentRoom, "dark");
+    if (darkness && typeof darkness === "string") {
+      light = Phaser.Display.Color.HexStringToColor(darkness).color;
     }
 
-    const { properties } = currentRoom;
-
-    if (properties.length > 0) {
-      let hasVisited = false;
-      for (const property of properties) {
-        switch (property.name) {
-          case "dark": {
-            const darkness: string = property.value as string;
-
-            if (darkness && typeof darkness === "string") {
-              light = Phaser.Display.Color.HexStringToColor(darkness).color;
-            }
-            break;
-          }
-          case "visited":
-            property.value = true;
-            hasVisited = true;
-            break;
-          default:
-            break;
-        }
-      }
-
-      if (!hasVisited) {
-        const visited: TiledObjectProperty = {
-          name: "visited",
-          type: "boolean",
-          value: true,
-        };
-        properties.push(visited);
-      }
+    // Remember the visit in the game state (saved with the game), instead of
+    // writing it into the Tiled data: that also works for rooms without properties
+    if (!outside) {
+      this.getGameState().visitRoom(MapScene.getRoomId(currentRoom));
     }
 
     const ambientColor = this.lights.ambientColor;
@@ -225,20 +234,29 @@ export abstract class MapScene extends ContinuousScene {
     return currentRoomNumber;
   }
 
-  public getCurrentRoom(x: number, y: number): boolean | number {
-    for (const [index, room] of this.rooms.entries()) {
-      const roomLeft = room.x || 0;
-      const roomRight = roomLeft + (room.width || 0);
-      const roomTop = room.y || 0;
-      const roomBottom = roomTop + (room.height || 0);
+  /**
+   * A stable id for a room, usable in saves (see world/rooms.ts)
+   */
+  public static getRoomId(room: TiledObject): string {
+    return getRoomId(room);
+  }
 
-      // Player is within the boundaries of this room
-      if (x > roomLeft && x < roomRight && y > roomTop && y < roomBottom) {
-        return index;
-      }
-    }
+  /**
+   * The index of the room containing a point, or null if there is none
+   */
+  /**
+   * Set up the slopes of the map
+   *
+   * @param layer The layer of the slopes, or null if there is none
+   */
+  protected setupSlopes(layer: Phaser.Tilemaps.TilemapLayer | null): void {
+    this.slopes?.destroy();
+    this.slopesLayer = layer;
+    this.slopes = createSlopes(this, layer);
+  }
 
-    return false;
+  public getCurrentRoom(x: number, y: number): number | null {
+    return findRoomIndex(this.rooms, x, y);
   }
 
   public get worldLayer(): Phaser.Tilemaps.TilemapLayer[] {
