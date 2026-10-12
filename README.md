@@ -122,6 +122,9 @@ If the bindings become unusable, hold **Shift + Backspace** (keyboard) or **Sele
 (gamepad) for two seconds: the keys go back to the defaults (and the keyboard mode, from the
 keyboard). It reads the raw keys, so it works whatever the bindings and the mode are.
 
+In keyboard + mouse mode a crosshair (`src/scenes/CursorScene.ts`) follows the mouse, over every
+scene, and takes the place of the system cursor.
+
 Mode and bindings are stored in their own key (`torch:settings`, see
 `src/input/inputSettings.ts`), apart from the saves. The gamepad has no events: the
 Controller reads it once per frame (`update()`, called from `ContinuousScene`).

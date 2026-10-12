@@ -17,6 +17,11 @@ export const MAPS: readonly MapConfig[] = [
     cacheKey: "chozodia_map",
     file: "assets/maps/chozodia.json",
   },
+  {
+    key: "chozodia_mirror",
+    cacheKey: "chozodia_mirror_map",
+    file: "assets/maps/chozodia_mirror.json",
+  },
 ];
 
 /** Where a new game starts */

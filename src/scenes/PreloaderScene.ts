@@ -94,6 +94,7 @@ export class PreloaderScene extends Phaser.Scene {
       .sleep("inventory")
       .launch("controls")
       .sleep("controls")
+      .launch("cursor")
       .launch("title")
       .stop();
   }
