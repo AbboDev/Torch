@@ -1,78 +1,46 @@
 import * as Phaser from "phaser";
-import {
-  Facing,
-  DirectionAxisY,
-  DirectionAxisX,
-} from "@/miscellaneous/Direction";
+import { DirectionAxisX } from "@/miscellaneous/Direction";
 import { ControllerKey } from "@/miscellaneous/Controller";
 import { PowerUps } from "@/miscellaneous/Inventory";
-import { collidesWithTile } from "@/world/oneWayTiles";
-import { hasLedgeToClimb } from "@/world/ledgeClimb";
-import { trackRoom } from "@/world/roomChange";
-import { BatteryRecharger } from "@/entities/player/BatteryRecharger";
-import {
-  LiquidDetection,
-  PlayerLiquids,
-} from "@/entities/player/PlayerLiquids";
-import { PlayerWeapons } from "@/entities/player/PlayerWeapons";
-import { PlayerBody } from "@/entities/player/PlayerBody";
-import { PlayerSensors } from "@/entities/player/PlayerSensors";
+import { PLAYER_DEPTH } from "@/config/depths";
+import { TILE_SIZE } from "@/config/tiles";
+import { SpriteCollidable } from "@/entities/collidables/SpriteCollidable";
 import { Arsenal } from "@/entities/weapons/Arsenal";
-import { BulletConfig } from "@/entities/bullets/Bullet";
-import { MovementContext } from "@/entities/player/movement";
-import { PlayerSpeeds } from "@/entities/player/PlayerSpeeds";
-import { PlayerAim } from "@/entities/player/PlayerAim";
-import { MovementHost } from "@/entities/player/movement/host";
-import { createMovementHost } from "@/entities/player/movement/createMovementHost";
-import { PlayerMovement } from "@/entities/player/movement/PlayerMovement";
-import { MovementState } from "@/entities/player/movement/state";
 import {
   getAnimationAction,
   getAnimationKey,
 } from "@/entities/player/animation";
+import { BatteryRecharger } from "@/entities/player/BatteryRecharger";
 import { getDeceleration } from "@/entities/player/horizontalMotion";
+import { MovementContext } from "@/entities/player/movement";
+import { createMovementHost } from "@/entities/player/movement/createMovementHost";
+import { MovementHost } from "@/entities/player/movement/host";
+import { PlayerMovement } from "@/entities/player/movement/PlayerMovement";
+import { MovementState } from "@/entities/player/movement/state";
+import { PlayerAim } from "@/entities/player/PlayerAim";
+import { PlayerBody } from "@/entities/player/PlayerBody";
 import { PlayerInput } from "@/entities/player/PlayerInput";
-import { SpriteCollidable } from "@/entities/collidables/SpriteCollidable";
+import {
+  LiquidDetection,
+  PlayerLiquids,
+} from "@/entities/player/PlayerLiquids";
+import { PlayerSensors } from "@/entities/player/PlayerSensors";
+import { PlayerSpeeds } from "@/entities/player/PlayerSpeeds";
+import { PlayerWeapons } from "@/entities/player/PlayerWeapons";
 import { MapScene } from "@/scenes/MapScene";
 import { PlayerStats } from "@/state/GameState";
-import { PLAYER_DEPTH } from "@/config/depths";
-import { TILE_SIZE } from "@/config/tiles";
+import { hasLedgeToClimb } from "@/world/ledgeClimb";
+import { collidesWithTile } from "@/world/oneWayTiles";
+import { trackRoom } from "@/world/roomChange";
 
+/**
+ * The hero. It is a sprite with a body, and the pieces which make it work:
+ * the buttons, the aim, the movement (a state machine), the sensors, the speeds,
+ * the weapons, the battery and the liquids. This class connects them, and
+ * does what needs Phaser itself: the room, the animation, the light.
+ */
 export class Player extends SpriteCollidable {
-  /**
-   * The light emitted by Player
-   *
-   * @type {Phaser.GameObjects.Light}
-   */
-  private torchLight: Phaser.GameObjects.Light;
-
-  /**
-   * The buttons of the Player, read once per update
-   *
-   * @type {PlayerInput}
-   */
-  private controls: PlayerInput;
-
-  /**
-   * What the Player is doing with its body (standing, crouching, in the air,
-   * hanging, on a ladder, climbing a ledge), and how it moves
-   *
-   * @type {PlayerMovement}
-   */
-  private movement = new PlayerMovement();
-
-  /**
-   * What the movement needs from the Player
-   *
-   * @type {MovementHost}
-   */
-  private movementHost: MovementHost;
-
-  /**
-   * The max distance from wall where the player can yet perform a wall jump
-   *
-   * @type {Number}
-   */
+  /** The max distance from a wall where the Player can still wall jump */
   static WALL_DETECTION_DISTANCE: number = TILE_SIZE / 4;
 
   /**
@@ -82,134 +50,53 @@ export class Player extends SpriteCollidable {
    */
   static SWEPT_LEDGE_DETECTION: boolean = false;
 
-  /**
-   * The default movement speed based on game gravity
-   *
-   * @type {Number}
-   */
+  /** The current room number */
+  public currentRoom: number = 0;
+
+  /** The previous room number */
+  public previousRoom: number | null = null;
+
+  /** The user can control the Player (not while it climbs a ledge) */
+  public canInteract: boolean = true;
+
+  /** The default movement speed, based on the gravity of the game */
   private baseSpeed: number;
 
-  /**
-   * How fast the Player goes
-   *
-   * @type {PlayerSpeeds}
-   */
+  /** How fast the Player goes */
   private speeds: PlayerSpeeds;
 
-  /**
-   * Fills the battery up again when it is not used
-   *
-   * @type {BatteryRecharger}
-   */
-  private recharger: BatteryRecharger;
+  /** The buttons of the Player, read once per update */
+  private controls: PlayerInput;
 
-  /**
-   * The Player in a liquid: swimming and the damage of acid and lava
-   *
-   * @type {PlayerLiquids}
-   */
-  private liquids: PlayerLiquids;
-
-  /**
-   * The weapons: change them, shoot, spend ammo
-   *
-   * @type {PlayerWeapons}
-   */
-  private weapons: PlayerWeapons;
-
-  /**
-   * The shape of the body and the corrections of its position
-   *
-   * @type {PlayerBody}
-   */
-  private shape: PlayerBody;
-
-  /**
-   * Where the Player looks and aims
-   *
-   * @type {PlayerAim}
-   */
+  /** Where the Player looks and aims */
   private aim = new PlayerAim();
 
-  /**
-   * What the Player is touching around the body: walls, ledges, ladders
-   * and moving platforms
-   *
-   * @type {PlayerSensors}
-   */
+  /** The shape of the body and the corrections of its position */
+  private shape: PlayerBody;
+
+  /** What the Player touches around the body: walls, ledges, ladders, platforms */
   private sensors: PlayerSensors;
 
   /**
-   * The current room number
-   *
-   * @type {number}
+   * What the Player is doing with its body (standing, crouching, in the air,
+   * hanging, on a ladder, climbing a ledge), and how it moves
    */
-  public currentRoom: number = 0;
+  private movement = new PlayerMovement();
 
-  /**
-   * The previous room number
-   *
-   * @type {number | null}
-   */
-  public previousRoom: number | null = null;
+  /** What the movement needs from the Player */
+  private movementHost: MovementHost;
 
-  /**
-   * Check if the user can interact with Player
-   *
-   * @type {boolean}
-   */
-  public canInteract: boolean = true;
+  /** The weapons: change them, shoot, spend ammo */
+  private weapons: PlayerWeapons;
 
-  /**
-   * Determinate if Player is crouch
-   */
-  public get isCrouch(): boolean {
-    return this.movement.isCrouch;
-  }
+  /** Fills the battery up again when it is not used */
+  private recharger: BatteryRecharger;
 
-  /**
-   * Determinate if Player is hanging on a tile
-   */
-  public get isHanging(): boolean {
-    return this.movement.isHanging;
-  }
+  /** The Player in a liquid: swimming and the damage of acid and lava */
+  private liquids: PlayerLiquids;
 
-  /**
-   * Determinate if Player is near a ladder
-   */
-  public get isOnLadder(): boolean {
-    return this.movement.isOnLadder;
-  }
-
-  /**
-   * Determinate if Player is grabbing a ladder
-   */
-  public get isAttachOnLadder(): boolean {
-    return this.movement.isAttachOnLadder;
-  }
-
-  /**
-   * What the Player is doing with its body
-   */
-  public get movementState(): MovementState {
-    return this.movement.state;
-  }
-
-  /**
-   * Determinate if Player has smaller collision box
-   */
-  public get isBodySmall(): boolean {
-    return this.shape.isSmall;
-  }
-
-  /**
-   * The bounds of the body, whatever the origin of the sprite
-   *
-   * @return {Phaser.Geom.Rectangle} The bounds of the body
-   */
-  public getBodyBounds(): Phaser.Geom.Rectangle {
-    return this.shape.getBounds();
-  }
+  /** The light emitted by Player */
+  private torchLight: Phaser.GameObjects.Light;
 
   /**
    * Create the Player
@@ -217,6 +104,7 @@ export class Player extends SpriteCollidable {
    * @param {MapScene} scene - scene creating the player.
    * @param {number} x - Start location x value.
    * @param {number} y - Start location y value.
+   * @param {number} currentRoom - The room it starts in.
    */
   public constructor(
     public scene: MapScene,
@@ -233,6 +121,7 @@ export class Player extends SpriteCollidable {
       this.getMovementContext()
     );
 
+    // The sprite and its body
     this.scene.add.existing(this);
     this.scene.physics.world.enable(this);
 
@@ -248,7 +137,7 @@ export class Player extends SpriteCollidable {
     this.body
       .setAllowGravity(true)
       .setAllowDrag(true)
-      // The drag is a deceleration in px/s², decided every frame in walk()
+      // The drag is a deceleration in px/s², decided every frame by the movement
       .setDamping(false)
       .setDragX(
         getDeceleration(this.speeds.getMaxRunSpeed(), {
@@ -259,38 +148,10 @@ export class Player extends SpriteCollidable {
 
     this.shape = new PlayerBody(this);
     this.shape.init();
-
-    this.controls = new PlayerInput(this.scene.getController());
-    this.weapons = new PlayerWeapons(
-      this.scene.getInventory(),
-      new Arsenal(this.scene),
-      this,
-      this.controls,
-      this.aim,
-      this.stats
-    );
-
     this.body.updateCenter();
 
-    const bounds = this.getBodyBounds();
-
-    this.recharger = new BatteryRecharger(
-      this.scene.time,
-      () => this.scene.getInventory().hasBattery(),
-      this.stats
-    );
-    this.liquids = new PlayerLiquids(
-      () => this.detectLiquid(),
-      (config) => this.scene.time.addEvent(config),
-      this.stats,
-      this
-    );
-
-    // Keep the Player on the slopes of the map
-    this.scene.slopes.track(this.body);
-    this.once(Phaser.GameObjects.Events.DESTROY, () => {
-      this.scene.slopes.untrack(this.body);
-    });
+    // The pieces
+    this.controls = new PlayerInput(this.scene.getController());
 
     this.sensors = new PlayerSensors(this.scene, this.body, {
       wallDistance: Player.WALL_DETECTION_DISTANCE,
@@ -318,6 +179,36 @@ export class Player extends SpriteCollidable {
       climb: (x, y) => this.climb(x, y),
     });
 
+    this.weapons = new PlayerWeapons(
+      this.scene.getInventory(),
+      new Arsenal(this.scene),
+      this,
+      this.controls,
+      this.aim,
+      this.stats
+    );
+
+    this.recharger = new BatteryRecharger(
+      this.scene.time,
+      () => this.scene.getInventory().hasBattery(),
+      this.stats
+    );
+
+    this.liquids = new PlayerLiquids(
+      () => this.detectLiquid(),
+      (config) => this.scene.time.addEvent(config),
+      this.stats,
+      this
+    );
+
+    // Keep the Player on the slopes of the map
+    this.scene.slopes.track(this.body);
+    this.once(Phaser.GameObjects.Events.DESTROY, () => {
+      this.scene.slopes.untrack(this.body);
+    });
+
+    // The torch
+    const bounds = this.getBodyBounds();
     this.torchLight = this.scene.lights
       .addLight(bounds.centerX, bounds.centerY, TILE_SIZE * 8)
       .setIntensity(this.scene.getInventory().equip(PowerUps.TORCH) ? 3 : 0)
@@ -327,20 +218,53 @@ export class Player extends SpriteCollidable {
     // this.setPipeline('Light2D');
   }
 
-  /**
-   * Determinate if Player is in a liquid
-   */
+  /** The stats of the Player (life, ammo, battery...), kept in the game state */
+  public get stats(): PlayerStats {
+    return this.scene.getGameState().player;
+  }
+
+  /** What the Player is doing with its body */
+  public get movementState(): MovementState {
+    return this.movement.state;
+  }
+
+  public get isCrouch(): boolean {
+    return this.movement.isCrouch;
+  }
+
+  /** Hanging from the edge of a ledge */
+  public get isHanging(): boolean {
+    return this.movement.isHanging;
+  }
+
+  /** Near a ladder */
+  public get isOnLadder(): boolean {
+    return this.movement.isOnLadder;
+  }
+
+  /** Holding a ladder */
+  public get isAttachOnLadder(): boolean {
+    return this.movement.isAttachOnLadder;
+  }
+
+  /** In a liquid */
   public get isSwimming(): boolean {
     // Asked by the speeds while the constructor is still running
     return this.liquids?.isSwimming ?? false;
   }
 
+  /** The body has the smaller shape of crouching */
+  public get isBodySmall(): boolean {
+    return this.shape.isSmall;
+  }
+
   /**
-   * The stats of the Player (life, ammo, battery...): they live in the game
-   * state, so they are saved and shown by the HUD
+   * The bounds of the body, whatever the origin of the sprite
+   *
+   * @return {Phaser.Geom.Rectangle} The bounds of the body
    */
-  public get stats(): PlayerStats {
-    return this.scene.getGameState().player;
+  public getBodyBounds(): Phaser.Geom.Rectangle {
+    return this.shape.getBounds();
   }
 
   
@@ -372,6 +296,8 @@ export class Player extends SpriteCollidable {
   }
 
   /**
+   * Every frame: read the buttons, move, shoot, then draw
+   *
    * @param {any} time
    * @param {number} delta
    */
@@ -402,8 +328,8 @@ export class Player extends SpriteCollidable {
       // Handle jump, walk, dash, hang and the ladders climb
       this.movement.updateMotion(this.movementHost);
 
-      // Handle the player body resizing
-      this.shape.resize(!this.movement.isHanging && this.movement.isCrouch);
+      // Handle the player body resizing: smaller when crouching
+      this.shape.resize(this.movement.isCrouch);
 
       // Handle the crouch action and settle the state of the movement
       this.movement.updateCrouch(this.movementHost);
@@ -435,14 +361,14 @@ export class Player extends SpriteCollidable {
     }
   }
 
-  protected climb(x: number, y?: number): void {
-    const x1: number = x;
-    let y1: number | undefined = y;
-
-    if (typeof y === "undefined") {
-      y1 = x1;
-    }
-
+  /**
+   * Pull the Player up a ledge: it moves to the side it looks at and up, and
+   * can not be controlled until it has arrived
+   *
+   * @param {number} x The distance to the side
+   * @param {number} y The distance up (default: as x)
+   */
+  protected climb(x: number, y: number = x): void {
     this.canInteract = false;
 
     const sign: string = this.aim.facing.x === DirectionAxisX.LEFT ? "-" : "+";
@@ -452,8 +378,8 @@ export class Player extends SpriteCollidable {
       duration: 150,
       repeat: 0,
       yoyo: false,
-      x: `${sign}=${x1}`,
-      y: `-=${y1}`,
+      x: `${sign}=${x}`,
+      y: `-=${y}`,
       onComplete: () => {
         this.movement.finishClimb();
         this.canInteract = true;
