@@ -139,3 +139,27 @@ export function bindKey(
 
   return { bindings: next, stolenFrom };
 }
+
+/** The next mode in the list, wrapping around (`step` is 1 or -1) */
+export function nextMode(mode: InputMode, step: number): InputMode {
+  const count = INPUT_MODES.length;
+
+  return INPUT_MODES[(INPUT_MODES.indexOf(mode) + step + count) % count];
+}
+
+/** A key as the player reads it: "KeyX" and "x" are "X", "Mouse2" is "Mouse right" */
+export function describeKey(key: string): string {
+  const mouse = /^Mouse(\d)$/.exec(key);
+  if (mouse) {
+    return `Mouse ${["left", "middle", "right"][Number(mouse[1])] ?? mouse[1]}`;
+  }
+
+  const pad = /^Pad(\d+)$/.exec(key);
+  if (pad) {
+    return `Pad ${pad[1]}`;
+  }
+
+  const name = key.replace(/^(?:Key|Digit)(?=[A-Za-z0-9]$)/, "");
+
+  return name.length === 1 ? name.toUpperCase() : name;
+}

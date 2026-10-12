@@ -164,3 +164,16 @@ describe("the modes of the Controller", () => {
     expect(backend.getItem("torch:save:0")).toBeNull();
   });
 });
+
+describe("the gamepad seen by a menu", () => {
+  it("tells if there is a gamepad and which buttons are held", () => {
+    const { controller, plug } = setup();
+    expect(controller.hasGamepad()).toBe(false);
+
+    plug(pad([0, 5]));
+    controller.update();
+
+    expect(controller.hasGamepad()).toBe(true);
+    expect(controller.getHeldPadCodes()).toEqual(["Pad0", "Pad5"]);
+  });
+});

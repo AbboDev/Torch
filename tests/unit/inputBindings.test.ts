@@ -4,6 +4,8 @@ import {
   DEFAULT_BINDINGS,
   DEFAULT_KEY_BINDINGS,
   bindKey,
+  describeKey,
+  nextMode,
   sameKey,
 } from "@/input/bindings";
 
@@ -47,5 +49,22 @@ describe("rebinding", () => {
 
     expect(bindings[C.A]).toEqual(["KeyK"]);
     expect(stolenFrom).toEqual([]);
+  });
+});
+
+describe("for the controls menu", () => {
+  it("goes to the next mode and wraps around", () => {
+    expect(nextMode("keyboard", 1)).toBe("keyboardMouse");
+    expect(nextMode("keyboard", -1)).toBe("gamepad");
+    expect(nextMode("gamepad", 1)).toBe("keyboard");
+  });
+
+  it("writes the keys as a player reads them", () => {
+    expect(describeKey("KeyX")).toBe("X");
+    expect(describeKey("x")).toBe("X");
+    expect(describeKey("Digit5")).toBe("5");
+    expect(describeKey("ArrowUp")).toBe("ArrowUp");
+    expect(describeKey("Mouse2")).toBe("Mouse right");
+    expect(describeKey("Pad12")).toBe("Pad 12");
   });
 });

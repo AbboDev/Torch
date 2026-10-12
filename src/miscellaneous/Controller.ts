@@ -206,6 +206,18 @@ export class Controller {
     }
   }
 
+  /** A gamepad was found by the last `update()` */
+  public hasGamepad(): boolean {
+    return this.pad !== undefined;
+  }
+
+  /** The gamepad buttons held now, as "Pad<index>": for a rebind screen */
+  public getHeldPadCodes(): string[] {
+    return (this.pad?.buttons ?? []).flatMap((button, index) =>
+      button.pressed ? [`Pad${index}`] : []
+    );
+  }
+
   public getMode(): InputMode {
     return this.mode;
   }

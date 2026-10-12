@@ -113,6 +113,11 @@ Every device has its own bindings (`src/input/bindings.ts`): keys as `event.code
 A rebind screen calls `controller.bind(button, code, device)`: the key is taken from
 the button which had it and those buttons are returned, to warn the player.
 
+In game, **Inventory → Y** opens the controls menu (`src/scenes/ControlsScene.ts`):
+Left/Right on the first row changes the device, A on an action waits for the new key
+(`Esc` cancels), and the buttons which lose a key are named. Arrows, Space and Esc
+always work there, so a wrong binding never locks the menu.
+
 Mode and bindings are stored in their own key (`torch:settings`, see
 `src/input/inputSettings.ts`), apart from the saves. The gamepad has no events: the
 Controller reads it once per frame (`update()`, called from `ContinuousScene`).

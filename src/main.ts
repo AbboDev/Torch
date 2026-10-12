@@ -5,6 +5,7 @@ import { MainScene } from "@/scenes/MainScene";
 import { HUDScene } from "@/scenes/HUDScene";
 import { InventoryScene } from "@/scenes/InventoryScene";
 import { GameOverScene } from "@/scenes/GameOverScene";
+import { ControlsScene } from "@/scenes/ControlsScene";
 
 import { TILE_SIZE } from "@/config/tiles";
 
@@ -58,6 +59,7 @@ const config: Phaser.Types.Core.GameConfig = {
     HUDScene,
     InventoryScene,
     GameOverScene,
+    ControlsScene,
   ],
 
   disableContextMenu: true,

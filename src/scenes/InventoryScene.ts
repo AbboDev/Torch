@@ -84,6 +84,11 @@ export class InventoryScene extends DataScene {
     this.add
       .text(width / 2 + hintX, TILE_SIZE / 2, "SELECT >", hintStyle)
       .setOrigin(0.5);
+    this.add
+      .text(width / 2, this.scale.height - TILE_SIZE, "Y: controls", {
+        fontSize: `${TILE_SIZE * 0.75}px`,
+      })
+      .setOrigin(0.5);
 
     const tabBarSize = this.children.getChildren().length;
 
@@ -244,6 +249,10 @@ export class InventoryScene extends DataScene {
       );
 
       return;
+    }
+
+    if (this.getController().isKeyPressedForFirstTime(ControllerKey.Y)) {
+      this.scene.sleep().wake("controls");
     }
 
     const isUpPress: boolean = this.getController().isKeyPressedForFirstTime(
