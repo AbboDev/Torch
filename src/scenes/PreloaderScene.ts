@@ -57,7 +57,7 @@ export class PreloaderScene extends Phaser.Scene {
       .image("full_liquid_tiles", "assets/tilesets/full_liquids.png")
       .tilemapTiledJSON("chozodia_map", "assets/maps/chozodia.json");
 
-    PlayerAssets.loadPlayerAssets(this);
+    PlayerAssets.preload(this);
     BulletAssets.loadBulletAssets(this);
 
     const barWidth = 320;
@@ -82,7 +82,7 @@ export class PreloaderScene extends Phaser.Scene {
   }
 
   public create(): void {
-    PlayerAssets.registerPlayerAnimations(this);
+    PlayerAssets.create(this);
     BulletAssets.registerBulletAnimations(this);
 
     this.scene
