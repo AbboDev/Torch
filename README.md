@@ -118,6 +118,10 @@ Left/Right on the first row changes the device, A on an action waits for the new
 (`Esc` cancels), and the buttons which lose a key are named. Arrows, Space and Esc
 always work there, so a wrong binding never locks the menu.
 
+If the bindings become unusable, hold **Shift + Backspace** (keyboard) or **Select + Start**
+(gamepad) for two seconds: the keys go back to the defaults (and the keyboard mode, from the
+keyboard). It reads the raw keys, so it works whatever the bindings and the mode are.
+
 Mode and bindings are stored in their own key (`torch:settings`, see
 `src/input/inputSettings.ts`), apart from the saves. The gamepad has no events: the
 Controller reads it once per frame (`update()`, called from `ContinuousScene`).

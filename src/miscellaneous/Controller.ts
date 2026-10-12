@@ -13,6 +13,12 @@ import { InputSettings } from "@/input/inputSettings";
 
 export { ControllerKey };
 
+/** Hold these for this long (ms) to reset the controls, whatever the bindings */
+const RESET_HOLD_MS = 2000;
+
+/** The gamepad part of the combination: Select + Start of the standard layout */
+const RESET_PAD_CODES = ["Pad8", "Pad9"];
+
 /** What the Controller needs from a keyboard event */
 interface KeyboardEventLike {
   key: string;
@@ -92,12 +98,28 @@ export class Controller {
   /** Called after the mode or the bindings change, to store them */
   public onChange?: () => void;
 
+  /** Counts the changes, so a screen can tell its list of keys is old */
+  private revision = 0;
+
+  /** The keys held now, by `event.code`: only for the reset combination */
+  private readonly heldKeys = new Set<string>();
+
+  /** Since when the reset combination is held (Infinity: already done) */
+  private comboSince: number | undefined;
+
+  private changed(): void {
+    this.revision++;
+    this.onChange?.();
+  }
+
   /** The keyboard works, except in gamepad mode with a gamepad connected */
   private isKeyboardActive(): boolean {
     return this.mode !== "gamepad" || this.pad === undefined;
   }
 
   private readonly onKeyDown = (event: KeyboardEventLike): void => {
+    this.heldKeys.add(event.code);
+
     if (!this.isKeyboardActive()) {
       return;
     }
@@ -126,6 +148,8 @@ export class Controller {
   // Releasing is always allowed: a key pressed before a change of mode
   // would stay down forever
   private readonly onKeyUp = (event: KeyboardEventLike): void => {
+    this.heldKeys.delete(event.code);
+
     for (const button of getButtonsOf(event, this.bindings.keyboard)) {
       this.state.release(button);
     }
@@ -161,6 +185,7 @@ export class Controller {
   private readonly onBlur = (): void => {
     this.state.releaseAll();
     this.padHeld.clear();
+    this.heldKeys.clear();
   };
 
   public constructor(
@@ -191,6 +216,8 @@ export class Controller {
         ? readGamepad(this.pad, this.bindings.gamepad)
         : new Set<ControllerKey>();
 
+    this.checkResetCombination();
+
     for (const button of this.padHeld) {
       if (!down.has(button)) {
         this.padHeld.delete(button);
@@ -204,6 +231,45 @@ export class Controller {
         this.state.press(button, this.clock());
       }
     }
+  }
+
+  /**
+   * The way out when the bindings are unusable: hold Shift + Backspace on the
+   * keyboard (bindings and mode go back to the defaults, keyboard) or Select +
+   * Start on the gamepad (bindings only) for two seconds. It reads the raw
+   * keys, so it works whatever the bindings and the mode are.
+   */
+  private checkResetCombination(): void {
+    const keyboard =
+      this.heldKeys.has("Backspace") &&
+      (this.heldKeys.has("ShiftLeft") || this.heldKeys.has("ShiftRight"));
+    const held = this.getHeldPadCodes();
+    const gamepad = RESET_PAD_CODES.every((code) => held.includes(code));
+
+    if (!keyboard && !gamepad) {
+      this.comboSince = undefined;
+
+      return;
+    }
+
+    const now = this.clock();
+    this.comboSince ??= now;
+
+    if (now - this.comboSince < RESET_HOLD_MS) {
+      return;
+    }
+
+    // Only once for every time the keys are held
+    this.comboSince = Infinity;
+    this.resetBindings();
+
+    if (keyboard) {
+      this.setMode("keyboard");
+    }
+  }
+
+  public getRevision(): number {
+    return this.revision;
   }
 
   /** A gamepad was found by the last `update()` */
@@ -231,7 +297,7 @@ export class Controller {
     this.mode = mode;
     this.padHeld.clear();
     this.state.releaseAll();
-    this.onChange?.();
+    this.changed();
   }
 
   /** Mode and bindings, to be stored (see `InputSettingsStore`) */
@@ -275,7 +341,7 @@ export class Controller {
       [device]: { ...this.bindings[device], [key]: keys },
     };
     this.state.release(key);
-    this.onChange?.();
+    this.changed();
   }
 
   /**
@@ -291,7 +357,7 @@ export class Controller {
 
     this.bindings = { ...this.bindings, [device]: bindings };
     this.state.releaseAll();
-    this.onChange?.();
+    this.changed();
 
     return stolenFrom;
   }
@@ -300,7 +366,7 @@ export class Controller {
   public resetBindings(): void {
     this.bindings = { ...DEFAULT_BINDINGS };
     this.state.releaseAll();
-    this.onChange?.();
+    this.changed();
   }
 
   /** Stop listening to the keyboard and the mouse */

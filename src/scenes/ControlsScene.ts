@@ -74,6 +74,9 @@ export class ControlsScene extends ContinuousScene {
 
   private note = "";
 
+  /** The revision of the Controller shown now: it changes with the reset combination */
+  private shownRevision = 0;
+
   /** The keys and clicks since the last frame */
   private pressed: RawPress[] = [];
 
@@ -146,6 +149,10 @@ export class ControlsScene extends ContinuousScene {
     const controller = this.getController();
     const queue = this.pressed;
     this.pressed = [];
+
+    if (controller.getRevision() !== this.shownRevision) {
+      this.render();
+    }
 
     if (this.capturing) {
       this.capture(time, queue);
@@ -308,9 +315,12 @@ export class ControlsScene extends ContinuousScene {
     } else if (!footer && mode === "gamepad" && !usesGamepad) {
       footer = "No gamepad found (press a button on it): the keyboard still works";
     } else if (!footer) {
-      footer = "Up/Down: choose   Left/Right: device   A or Space: change key";
+      footer =
+        "Up/Down: choose   Left/Right: device   A or Space: change key\n" +
+        "Stuck? Hold Shift+Backspace (or Select+Start on the pad) for 2 s to reset";
     }
 
     this.footer.setText(footer);
+    this.shownRevision = controller.getRevision();
   }
 }

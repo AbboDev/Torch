@@ -177,3 +177,86 @@ describe("the gamepad seen by a menu", () => {
     expect(controller.getHeldPadCodes()).toEqual(["Pad0", "Pad5"]);
   });
 });
+
+describe("the reset combination", () => {
+  /** Hold Shift + Backspace: the way out when the bindings are unusable */
+  function holdKeyboardCombination(target: FakeWindow) {
+    target.send("keydown", { key: "Shift", code: "ShiftLeft" });
+    target.send("keydown", { key: "Backspace", code: "Backspace" });
+  }
+
+  it("resets the keys and goes back to the keyboard after two seconds", () => {
+    const { target, controller, at } = setup();
+    controller.setMode("gamepad");
+    controller.bind(C.A, "KeyK");
+    holdKeyboardCombination(target);
+
+    at(0);
+    controller.update();
+    at(1999);
+    controller.update();
+    expect(controller.getBindings()[C.A]).toEqual(["KeyK"]);
+
+    at(2000);
+    controller.update();
+    expect(controller.getBindings()[C.A]).toEqual(["x"]);
+    expect(controller.getMode()).toBe("keyboard");
+  });
+
+  it("works once for every time the keys are held", () => {
+    const { target, controller, at } = setup();
+    holdKeyboardCombination(target);
+    at(0);
+    controller.update();
+    at(2000);
+    controller.update();
+
+    controller.bind(C.A, "KeyK");
+    at(9000);
+    controller.update();
+    expect(controller.getBindings()[C.A]).toEqual(["KeyK"]);
+  });
+
+  it("starts again from zero when the keys are let go", () => {
+    const { target, controller, at } = setup();
+    controller.bind(C.A, "KeyK");
+
+    holdKeyboardCombination(target);
+    at(0);
+    controller.update();
+    at(1500);
+    target.send("keyup", { key: "Backspace", code: "Backspace" });
+    controller.update();
+
+    target.send("keydown", { key: "Backspace", code: "Backspace" });
+    at(1600);
+    controller.update();
+    at(3100);
+    controller.update();
+    expect(controller.getBindings()[C.A]).toEqual(["KeyK"]);
+  });
+
+  it("is also on the gamepad (Select + Start), keeping the mode", () => {
+    const { controller, plug, at } = setup();
+    controller.setMode("gamepad");
+    controller.bind(C.A, "Pad5", "gamepad");
+    plug(pad([8, 9]));
+
+    at(0);
+    controller.update();
+    at(2000);
+    controller.update();
+
+    expect(controller.getBindings("gamepad")[C.A]).toEqual(["Pad0"]);
+    expect(controller.getMode()).toBe("gamepad");
+  });
+
+  it("counts every change, so a screen can refresh itself", () => {
+    const { controller } = setup();
+    const before = controller.getRevision();
+
+    controller.bind(C.A, "KeyK");
+
+    expect(controller.getRevision()).toBeGreaterThan(before);
+  });
+});
