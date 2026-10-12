@@ -96,6 +96,29 @@ coyote time and jump buffer in `JumpAssist.ts`, the sensors in `PlayerSensors.ts
 
 ---
 
+## 🎮 Input: keyboard, mouse and gamepad
+
+`Controller` (`src/miscellaneous/Controller.ts`) turns every device into the same
+buttons (`ControllerKey`), so the rest of the game does not know where they come from.
+`setMode()` chooses which devices count:
+
+| Mode            | Devices                                                          |
+| --------------- | ---------------------------------------------------------------- |
+| `keyboard`      | keyboard (default)                                               |
+| `keyboardMouse` | keyboard + mouse buttons (left shoots, right aims by default)    |
+| `gamepad`       | gamepad (d-pad and left stick); the keyboard works only if none is connected |
+
+Every device has its own bindings (`src/input/bindings.ts`): keys as `event.code` or
+`key`, mouse as `Mouse0`/`Mouse1`/`Mouse2`, gamepad as `Pad<index>` (standard layout).
+A rebind screen calls `controller.bind(button, code, device)`: the key is taken from
+the button which had it and those buttons are returned, to warn the player.
+
+Mode and bindings are stored in their own key (`torch:settings`, see
+`src/input/inputSettings.ts`), apart from the saves. The gamepad has no events: the
+Controller reads it once per frame (`update()`, called from `ContinuousScene`).
+
+---
+
 ## 🗺️ Rooms, doors and backgrounds (Tiled)
 
 Everything below is set in the `objects` layer of the map, with custom properties.

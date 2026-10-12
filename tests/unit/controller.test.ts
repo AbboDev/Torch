@@ -276,7 +276,7 @@ describe("Controller", () => {
 
   it("stops listening when destroyed", () => {
     const { target, controller } = setup();
-    expect(target.count()).toBe(3);
+    expect(target.count()).toBe(5);
 
     target.send("keydown", { key: "ArrowUp", code: "ArrowUp" });
     controller.destroy();

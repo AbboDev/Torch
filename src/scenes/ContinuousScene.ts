@@ -1,5 +1,6 @@
 import * as Phaser from "phaser";
 import { Controller } from "@/miscellaneous/Controller";
+import { InputSettingsStore } from "@/input/inputSettings";
 import { Inventory } from "@/miscellaneous/Inventory";
 import { GameState, GameStateEvents } from "@/state/GameState";
 import { SaveManager } from "@/state/SaveManager";
@@ -20,13 +21,20 @@ export abstract class ContinuousScene extends Phaser.Scene {
     let controller = this.registry.get("controller") as Controller | undefined;
 
     if (!controller) {
-      controller = new Controller(window);
+      const created = new Controller(window);
+      const settings = new InputSettingsStore();
+      created.applySettings(settings.load());
+      created.onChange = () => settings.save(created.getSettings());
+      controller = created;
       this.registry.set("controller", controller);
 
-      const created = controller;
-      this.game.events.once(Phaser.Core.Events.DESTROY, () =>
-        created.destroy()
-      );
+      // The gamepad has no events: read it once per frame, before the scenes
+      const readPad = () => created.update();
+      this.game.events.on(Phaser.Core.Events.PRE_STEP, readPad);
+      this.game.events.once(Phaser.Core.Events.DESTROY, () => {
+        this.game.events.off(Phaser.Core.Events.PRE_STEP, readPad);
+        created.destroy();
+      });
     }
 
     return controller;
