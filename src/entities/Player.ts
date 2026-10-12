@@ -7,6 +7,8 @@ import {
 import { ControllerKey } from "@/miscellaneous/Controller";
 import { PowerUps } from "@/miscellaneous/Inventory";
 import { collidesWithTile } from "@/world/oneWayTiles";
+import { hasLedgeToClimb } from "@/world/ledgeClimb";
+import { trackRoom } from "@/world/roomChange";
 import { BatteryRecharger } from "@/entities/player/BatteryRecharger";
 import {
   LiquidDetection,
@@ -353,20 +355,20 @@ export class Player extends SpriteCollidable {
     super.preUpdate(time, delta);
 
     const bounds = this.getBodyBounds();
-    const roomNumber = this.scene.setCurrentRoom(
-      bounds.centerX,
-      bounds.centerY,
-      this.currentRoom
+    const room = trackRoom(
+      this.currentRoom,
+      this.previousRoom,
+      this.scene.setCurrentRoom(
+        bounds.centerX,
+        bounds.centerY,
+        this.currentRoom
+      )
     );
 
     // Update player room variables
-    if (roomNumber !== null && roomNumber !== this.currentRoom) {
-      this.previousRoom = this.currentRoom;
-      this.currentRoom = roomNumber;
-      this.scene.isChangingRoom = true;
-    } else {
-      this.scene.isChangingRoom = false;
-    }
+    this.currentRoom = room.current;
+    this.previousRoom = room.previous;
+    this.scene.isChangingRoom = room.changed;
   }
 
   /**
@@ -568,33 +570,24 @@ export class Player extends SpriteCollidable {
   }
 
   /**
-   * Running against a wall: is there a ledge above to climb onto? (a tile on
-   * the level of the feet in the next column, and none above it)
+   * Running against a wall: is there a ledge above to climb onto?
    *
    * @param {boolean} isLeft The wall is on the left
    */
   private hasLedgeToClimb(isLeft: boolean): boolean {
-    const bounds: Phaser.Geom.Rectangle = this.getBodyBounds();
+    const bounds = this.getBodyBounds();
 
-    const x = isLeft ? bounds.centerX - TILE_SIZE : bounds.centerX + TILE_SIZE;
-    const xTile = Math.floor(x / TILE_SIZE);
-    const bottom = Math.floor((bounds.centerY - 1) / TILE_SIZE);
-
-    const findTile = (row: number): Phaser.Tilemaps.Tile | null => {
-      for (const layer of this.scene.worldLayer) {
-        const tile = this.scene.map.getTileAt(xTile, row, undefined, layer);
-
-        if (tile) {
-          return tile;
-        }
-      }
-
-      return null;
-    };
-
-    return !findTile(bottom) && findTile(bottom + 1) !== null;
+    return hasLedgeToClimb({
+      isLeft,
+      centerX: bounds.centerX,
+      centerY: bounds.centerY,
+      tileSize: TILE_SIZE,
+      hasTile: (column, row) =>
+        this.scene.worldLayer.some(
+          (layer) => !!this.scene.map.getTileAt(column, row, undefined, layer)
+        ),
+    });
   }
-
   /**
    * Put the Player somewhere else, standing still (a door, a save point...)
    *
