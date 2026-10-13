@@ -17,6 +17,8 @@ export const DEFAULT_KEY_BINDINGS: KeyBindings = {
   [ControllerKey.X]: ["z"],
   [ControllerKey.Y]: ["s"],
   [ControllerKey.L]: ["a"],
+  [ControllerKey.FINE_AIM]: ["d"],
+  [ControllerKey.LOCK]: ["f"],
   [ControllerKey.START]: ["Enter"],
   [ControllerKey.SELECT]: ["Shift"],
   [ControllerKey.DEBUG]: ["Backslash"],
@@ -55,6 +57,7 @@ export const DEFAULT_MOUSE_BINDINGS: KeyBindings = {
   ...noBindings(),
   [ControllerKey.B]: ["Mouse0"],
   [ControllerKey.L]: ["Mouse2"],
+  [ControllerKey.LOCK]: ["Mouse1"],
 };
 
 /**
@@ -72,6 +75,8 @@ export const DEFAULT_GAMEPAD_BINDINGS: KeyBindings = {
   [ControllerKey.X]: ["Pad1"],
   [ControllerKey.Y]: ["Pad3"],
   [ControllerKey.L]: ["Pad4", "Pad5"],
+  [ControllerKey.FINE_AIM]: [],
+  [ControllerKey.LOCK]: ["Pad7"],
   [ControllerKey.START]: ["Pad9"],
   [ControllerKey.SELECT]: ["Pad8"],
   [ControllerKey.DEBUG]: [],

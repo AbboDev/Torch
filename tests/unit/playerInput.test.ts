@@ -34,6 +34,17 @@ describe("PlayerInput", () => {
     expect(controls.left).toBe(false);
   });
 
+  it("has its own button for the fine aim, apart from the aim button", () => {
+    const source = new FakeSource();
+    const controls = new PlayerInput(source);
+
+    source.held.add(ControllerKey.FINE_AIM);
+    controls.poll();
+
+    expect(controls.fineAim).toBe(true);
+    expect(controls.aim).toBe(false);
+  });
+
   it("keeps the same state during a frame, until the next poll", () => {
     const source = new FakeSource();
     const controls = new PlayerInput(source);

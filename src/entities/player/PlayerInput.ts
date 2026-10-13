@@ -27,6 +27,7 @@ export class PlayerInput {
   public shoot = false;
   public dash = false;
   public aim = false;
+  public fineAim = false;
 
   public constructor(private readonly source: ButtonSource) {}
 
@@ -40,6 +41,7 @@ export class PlayerInput {
     this.shoot = this.source.isKeyPressed(ControllerKey.B);
     this.dash = this.source.isKeyPressed(ControllerKey.X);
     this.aim = this.source.isKeyPressed(ControllerKey.L);
+    this.fineAim = this.source.isKeyPressed(ControllerKey.FINE_AIM);
   }
 
   /** True once per press, then false until the button is released */

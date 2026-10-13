@@ -11,6 +11,10 @@ export enum ControllerKey {
   X = "X",
   Y = "Y",
   L = "L",
+  /** Held, it lets up and down turn the aim of the keyboard at any angle */
+  FINE_AIM = "FineAim",
+  /** Locks the aim on what it points at, or lets it go */
+  LOCK = "Lock",
   START = "Start",
   SELECT = "Select",
   DEBUG = "Debug",
