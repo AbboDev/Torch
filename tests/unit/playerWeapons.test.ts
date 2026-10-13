@@ -157,4 +157,41 @@ describe("PlayerWeapons", () => {
     weapons.update(16);
     expect(inventory.switchToNextWeapon).toHaveBeenCalledTimes(1);
   });
+
+  describe("with a free aim", () => {
+    const shot = (fireBullet: ReturnType<typeof vi.fn>) =>
+      (fireBullet.mock.calls[0] as unknown as [number, { angle?: number }])[1];
+
+    it("shoots along the angle of the stick", () => {
+      const { weapons, aim, buttons, fireBullet } = setup();
+      aim.freeAngle = -Math.PI / 3;
+      buttons.shoot = true;
+
+      weapons.update(1000);
+
+      expect(shot(fireBullet).angle).toBeCloseTo(-Math.PI / 3);
+    });
+
+    it("shoots from the gun to the point of the mouse", () => {
+      const { weapons, aim, buttons, fireBullet } = setup();
+      aim.facingForAim.y = DirectionAxisY.MIDDLE;
+      // the gun is at (216, 100 + SHOT_HEIGHT): 100 right and 100 down of it
+      aim.freeAngle = 0;
+      aim.freeTarget = { x: 316, y: 100 + SHOT_HEIGHT + 100 };
+      buttons.shoot = true;
+
+      weapons.update(1000);
+
+      expect(shot(fireBullet).angle).toBeCloseTo(Math.PI / 4);
+    });
+
+    it("gives no angle when the buttons aim", () => {
+      const { weapons, buttons, fireBullet } = setup();
+      buttons.shoot = true;
+
+      weapons.update(1000);
+
+      expect("angle" in shot(fireBullet)).toBe(false);
+    });
+  });
 });

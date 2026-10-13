@@ -3,6 +3,7 @@ import type { BulletConfig } from "@/entities/bullets/Bullet";
 import type { Weapon } from "@/entities/weapons/Weapon";
 import { TILE_SIZE } from "@/config/tiles";
 import { getShotPosition } from "@/entities/player/aim";
+import { Point, angleBetween } from "@/entities/player/aimAngles";
 import type { PlayerAim } from "@/entities/player/PlayerAim";
 import { ControllerKey } from "@/input/ControllerKey";
 import { DirectionAxisX } from "@/miscellaneous/Direction";
@@ -64,10 +65,14 @@ export class PlayerWeapons {
       this.aim.facingForAim.x !== DirectionAxisX.CENTER &&
       this.stats.ammo > 0
     ) {
+      const position = this.getShotPosition();
+      const angle = this.getFreeAngle(position);
       const config: BulletConfig = {
         facing: this.aim.facingForAim,
         diagonal: this.aim.isAimingDiagonal,
-        position: this.getShotPosition(),
+        position,
+        // Only with a free aim: the other shots go in the eight directions
+        ...(angle === undefined ? {} : { angle }),
       };
 
       const weapon = this.arsenal.getCurrent();
@@ -79,6 +84,21 @@ export class PlayerWeapons {
     }
 
     this.isPressingShot = isShootPress;
+  }
+
+  /**
+   * The exact direction of a shot with a free aim: from the gun to the point
+   * aimed at (the mouse), or the angle itself (the stick). Undefined if the
+   * Player aims with the buttons.
+   */
+  private getFreeAngle(from: Point): number | undefined {
+    const { freeAngle, freeTarget } = this.aim;
+
+    if (freeAngle === null) {
+      return undefined;
+    }
+
+    return freeTarget ? angleBetween(from, freeTarget, freeAngle) : freeAngle;
   }
 
   /**

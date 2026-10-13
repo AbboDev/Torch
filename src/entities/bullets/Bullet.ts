@@ -1,5 +1,6 @@
 import * as Phaser from "phaser";
 import { Facing, getSign } from "@/miscellaneous/Direction";
+import { octantSign } from "@/entities/player/aimAngles";
 import { MapScene } from "@/scenes/MapScene";
 import { BULLET_DEPTH } from "@/config/depths";
 import { DEFAULT_BULLET_LIGHT } from "@/config/lights";
@@ -9,6 +10,8 @@ export interface BulletConfig {
   position: Phaser.Math.Vector2;
   diagonal: boolean;
   facing: Facing;
+  /** The exact direction in radians, for a free aim: then `facing` is not used */
+  angle?: number;
 }
 
 export class Bullet extends Phaser.Physics.Arcade.Sprite {
@@ -90,11 +93,21 @@ export class Bullet extends Phaser.Physics.Arcade.Sprite {
   public static preload(scene: Phaser.Scene): void {}
 
   public fire(config: BulletConfig): void {
-    const sign = getSign(config.facing);
+    const { angle } = config;
+
+    // With a free aim the hit box follows the closest of the eight directions
+    const sign =
+      angle === undefined ? getSign(config.facing) : octantSign(angle);
     // Test if the bullet should be shot diagonally or vertically
-    if (!config.diagonal && sign.y !== 0) {
+    if (angle === undefined && !config.diagonal && sign.y !== 0) {
       sign.x = 0;
     }
+
+    // The old shots go along the signs, a free one along the exact direction
+    const direction =
+      angle === undefined
+        ? { x: sign.x, y: sign.y }
+        : { x: Math.cos(angle), y: Math.sin(angle) };
 
     const size: number = Math.min(this.width, this.height);
     const diff: number = Math.max(this.width, this.height);
@@ -129,8 +142,8 @@ export class Bullet extends Phaser.Physics.Arcade.Sprite {
     const vector: Phaser.Math.Vector2 = new Phaser.Math.Vector2(sign.x, sign.y);
 
     this.setPosition(config.position.x, config.position.y)
-      .setVelocity(this.speed * 5 * sign.x, this.speed * 5 * sign.y)
-      .setRotation(vector.angle())
+      .setVelocity(this.speed * 5 * direction.x, this.speed * 5 * direction.y)
+      .setRotation(angle ?? vector.angle())
       .setActive(true)
       .setVisible(true);
 
