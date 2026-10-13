@@ -139,3 +139,55 @@ describe("getShotPosition", () => {
     expect(shot).toEqual({ x: 200, y: 100 });
   });
 });
+
+describe("PlayerAim with a free aim", () => {
+  const looking = (x: DirectionAxisX) => {
+    const aim = new PlayerAim();
+    aim.facing.x = x;
+    aim.facingForAim.x = x;
+
+    return aim;
+  };
+
+  it("takes the angle, and shows the closest of the eight directions", () => {
+    const aim = looking(DirectionAxisX.RIGHT);
+
+    aim.setFree(-Math.PI / 4, { x: 5, y: 5 });
+
+    expect(aim.freeAngle).toBeCloseTo(-Math.PI / 4);
+    expect(aim.freeTarget).toEqual({ x: 5, y: 5 });
+    expect(aim.facing.y).toBe(DirectionAxisY.UP);
+    expect(aim.facingForAim.y).toBe(DirectionAxisY.UP);
+    expect(aim.isAimingDiagonal).toBe(true);
+  });
+
+  it("turns the sprite to the side of the aim, not the movement", () => {
+    const aim = looking(DirectionAxisX.RIGHT);
+
+    aim.setFree(Math.PI);
+
+    expect(aim.lookingX).toBe(DirectionAxisX.LEFT);
+    expect(aim.facingForAim.x).toBe(DirectionAxisX.LEFT);
+    expect(aim.facing.x).toBe(DirectionAxisX.RIGHT);
+  });
+
+  it("goes back to the buttons with null", () => {
+    const aim = looking(DirectionAxisX.RIGHT);
+    aim.setFree(Math.PI, { x: 1, y: 1 });
+
+    aim.setFree(null);
+
+    expect(aim.freeAngle).toBeNull();
+    expect(aim.freeTarget).toBeNull();
+    expect(aim.lookingX).toBe(DirectionAxisX.RIGHT);
+  });
+
+  it("does nothing while the Player looks at the front", () => {
+    const aim = new PlayerAim();
+
+    aim.setFree(0);
+
+    expect(aim.freeAngle).toBeNull();
+    expect(aim.lookingX).toBe(DirectionAxisX.CENTER);
+  });
+});
