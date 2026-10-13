@@ -286,16 +286,15 @@ export class Controller {
   }
 
   /**
-   * The device which aims freely now: the mouse in keyboard + mouse mode, the
-   * right stick in gamepad mode (with a gamepad), otherwise none and the
-   * Player aims with the buttons.
+   * The device which aims now: the mouse in keyboard + mouse mode, the right
+   * stick in gamepad mode (with a gamepad), otherwise the keyboard.
    */
-  public getAimDevice(): AimDevice | null {
+  public getAimDevice(): AimDevice {
     if (this.mode === "keyboardMouse") {
       return "mouse";
     }
 
-    return this.mode === "gamepad" && this.pad ? "gamepad" : null;
+    return this.mode === "gamepad" && this.pad ? "gamepad" : "keyboard";
   }
 
   /** The right stick of the gamepad, from -1 to 1 (0 with no gamepad) */

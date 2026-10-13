@@ -37,6 +37,12 @@ export class PlayerAim {
   /** The point of the world the mouse is on (null aiming with the stick) */
   public freeTarget: Point | null = null;
 
+  /**
+   * The aim key is down and the keyboard turns the aim: it counts as aiming
+   * diagonally for the movement, so the down button does not crouch
+   */
+  public isAdjustingAngle = false;
+
   /** The side the sprite looks at while aiming freely */
   public freeSide: Side | null = null;
 

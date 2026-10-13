@@ -207,6 +207,11 @@ export class Player extends SpriteCollidable {
           return this.scene.cameras.main.getWorldPoint(pointer.x, pointer.y);
         },
         stick: () => this.scene.getController().getAimStick(),
+        keys: () => ({
+          aim: this.controls.aim,
+          up: this.controls.up,
+          down: this.controls.down,
+        }),
       },
       this.scene.getAimCursor()
     );
@@ -361,7 +366,7 @@ export class Player extends SpriteCollidable {
       }
 
       // Aim with the mouse or the right stick, if one of them is in use
-      this.freeAim.update(this.aim);
+      this.freeAim.update(this.aim, delta);
 
       // The user can shoot only if the Player has at least one range weapon
       if (this.scene.getInventory().hasAtLeastOneRangeWeapon()) {

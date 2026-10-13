@@ -119,6 +119,11 @@ describe("createMovementHost", () => {
 
     aim.isAimingDiagonal = true;
     expect(host.isAimingDiagonal).toBe(true);
+
+    // turning the aim with the keyboard counts too: down must not crouch
+    aim.isAimingDiagonal = false;
+    aim.isAdjustingAngle = true;
+    expect(host.isAimingDiagonal).toBe(true);
   });
 
   it("reads the speed and the blocked sides of the body as they are now", () => {

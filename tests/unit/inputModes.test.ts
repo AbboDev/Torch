@@ -168,7 +168,7 @@ describe("the modes of the Controller", () => {
 describe("the aim device", () => {
   it("is the mouse in keyboard + mouse mode, the stick in gamepad mode", () => {
     const { controller, plug } = setup();
-    expect(controller.getAimDevice()).toBeNull();
+    expect(controller.getAimDevice()).toBe("keyboard");
 
     controller.setMode("keyboardMouse");
     expect(controller.getAimDevice()).toBe("mouse");
@@ -179,12 +179,12 @@ describe("the aim device", () => {
     expect(controller.getAimDevice()).toBe("gamepad");
   });
 
-  it("is none in gamepad mode without a gamepad: the keyboard aims", () => {
+  it("is the keyboard in gamepad mode without a gamepad: it still works", () => {
     const { controller } = setup();
     controller.setMode("gamepad");
     controller.update();
 
-    expect(controller.getAimDevice()).toBeNull();
+    expect(controller.getAimDevice()).toBe("keyboard");
   });
 
   it("reads the right stick, and is at rest without a gamepad", () => {

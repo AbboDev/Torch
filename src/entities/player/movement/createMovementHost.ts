@@ -63,7 +63,7 @@ export function createMovementHost(parts: MovementHostParts): MovementHost {
       return aim.previousFacing;
     },
     get isAimingDiagonal() {
-      return aim.isAimingDiagonal;
+      return aim.isAimingDiagonal || aim.isAdjustingAngle;
     },
     get isSwimming() {
       return parts.isSwimming();
