@@ -1,8 +1,22 @@
 import { TILE_SIZE } from "@/config/tiles";
 import { Point } from "@/entities/player/aimAngles";
 
-/** What a point of the world is, for the aim */
-export type AimHit = "solid" | "breakable" | "enemy";
+export type AimHitKind = "solid" | "breakable" | "enemy";
+
+/**
+ * What a point of the world is, for the aim. What can be hit (a block, an
+ * enemy) can also be followed and locked on: it has an `id`, the same at every
+ * frame, and tells where it is now.
+ */
+export interface AimHit {
+  kind: AimHitKind;
+  id?: string;
+  /** Where it is now; null once it is gone */
+  position?: () => Point | null;
+}
+
+/** A wall, or anything which only stops the aim */
+export const SOLID: AimHit = { kind: "solid" };
 
 /** Tells what there is at a point of the world, if anything */
 export type AimProbe = (x: number, y: number) => AimHit | null;
@@ -39,8 +53,8 @@ export function findAimTarget(
 }
 
 /** Shooting it does something: a block which breaks or an enemy */
-export function isInteractive(hit: AimHit | null): boolean {
-  return hit === "breakable" || hit === "enemy";
+export function isInteractive(hit: AimHit | null): hit is AimHit {
+  return hit !== null && hit.kind !== "solid";
 }
 
 /** Where the gun is and where it points */
@@ -58,6 +72,9 @@ export class AimTargeting {
   /** The aim points at something which can be hit now */
   public isTargeting = false;
 
+  /** What it points at, when it can be hit: the lock takes it from here */
+  public target: AimHit | null = null;
+
   private lastAcquired = -Infinity;
 
   public constructor(
@@ -73,6 +90,8 @@ export class AimTargeting {
   public update(ray: AimRay | null, time: number): void {
     const hit = ray ? findAimTarget(ray.from, ray.angle, this.probe) : null;
     const isTargeting = isInteractive(hit);
+
+    this.target = isTargeting ? hit : null;
 
     if (
       isTargeting &&

@@ -18,7 +18,7 @@ import { createMovementHost } from "@/entities/player/movement/createMovementHos
 import { MovementHost } from "@/entities/player/movement/host";
 import { PlayerMovement } from "@/entities/player/movement/PlayerMovement";
 import { MovementState } from "@/entities/player/movement/state";
-import { AimHit, AimTargeting } from "@/entities/player/aimTarget";
+import { AimHit, AimTargeting, SOLID } from "@/entities/player/aimTarget";
 import { FreeAim } from "@/entities/player/FreeAim";
 import { PlayerAim } from "@/entities/player/PlayerAim";
 import { PlayerBody } from "@/entities/player/PlayerBody";
@@ -420,16 +420,26 @@ export class Player extends SpriteCollidable {
   private probeAim(x: number, y: number): AimHit | null {
     const { shootables, breakablesLayer, collisionsLayer, slopes } = this.scene;
 
-    if (shootables.isAt(x, y)) {
-      return "enemy";
+    const enemy = shootables.find(x, y);
+    if (enemy) {
+      return { kind: "enemy", id: enemy.id, position: () => enemy.position() };
     }
 
-    if (breakablesLayer.getTileAtWorldXY(x, y)) {
-      return "breakable";
+    const block = breakablesLayer.getTileAtWorldXY(x, y);
+    if (block) {
+      const [tileX, tileY] = [block.x, block.y];
+      const center = { x: block.getCenterX(), y: block.getCenterY() };
+
+      return {
+        kind: "breakable",
+        id: `${tileX},${tileY}`,
+        // a block is where it was until a shot breaks it
+        position: () => (breakablesLayer.hasTileAt(tileX, tileY) ? center : null),
+      };
     }
 
     if (collisionsLayer.getTileAtWorldXY(x, y) || slopes.isInside(x, y)) {
-      return "solid";
+      return SOLID;
     }
 
     return null;

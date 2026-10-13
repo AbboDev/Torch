@@ -1,59 +1,71 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  AimHit,
+  AimHitKind,
   AimProbe,
   AimTargeting,
+  SOLID,
   findAimTarget,
   isInteractive,
 } from "@/entities/player/aimTarget";
 
 vi.mock("phaser", () => ({ Math: { Vector2: class Vector2 {} } }));
 
+/** What a probe finds: a wall, or something which can be hit and followed */
+const thing = (kind: AimHitKind, id = kind): AimHit =>
+  kind === "solid" ? SOLID : { kind, id, position: () => ({ x: 0, y: 0 }) };
+
 /** Something at x >= 100 (a wall, a block...), on the line y = 0 */
 const wallAt =
-  (x: number, hit: "solid" | "breakable" | "enemy"): AimProbe =>
+  (x: number, kind: AimHitKind): AimProbe =>
   (px) =>
-    px >= x ? hit : null;
+    px >= x ? thing(kind) : null;
 
 describe("findAimTarget", () => {
   it("finds the first thing along the aim", () => {
     const probe = wallAt(100, "breakable");
 
-    expect(findAimTarget({ x: 0, y: 0 }, 0, probe)).toBe("breakable");
+    expect(findAimTarget({ x: 0, y: 0 }, 0, probe)?.kind).toBe("breakable");
   });
 
   it("looks in the direction of the angle", () => {
     // aiming up, there is nothing at the sides
-    const probe: AimProbe = (x, y) => (y <= -40 && Math.abs(x) < 1 ? "enemy" : null);
+    const probe: AimProbe = (x, y) =>
+      y <= -40 && Math.abs(x) < 1 ? thing("enemy") : null;
 
-    expect(findAimTarget({ x: 0, y: 0 }, -Math.PI / 2, probe)).toBe("enemy");
+    expect(findAimTarget({ x: 0, y: 0 }, -Math.PI / 2, probe)?.kind).toBe(
+      "enemy"
+    );
     expect(findAimTarget({ x: 0, y: 0 }, 0, probe)).toBeNull();
   });
 
   it("is hidden by a wall in front of it", () => {
-    const probe: AimProbe = (x) => (x >= 50 ? "solid" : x >= 100 ? "enemy" : null);
+    const probe: AimProbe = (x) =>
+      x >= 50 ? thing("solid") : x >= 100 ? thing("enemy") : null;
 
-    expect(findAimTarget({ x: 0, y: 0 }, 0, probe)).toBe("solid");
+    expect(findAimTarget({ x: 0, y: 0 }, 0, probe)?.kind).toBe("solid");
   });
 
   it("does not look farther than the range", () => {
     const probe = wallAt(100, "enemy");
 
     expect(findAimTarget({ x: 0, y: 0 }, 0, probe, 64)).toBeNull();
-    expect(findAimTarget({ x: 0, y: 0 }, 0, probe, 128)).toBe("enemy");
+    expect(findAimTarget({ x: 0, y: 0 }, 0, probe, 128)?.kind).toBe("enemy");
   });
 
   it("does not skip a thing thinner than a tile", () => {
-    const probe: AimProbe = (x) => (x >= 41 && x <= 44 ? "enemy" : null);
+    const probe: AimProbe = (x) =>
+      x >= 41 && x <= 44 ? thing("enemy") : null;
 
-    expect(findAimTarget({ x: 0, y: 0 }, 0, probe)).toBe("enemy");
+    expect(findAimTarget({ x: 0, y: 0 }, 0, probe)?.kind).toBe("enemy");
   });
 });
 
 describe("isInteractive", () => {
   it("is true for what a shot breaks or hurts, not for the walls", () => {
-    expect(isInteractive("breakable")).toBe(true);
-    expect(isInteractive("enemy")).toBe(true);
-    expect(isInteractive("solid")).toBe(false);
+    expect(isInteractive(thing("breakable"))).toBe(true);
+    expect(isInteractive(thing("enemy"))).toBe(true);
+    expect(isInteractive(SOLID)).toBe(false);
     expect(isInteractive(null)).toBe(false);
   });
 });
@@ -111,6 +123,16 @@ describe("AimTargeting", () => {
 
     expect(onAcquire).toHaveBeenCalledTimes(1);
     expect(targeting.isTargeting).toBe(true);
+  });
+
+  it("keeps what it points at, for the lock", () => {
+    const targeting = new AimTargeting(wallAt(100, "enemy"), vi.fn());
+
+    targeting.update(ray, 0);
+    expect(targeting.target?.kind).toBe("enemy");
+
+    targeting.update({ ...ray, angle: Math.PI }, 16);
+    expect(targeting.target).toBeNull();
   });
 
   it("points at nothing when there is no aim", () => {

@@ -316,8 +316,9 @@ starts to point at it (`src/entities/player/aimTarget.ts`). A wall in the way hi
 It looks up to 12 tiles away (`AIM_TARGET_RANGE`).
 
 - **Blocks** are the ones of the `breakables` layer.
-- **Enemies** do not exist yet: when they do, each one adds a probe to `scene.shootables`
-  (`src/world/shootables.ts`) and removes it when it goes away.
+- **Enemies** do not exist yet: when they do, each one adds itself to `scene.shootables`
+  (`src/world/shootables.ts`: an id, where it is and where it is now) and removes itself when it
+  goes away.
 - **Placeholders:** the animation (`hero_aim_target_<side>_animation`) borrows the frames of the
   standing pose, faster; change `sheet` in `PlayerAssets.ts` for the real one. The sound is
   `assets/audio/aim_target.wav`, set in `src/config/sounds.ts`: replace the file.

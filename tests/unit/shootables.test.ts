@@ -1,26 +1,36 @@
 import { describe, expect, it } from "vitest";
-import { Shootables } from "@/world/shootables";
+import { Shootable, Shootables } from "@/world/shootables";
+
+/** An enemy of 10 x 10 pixels at (x, y) */
+const enemy = (id: string, x: number, y: number): Shootable => ({
+  id,
+  contains: (px, py) => px >= x && px < x + 10 && py >= y && py < y + 10,
+  position: () => ({ x: x + 5, y: y + 5 }),
+});
 
 describe("Shootables", () => {
-  it("knows nothing is there when it is empty", () => {
-    expect(new Shootables().isAt(10, 10)).toBe(false);
+  it("finds nothing when it is empty", () => {
+    expect(new Shootables().find(10, 10)).toBeNull();
   });
 
-  it("finds the thing which the probes find", () => {
+  it("finds the thing which is at the point", () => {
     const shootables = new Shootables();
-    shootables.add((x, y) => x >= 10 && x <= 20 && y >= 10 && y <= 20);
+    const first = enemy("first", 10, 10);
+    shootables.add(first);
+    shootables.add(enemy("second", 100, 10));
 
-    expect(shootables.isAt(15, 15)).toBe(true);
-    expect(shootables.isAt(30, 15)).toBe(false);
+    expect(shootables.find(15, 15)).toBe(first);
+    expect(shootables.find(105, 15)?.id).toBe("second");
+    expect(shootables.find(50, 15)).toBeNull();
   });
 
-  it("forgets a probe when its thing goes away", () => {
+  it("forgets a thing when it goes away", () => {
     const shootables = new Shootables();
-    const remove = shootables.add(() => true);
-    expect(shootables.isAt(0, 0)).toBe(true);
+    const remove = shootables.add(enemy("gone", 0, 0));
+    expect(shootables.find(1, 1)?.id).toBe("gone");
 
     remove();
 
-    expect(shootables.isAt(0, 0)).toBe(false);
+    expect(shootables.find(1, 1)).toBeNull();
   });
 });
