@@ -3,6 +3,7 @@ import mapSource from "../../assets/maps/chozodia.json?raw";
 import { BACKGROUNDS } from "@/config/backgrounds";
 import { MapObject, parseDoors } from "@/world/doors";
 import { getRoomProperty } from "@/world/rooms";
+import { getObjectClass } from "@/world/tiledObjects";
 
 // A check of the data of the real map: a mistake in Tiled shows up here
 const map = JSON.parse(mapSource);
@@ -10,7 +11,7 @@ const objects: MapObject[] = map.layers
   .filter((layer: { name: string }) => layer.name === "objects")
   .flatMap((layer: { objects: MapObject[] }) => layer.objects);
 
-const rooms = objects.filter((object) => object.type === "room");
+const rooms = objects.filter((object) => getObjectClass(object) === "room");
 
 describe("the map chozodia", () => {
   it("has rooms with a size, and unique ids", () => {
@@ -48,7 +49,7 @@ describe("the map chozodia", () => {
 
     expect(warn).not.toHaveBeenCalled();
     expect(doors).toHaveLength(
-      objects.filter((object) => object.type === "door").length
+      objects.filter((object) => getObjectClass(object) === "door").length
     );
   });
 });

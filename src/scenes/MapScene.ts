@@ -1,7 +1,9 @@
 import * as Phaser from "phaser";
 import { ContinuousScene } from "@/scenes/ContinuousScene";
 import { ControllerKey } from "@/miscellaneous/Controller";
+import { MAIN_MAP, MapConfig } from "@/config/maps";
 import { Slopes } from "@/world/Slopes";
+import { attachClasses, readRawObjects } from "@/world/tiledObjects";
 import { createSlopes } from "@/world/slopesLayer";
 import {
   findRoomIndex,
@@ -35,6 +37,12 @@ export abstract class MapScene extends ContinuousScene {
    * @type {Slopes}
    */
   public slopes!: Slopes;
+
+  /**
+   * The map of this scene: its name for the saves and the ids of its rooms,
+   * and where Phaser has its JSON
+   */
+  public readonly mapConfig: MapConfig = MAIN_MAP;
 
   /**
    * The main tilemap layer where all the tiles with only top side collision will be implemented
@@ -244,6 +252,20 @@ export abstract class MapScene extends ContinuousScene {
   /**
    * The index of the room containing a point, or null if there is none
    */
+  /**
+   * The objects of a layer of objects of the map, each with its class
+   * (Phaser reads only the `type` of Tiled: the class comes from the raw JSON)
+   *
+   * @param layerName The name of the layer of objects in Tiled
+   */
+  protected getMapObjects(layerName: string): TiledObject[] {
+    const objects: TiledObject[] =
+      this.map.getObjectLayer(layerName)?.objects ?? [];
+    const raw = this.cache.tilemap.get(this.mapConfig.cacheKey)?.data;
+
+    return attachClasses(objects, readRawObjects(raw, layerName));
+  }
+
   /**
    * Set up the slopes of the map
    *

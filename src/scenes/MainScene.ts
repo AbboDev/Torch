@@ -2,6 +2,7 @@ import * as Phaser from "phaser";
 import { MapScene } from "@/scenes/MapScene";
 import { ControllerKey } from "@/miscellaneous/Controller";
 import { SLOPES_LAYER_NAME, renderSlopesDebug } from "@/world/slopesLayer";
+import { getObjectClass } from "@/world/tiledObjects";
 import { RoomBackground } from "@/world/RoomBackground";
 import { RoomTransition } from "@/world/RoomTransition";
 import { DoorTransition } from "@/world/DoorTransition";
@@ -75,25 +76,27 @@ export class MainScene extends MapScene {
   public create(): void {
     super.create();
 
-    this.map = this.make.tilemap({ key: "chozodia_map" });
+    this.map = this.make.tilemap({ key: this.mapConfig.cacheKey });
 
     // Get the objects layer of the current loaded map for found
     // the main spawn point and rooms
-    const mapObjects: TiledObject[] =
-      this.map.getObjectLayer("objects")?.objects ?? [];
+    const mapObjects: TiledObject[] = this.getMapObjects("objects");
 
     this.doors = parseDoors(mapObjects);
 
     mapObjects.forEach((object: TiledObject) => {
-      if (object.type === "room") {
+      if (getObjectClass(object) === "room") {
         this.rooms.push(object);
       }
 
-      if (object.type === "save_point") {
+      if (getObjectClass(object) === "save_point") {
         this.savePoints.push(object);
       }
 
-      if (object.name === "spawn_point") {
+      if (
+        object.name === "spawn_point" ||
+        getObjectClass(object) === "spawn_point"
+      ) {
         this.spawnPoint = object;
       }
     });
@@ -187,19 +190,17 @@ export class MainScene extends MapScene {
       }
     }
 
-    (this.map.getObjectLayer("scenario_elements")?.objects ?? []).forEach(
-      (object: TiledObject) => {
-        if (object.type === "platform") {
-          const platform = new Platform(
-            this,
-            object.x!,
-            object.y!,
-            object.properties!
-          );
-          this.platforms.add(platform);
-        }
+    this.getMapObjects("scenario_elements").forEach((object: TiledObject) => {
+      if (getObjectClass(object) === "platform") {
+        const platform = new Platform(
+          this,
+          object.x!,
+          object.y!,
+          object.properties!
+        );
+        this.platforms.add(platform);
       }
-    );
+    });
 
     this.physics.world.setBounds(
       0,

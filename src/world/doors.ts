@@ -1,9 +1,10 @@
 import { RoomWithProperties, getRoomProperty } from "@/world/rooms";
+import { getObjectClass } from "@/world/tiledObjects";
 
 /**
  * The doors of a map, with no dependency on Phaser.
  *
- * A door is an object of type "door" in the "objects" layer of Tiled: a
+ * A door is an object of class "door" in the "objects" layer of Tiled: a
  * rectangle which takes the Player somewhere else in the map, whatever the
  * distance, even to a room which does not touch the current one. Its custom
  * properties:
@@ -19,6 +20,7 @@ export interface MapObject extends RoomWithProperties {
   id: number;
   name?: string;
   type?: string;
+  class?: string;
   x?: number;
   y?: number;
   width?: number;
@@ -47,7 +49,7 @@ export function parseDoors(
   const doors: Door[] = [];
 
   for (const object of objects) {
-    if (object.type !== "door") {
+    if (getObjectClass(object) !== "door") {
       continue;
     }
 

@@ -7,5 +7,7 @@ export interface TiledObjectProperty {
 }
 
 export interface TiledObject extends Phaser.Types.Tilemaps.TiledObject {
+  /** The kind of the object, from the raw JSON (Phaser keeps only `type`) */
+  class?: string;
   properties?: TiledObjectProperty[] | undefined;
 }
