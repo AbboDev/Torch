@@ -1,9 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  KEYBOARD_AIM_SPEED,
   angleBetween,
   aimPose,
+  elevationToAngle,
   octantSign,
   pointOnCircle,
+  stepElevation,
   stickAngle,
 } from "@/entities/player/aimAngles";
 import { DirectionAxisX, DirectionAxisY } from "@/miscellaneous/Direction";
@@ -106,5 +109,29 @@ describe("aimPose", () => {
     expect(aimPose(-PI / 2, DirectionAxisX.RIGHT).side).toBe(
       DirectionAxisX.RIGHT
     );
+  });
+});
+
+describe("the aim of the keyboard", () => {
+  it("raises and lowers the elevation with the time held", () => {
+    const second = KEYBOARD_AIM_SPEED;
+
+    expect(stepElevation(0, 1, 500)).toBeCloseTo(second / 2);
+    expect(stepElevation(0, -1, 250)).toBeCloseTo(-second / 4);
+    expect(stepElevation(0.3, 0, 1000)).toBe(0.3);
+  });
+
+  it("stops straight up and straight down", () => {
+    expect(stepElevation(1, 1, 10000)).toBeCloseTo(PI / 2);
+    expect(stepElevation(-1, -1, 10000)).toBeCloseTo(-PI / 2);
+  });
+
+  it("makes the angle of the side the Player looks at", () => {
+    // up to the right: negative, the y axis points down
+    expect(elevationToAngle(PI / 4, false)).toBeCloseTo(-PI / 4);
+    // up to the left
+    expect(elevationToAngle(PI / 4, true)).toBeCloseTo((5 * PI) / 4);
+    expect(octantSign(elevationToAngle(PI / 4, true))).toEqual({ x: -1, y: -1 });
+    expect(octantSign(elevationToAngle(-PI / 4, true))).toEqual({ x: -1, y: 1 });
   });
 });

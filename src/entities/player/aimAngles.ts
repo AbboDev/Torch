@@ -109,3 +109,30 @@ export function aimPose(angle: number, previousSide: Side): AimPose {
 
   return { side, facingY, diagonal: sign.x !== 0 && sign.y !== 0 };
 }
+
+/** How fast the keyboard turns the aim, in radians per second */
+export const KEYBOARD_AIM_SPEED = (Math.PI * 2) / 3;
+
+/** Where the aim starts when the aim key goes down: the diagonal, as it always did */
+export const KEYBOARD_AIM_START = Math.PI / 4;
+
+/**
+ * The elevation of the aim (radians above the horizon, negative below it)
+ * after `ms` of holding up or down. Straight up and straight down are the limits.
+ *
+ * @param direction 1 for up, -1 for down, 0 for none
+ */
+export function stepElevation(
+  elevation: number,
+  direction: number,
+  ms: number
+): number {
+  const next = elevation + direction * KEYBOARD_AIM_SPEED * (ms / 1000);
+
+  return Math.max(-Math.PI / 2, Math.min(Math.PI / 2, next));
+}
+
+/** The angle for an elevation, aiming to the left or to the right */
+export function elevationToAngle(elevation: number, isLeft: boolean): number {
+  return isLeft ? Math.PI + elevation : -elevation;
+}
