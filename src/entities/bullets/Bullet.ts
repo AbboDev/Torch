@@ -175,7 +175,7 @@ export class Bullet extends Phaser.Physics.Arcade.Sprite {
     }
 
     if (tile && tile.layer.name === "breakables") {
-      this.scene.map.removeTileAt(tile.x, tile.y);
+      this.scene.breakTile(tile);
     }
 
     this.setVelocity(0, 0).setActive(false).setVisible(false).destroy();

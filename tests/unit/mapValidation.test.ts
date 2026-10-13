@@ -319,10 +319,12 @@ import { REQUIRED_TILESETS, REQUIRED_TILE_LAYERS } from "@/config/maps";
 describe("the requirements of a map", () => {
   it("are the tile layers MainScene creates", () => {
     for (const name of REQUIRED_TILE_LAYERS) {
-      expect(mainScene, name).toContain(`createLayer("${name}"`);
+      expect(mainScene, name).toMatch(
+        new RegExp(`createLayer\\(\\s*"${name}"`)
+      );
     }
 
-    const created = [...mainScene.matchAll(/createLayer\("([a-z_]+)"/g)]
+    const created = [...mainScene.matchAll(/createLayer\(\s*"([a-z_]+)"/g)]
       .map((match) => match[1])
       // the slopes are optional
       .filter((name) => name !== "slopes");

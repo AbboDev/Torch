@@ -53,6 +53,11 @@ export interface WorldSnapshot {
   visitedRooms: string[];
   /** The last save point used */
   savePoint: SavePointRef | null;
+  /**
+   * Things which changed in the world for good (a broken block, a boss
+   * defeated, a door opened...), as ids chosen by the code which sets them
+   */
+  flags: string[];
 }
 
 export interface GameStateSnapshot {
@@ -104,6 +109,8 @@ export class GameState {
 
   private savePoint: SavePointRef | null = null;
 
+  private flags = new Set<string>();
+
   /**
    * Get the state attached to the Game (Phaser's global registry),
    * creating it the first time. It survives any scene restart.
@@ -152,6 +159,15 @@ export class GameState {
     this.savePoint = savePoint ? { ...savePoint } : null;
   }
 
+  /** Remember that something changed in the world (saved with the game) */
+  public setFlag(flag: string): void {
+    this.flags.add(flag);
+  }
+
+  public hasFlag(flag: string): boolean {
+    return this.flags.has(flag);
+  }
+
   public snapshot(): GameStateSnapshot {
     return {
       stats: { ...this.stats },
@@ -159,6 +175,7 @@ export class GameState {
       world: {
         visitedRooms: [...this.visitedRooms],
         savePoint: this.savePoint ? { ...this.savePoint } : null,
+        flags: [...this.flags],
       },
     };
   }
@@ -182,6 +199,9 @@ export class GameState {
       (snapshot?.world?.visitedRooms ?? []).filter(
         (id) => typeof id === "string"
       )
+    );
+    this.flags = new Set(
+      (snapshot?.world?.flags ?? []).filter((flag) => typeof flag === "string")
     );
     const savePoint = snapshot?.world?.savePoint;
     // A save point is a map and a name (an older save had only a name: it is dropped)

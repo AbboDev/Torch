@@ -13,6 +13,7 @@ import {
 } from "@/world/rooms";
 import { TiledObject } from "@/entities/scenarios/TiledObject";
 import { Platform } from "@/entities/scenarios/Platform";
+import { breakableFlag } from "@/world/worldFlags";
 
 import { DEFAULT_LIGHT } from "@/config/lights";
 
@@ -184,6 +185,17 @@ export abstract class MapScene extends ContinuousScene {
     }
   }
 
+  /**
+   * Destroy a block of the breakables layer for good: it stays destroyed in
+   * the save (see world/worldFlags.ts)
+   */
+  public breakTile(tile: Phaser.Tilemaps.Tile): void {
+    this.breakablesLayer.removeTileAt(tile.x, tile.y);
+    this.getGameState().setFlag(
+      breakableFlag(this.mapConfig.key, tile.x, tile.y)
+    );
+  }
+
   public updateCollisionGraphic(active: boolean): void {
     this.collisionDebugGraphics.setActive(active).setVisible(active);
   }
@@ -250,9 +262,6 @@ export abstract class MapScene extends ContinuousScene {
   }
 
   /**
-   * The index of the room containing a point, or null if there is none
-   */
-  /**
    * The objects of a layer of objects of the map, each with its class
    * (Phaser reads only the `type` of Tiled: the class comes from the raw JSON)
    *
@@ -277,6 +286,9 @@ export abstract class MapScene extends ContinuousScene {
     this.slopes = createSlopes(this, layer);
   }
 
+  /**
+   * The index of the room containing a point, or null if there is none
+   */
   public getCurrentRoom(x: number, y: number): number | null {
     return findRoomIndex(this.rooms, x, y);
   }

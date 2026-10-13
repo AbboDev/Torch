@@ -13,6 +13,7 @@ import {
 import { validateMap } from "@/world/mapValidation";
 import { PlatformDirection } from "@/world/objectSchemas";
 import { toBounds } from "@/world/scroll";
+import { breakableFlag } from "@/world/worldFlags";
 import { getRoomProperty } from "@/world/rooms";
 import { DEV_LOADOUT } from "@/config/dev";
 import { applyDevLoadout } from "@/miscellaneous/devLoadout";
@@ -127,12 +128,16 @@ export class MainScene extends MapScene {
     const createLayer = (
       name: string,
       layerTilesets: Phaser.Tilemaps.Tileset | Phaser.Tilemaps.Tileset[],
-      collisionColor?: keyof typeof DEBUG_COLLISION_COLORS
+      collisionColor?: keyof typeof DEBUG_COLLISION_COLORS,
+      prepare?: (layer: Phaser.Tilemaps.TilemapLayer) => void
     ): Phaser.Tilemaps.TilemapLayer => {
       const layer = this.map.createLayer(name, layerTilesets, 0, 0, false);
       if (!layer) {
         throw new Error(`Map layer not found: ${name}`);
       }
+
+      // Before the collisions and their debug drawing, which see the result
+      prepare?.(layer as Phaser.Tilemaps.TilemapLayer);
 
       if (collisionColor) {
         layer
@@ -178,7 +183,12 @@ export class MainScene extends MapScene {
       .setDepth(WORLD_LAYER_DEPTH)
       .setLighting(true);
 
-    this.breakablesLayer = createLayer("breakables", tileset, "breakables")
+    this.breakablesLayer = createLayer(
+      "breakables",
+      tileset,
+      "breakables",
+      (layer) => this.removeBrokenTiles(layer)
+    )
       .setDepth(WORLD_LAYER_DEPTH)
       .setLighting(true);
 
@@ -406,6 +416,28 @@ export class MainScene extends MapScene {
     if (door) {
       this.doorTransition.start(door);
     }
+  }
+
+  /**
+   * Take away the blocks which were destroyed in a previous visit (they are
+   * flags in the game state, so they come back with a save)
+   */
+  private removeBrokenTiles(layer: Phaser.Tilemaps.TilemapLayer): void {
+    const state = this.getGameState();
+
+    layer.forEachTile(
+      (tile) => {
+        if (state.hasFlag(breakableFlag(this.mapConfig.key, tile.x, tile.y))) {
+          layer.removeTileAt(tile.x, tile.y);
+        }
+      },
+      undefined,
+      0,
+      0,
+      layer.layer.width,
+      layer.layer.height,
+      { isNotEmpty: true }
+    );
   }
 
   /**

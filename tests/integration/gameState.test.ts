@@ -56,6 +56,29 @@ describe("game state", () => {
     expect(listener).toHaveBeenCalledTimes(1);
   });
 
+  it("remembers the flags of the world and saves them", () => {
+    const manager = new SaveManager(new MemoryStorage());
+    const state = new GameState();
+
+    state.setFlag("map:breakable:3,4");
+    manager.save(state);
+
+    const loaded = new GameState();
+    manager.loadInto(loaded);
+
+    expect(loaded.hasFlag("map:breakable:3,4")).toBe(true);
+    expect(loaded.hasFlag("map:breakable:0,0")).toBe(false);
+  });
+
+  it("loads a save written before the flags existed", () => {
+    const state = new GameState();
+    state.setFlag("something");
+
+    state.restore({ world: { visitedRooms: [], savePoint: null } } as never);
+
+    expect(state.hasFlag("something")).toBe(false);
+  });
+
   it("round-trips through a save and restores everything", () => {
     const manager = new SaveManager(new MemoryStorage());
     const original = new GameState();
