@@ -12,8 +12,16 @@ import {
 } from "@/world/mapObjectHandlers";
 import { validateMap } from "@/world/mapValidation";
 import { PlatformDirection } from "@/world/objectSchemas";
+import {
+  SavePoint,
+  SavePointTrigger,
+  findSavePoint,
+  findSavePointAt,
+  parseSavePoints,
+} from "@/world/savePoints";
 import { toBounds } from "@/world/scroll";
 import { breakableFlag } from "@/world/worldFlags";
+import { useSavePoint } from "@/state/checkpoint";
 import { getRoomProperty } from "@/world/rooms";
 import { DEV_LOADOUT } from "@/config/dev";
 import { applyDevLoadout } from "@/miscellaneous/devLoadout";
@@ -31,6 +39,8 @@ import {
 } from "@/config/depths";
 import { DEFAULT_LIGHT } from "@/config/lights";
 import { TILE_SIZE } from "@/config/tiles";
+
+const SAVE_PROMPT = "Press UP to save";
 
 const DEBUG_FACE_COLOR = new Phaser.Display.Color(40, 39, 37, 255);
 const DEBUG_COLLISION_COLORS = {
@@ -70,9 +80,17 @@ export class MainScene extends MapScene {
 
   /**
    * The save points found in the map: objects of type "save_point" in the
-   * "objects" layer of Tiled. Their name is the id stored in the save.
+   * "objects" layer of Tiled (see world/savePoints.ts). Their name is the id
+   * stored in the save.
    */
-  private savePoints: TiledObject[] = [];
+  private savePoints: SavePoint[] = [];
+
+  private savePointTrigger = new SavePointTrigger();
+
+  /**
+   * The hint shown by the HUD while the Player is in a save point
+   */
+  private prompt: string | null = null;
 
   public constructor() {
     super({
@@ -84,6 +102,13 @@ export class MainScene extends MapScene {
 
   public create(): void {
     super.create();
+
+    // A scene which restarts keeps its fields: start clean
+    this.doors = [];
+    this.savePoints = [];
+    this.prompt = null;
+    this.doorTrigger = new DoorTrigger();
+    this.savePointTrigger = new SavePointTrigger();
 
     this.map = this.make.tilemap({ key: this.mapConfig.cacheKey });
 
@@ -103,12 +128,14 @@ export class MainScene extends MapScene {
 
     // The rooms, the save points, the spawn point and the doors of the map
     // (the platforms are made later, when the layers they collide with exist)
-    const objectContext = this.createObjectContext();
+    const savePointObjects: TiledObject[] = [];
+    const objectContext = this.createObjectContext(savePointObjects);
     MainScene.objects.spawn(
       "objects",
       this.getMapObjects("objects"),
       objectContext
     );
+    this.savePoints = parseSavePoints(savePointObjects);
 
     if (!this.spawnPoint) {
       throw "No Spawn Point detected";
@@ -224,13 +251,17 @@ export class MainScene extends MapScene {
     // Restart from the last used save point, if any, otherwise from the start
     // (a save point of another map is not for this one)
     const saved = this.getGameState().getSavePoint();
-    const start: TiledObject =
-      (saved?.map === this.mapConfig.key
-        ? this.savePoints.find((point) => point.name === saved.id)
-        : undefined) ?? this.spawnPoint;
+    const savedPoint =
+      saved?.map === this.mapConfig.key
+        ? findSavePoint(this.savePoints, saved.id)
+        : undefined;
 
-    const x: number = start.x || 0;
-    const y: number = start.y || 0;
+    if (saved?.map === this.mapConfig.key && !savedPoint) {
+      console.warn(`Save point "${saved.id}" is not in the map`);
+    }
+
+    const x: number = savedPoint?.spawn.x ?? this.spawnPoint.x ?? 0;
+    const y: number = savedPoint?.spawn.y ?? this.spawnPoint.y ?? 0;
 
     const roomNumber: number = this.setCurrentRoom(x, y);
 
@@ -284,6 +315,7 @@ export class MainScene extends MapScene {
     // this.cameras.main.centerOnY(this.hero.y - TILE_SIZE * 4.5);
 
     this.updateDoors();
+    this.updateSavePoints();
 
     if (this.isChangingRoom && this.rooms.length > 0) {
       this.startRoomTransition(this.hero.previousRoom, this.hero.currentRoom);
@@ -301,13 +333,15 @@ export class MainScene extends MapScene {
    * Where the objects of the map go: the registry (world/mapObjectHandlers.ts)
    * says which object is what, this says what the scene does with each
    */
-  private createObjectContext(): MapObjectContext<TiledObject> {
+  private createObjectContext(
+    savePointObjects: TiledObject[]
+  ): MapObjectContext<TiledObject> {
     return {
       addRoom: (room) => {
         this.rooms.push(room);
       },
       addSavePoint: (savePoint) => {
-        this.savePoints.push(savePoint);
+        savePointObjects.push(savePoint);
       },
       setSpawnPoint: (spawnPoint) => {
         this.spawnPoint = spawnPoint;
@@ -416,6 +450,81 @@ export class MainScene extends MapScene {
     if (door) {
       this.doorTransition.start(door);
     }
+  }
+
+  /**
+   * The Player can use a save point: in control, not in a transition
+   */
+  private canUseSavePoints(): boolean {
+    return (
+      this.hero.canInteract &&
+      !this.doorTransition.isRunning &&
+      !this.roomTransition.isRunning
+    );
+  }
+
+  /**
+   * Show the hint while the Player is in a save point, and save when it
+   * presses Up there
+   */
+  private updateSavePoints(): void {
+    if (this.savePoints.length === 0) {
+      return;
+    }
+
+    const body = this.hero.body;
+    const inside = this.canUseSavePoints()
+      ? findSavePointAt(
+          this.savePoints,
+          body.x + body.width / 2,
+          body.y + body.height / 2
+        )
+      : null;
+
+    this.setPrompt(inside ? SAVE_PROMPT : null);
+
+    const point = this.savePointTrigger.update(
+      inside,
+      this.getController().isKeyPressed(ControllerKey.UP),
+      this.hero.isOnFloor()
+    );
+
+    if (point) {
+      this.saveAt(point);
+    }
+  }
+
+  /**
+   * Heal the Player and save the game: it restarts from this save point
+   */
+  private saveAt(point: SavePoint): void {
+    try {
+      useSavePoint(this.getGameState(), this.getSaveManager(), {
+        map: this.mapConfig.key,
+        id: point.id,
+      });
+    } catch (error) {
+      // The storage can be full or blocked: the game goes on, unsaved
+      console.error("The game could not be saved", error);
+      this.events.emit("notice", "Could not save the game");
+
+      return;
+    }
+
+    this.cameras.main.flash(300, 160, 255, 160);
+    this.events.emit("notice", "Game saved");
+  }
+
+  /**
+   * Tell the HUD which hint to show (null: none)
+   */
+  private setPrompt(prompt: string | null): void {
+    if (prompt === this.prompt) {
+      return;
+    }
+
+    this.prompt = prompt;
+    this.events.emit("prompt", prompt);
   }
 
   /**

@@ -21,6 +21,12 @@ export class HUDScene extends DataScene {
 
   private debugger!: Phaser.GameObjects.Text;
 
+  /** The hint shown while the Player can do something (save...) */
+  private prompt!: Phaser.GameObjects.Text;
+
+  /** A message which fades away by itself ("Game saved") */
+  private notice!: Phaser.GameObjects.Text;
+
   public constructor() {
     super({
       active: false,
@@ -114,6 +120,18 @@ export class HUDScene extends DataScene {
       .setAlign("left")
       .setOrigin(0);
 
+    const { width, height } = this.scale;
+
+    this.prompt = this.add
+      .text(width / 2, height - TILE_SIZE * 3, "", style)
+      .setOrigin(0.5)
+      .setVisible(false);
+
+    this.notice = this.add
+      .text(width / 2, TILE_SIZE * 3, "", style)
+      .setOrigin(0.5)
+      .setAlpha(0);
+
     const mainScene = this.scene.get("main");
     const onDebugPlayer = (data: any) => {
       const x = data.position.x.toFixed(3);
@@ -123,9 +141,26 @@ export class HUDScene extends DataScene {
 
       this.debugger.setText(`x: ${x} | y: ${y} | Vx: ${Vx} | Vy: ${Vy}`);
     };
+    const onPrompt = (text: string | null) => {
+      this.prompt.setText(text ?? "").setVisible(text !== null);
+    };
+    const onNotice = (message: string) => {
+      this.tweens.killTweensOf(this.notice);
+      this.notice.setText(message).setAlpha(1);
+      this.tweens.add({
+        targets: this.notice,
+        alpha: 0,
+        delay: 1500,
+        duration: 500,
+      });
+    };
     mainScene.events.on("debugPlayer", onDebugPlayer);
+    mainScene.events.on("prompt", onPrompt);
+    mainScene.events.on("notice", onNotice);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       mainScene.events.off("debugPlayer", onDebugPlayer);
+      mainScene.events.off("prompt", onPrompt);
+      mainScene.events.off("notice", onNotice);
     });
 
     this.watchState("weapon", () => {
