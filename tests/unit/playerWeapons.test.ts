@@ -194,4 +194,43 @@ describe("PlayerWeapons", () => {
       expect("angle" in shot(fireBullet)).toBe(false);
     });
   });
+
+  describe("the aim ray", () => {
+    it("points ahead with the buttons, from the gun", () => {
+      const { weapons, aim } = setup();
+      aim.facingForAim.y = DirectionAxisY.MIDDLE;
+
+      const ray = weapons.getAimRay();
+
+      expect(ray?.from).toMatchObject({ x: 216, y: 100 + SHOT_HEIGHT });
+      expect(ray?.angle).toBeCloseTo(0);
+
+      aim.facingForAim.x = DirectionAxisX.LEFT;
+      expect(weapons.getAimRay()?.angle).toBeCloseTo(Math.PI);
+    });
+
+    it("goes up straight, or diagonally with the aim key", () => {
+      const { weapons, aim } = setup();
+      aim.facingForAim.y = DirectionAxisY.UP;
+
+      expect(weapons.getAimRay()?.angle).toBeCloseTo(-Math.PI / 2);
+
+      aim.isAimingDiagonal = true;
+      expect(weapons.getAimRay()?.angle).toBeCloseTo(-Math.PI / 4);
+    });
+
+    it("follows the free aim as a shot does", () => {
+      const { weapons, aim } = setup();
+      aim.freeAngle = 1;
+
+      expect(weapons.getAimRay()?.angle).toBe(1);
+    });
+
+    it("is none while the Player looks at the front", () => {
+      const { weapons, aim } = setup();
+      aim.facingForAim.x = DirectionAxisX.CENTER;
+
+      expect(weapons.getAimRay()).toBeNull();
+    });
+  });
 });

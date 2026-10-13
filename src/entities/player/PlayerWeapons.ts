@@ -4,9 +4,10 @@ import type { Weapon } from "@/entities/weapons/Weapon";
 import { TILE_SIZE } from "@/config/tiles";
 import { getShotPosition } from "@/entities/player/aim";
 import { Point, angleBetween } from "@/entities/player/aimAngles";
+import type { AimRay } from "@/entities/player/aimTarget";
 import type { PlayerAim } from "@/entities/player/PlayerAim";
 import { ControllerKey } from "@/input/ControllerKey";
-import { DirectionAxisX } from "@/miscellaneous/Direction";
+import { DirectionAxisX, getSign } from "@/miscellaneous/Direction";
 import type { PlayerStats } from "@/state/GameState";
 
 /** The distance from the top of the sprite to the gun, aiming straight */
@@ -84,6 +85,31 @@ export class PlayerWeapons {
     }
 
     this.isPressingShot = isShootPress;
+  }
+
+  /**
+   * Where the gun is and where it points, as a shot would go now. Null while
+   * the Player looks at the front: it can not shoot.
+   */
+  public getAimRay(): AimRay | null {
+    if (this.aim.facingForAim.x === DirectionAxisX.CENTER) {
+      return null;
+    }
+
+    const from = this.getShotPosition();
+    const freeAngle = this.getFreeAngle(from);
+
+    if (freeAngle !== undefined) {
+      return { from, angle: freeAngle };
+    }
+
+    // With the buttons the shots go in one of the eight directions
+    const sign = getSign(this.aim.facingForAim);
+    if (!this.aim.isAimingDiagonal && sign.y !== 0) {
+      sign.x = 0;
+    }
+
+    return { from, angle: Math.atan2(sign.y, sign.x) };
   }
 
   /**
