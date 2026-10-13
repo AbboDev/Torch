@@ -17,6 +17,7 @@ import { createMovementHost } from "@/entities/player/movement/createMovementHos
 import { MovementHost } from "@/entities/player/movement/host";
 import { PlayerMovement } from "@/entities/player/movement/PlayerMovement";
 import { MovementState } from "@/entities/player/movement/state";
+import { FreeAim } from "@/entities/player/FreeAim";
 import { PlayerAim } from "@/entities/player/PlayerAim";
 import { PlayerBody } from "@/entities/player/PlayerBody";
 import { PlayerInput } from "@/entities/player/PlayerInput";
@@ -88,6 +89,9 @@ export class Player extends SpriteCollidable {
 
   /** The weapons: change them, shoot, spend ammo */
   private weapons: PlayerWeapons;
+
+  /** The aim with the mouse or the right stick of the gamepad */
+  private freeAim: FreeAim;
 
   /** Fills the battery up again when it is not used */
   private recharger: BatteryRecharger;
@@ -188,6 +192,25 @@ export class Player extends SpriteCollidable {
       this.stats
     );
 
+    this.freeAim = new FreeAim(
+      {
+        device: () => this.scene.getController().getAimDevice(),
+        origin: () => {
+          const bounds = this.getBodyBounds();
+
+          return { x: bounds.centerX, y: bounds.centerY };
+        },
+        pointer: () => {
+          const pointer = this.scene.input.activePointer;
+
+          // The camera has a zoom and follows the Player: ask it
+          return this.scene.cameras.main.getWorldPoint(pointer.x, pointer.y);
+        },
+        stick: () => this.scene.getController().getAimStick(),
+      },
+      this.scene.getAimCursor()
+    );
+
     this.recharger = new BatteryRecharger(
       this.scene.time,
       () => this.scene.getInventory().hasBattery(),
@@ -205,6 +228,7 @@ export class Player extends SpriteCollidable {
     this.scene.slopes.track(this.body);
     this.once(Phaser.GameObjects.Events.DESTROY, () => {
       this.scene.slopes.untrack(this.body);
+      this.scene.getAimCursor().visible = false;
     });
 
     // The torch
@@ -336,6 +360,9 @@ export class Player extends SpriteCollidable {
         this.centerOnLadder();
       }
 
+      // Aim with the mouse or the right stick, if one of them is in use
+      this.freeAim.update(this.aim);
+
       // The user can shoot only if the Player has at least one range weapon
       if (this.scene.getInventory().hasAtLeastOneRangeWeapon()) {
         // Handle all the ranged combat actions
@@ -447,7 +474,7 @@ export class Player extends SpriteCollidable {
 
     const animation = getAnimationKey(
       action,
-      this.movement.isAttachOnLadder ? DirectionAxisX.CENTER : this.aim.facing.x
+      this.movement.isAttachOnLadder ? DirectionAxisX.CENTER : this.aim.lookingX
     );
     const doNewAnimation: boolean = animation !== this.anims.getName();
 

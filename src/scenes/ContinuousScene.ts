@@ -1,4 +1,5 @@
 import * as Phaser from "phaser";
+import type { AimCursorState } from "@/entities/player/aimAngles";
 import { Controller } from "@/miscellaneous/Controller";
 import { InputSettingsStore } from "@/input/inputSettings";
 import { Inventory } from "@/miscellaneous/Inventory";
@@ -38,6 +39,21 @@ export abstract class ContinuousScene extends Phaser.Scene {
     }
 
     return controller;
+  }
+
+  /**
+   * Where the cursor of the gamepad is in the world: the Player moves it, the
+   * CursorScene draws it. It is only shown, so it is not part of the game state.
+   */
+  public getAimCursor(): AimCursorState {
+    let cursor = this.registry.get("aimCursor") as AimCursorState | undefined;
+
+    if (!cursor) {
+      cursor = { visible: false, x: 0, y: 0 };
+      this.registry.set("aimCursor", cursor);
+    }
+
+    return cursor;
   }
 
   /**
