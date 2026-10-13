@@ -12,6 +12,9 @@ import { ContinuousScene } from "@/scenes/ContinuousScene";
 export class CursorScene extends ContinuousScene {
   private crosshair!: Phaser.GameObjects.Graphics;
 
+  /** Shows the target the aim is locked on */
+  private lockMark!: Phaser.GameObjects.Graphics;
+
   private isShown = false;
 
   /** The mouse starts at (0, 0) until it is moved: do not draw it there */
@@ -28,28 +31,31 @@ export class CursorScene extends ContinuousScene {
   public create(): void {
     super.create();
 
-    // Four arms and a dot around (0, 0), each with a black edge to be seen on
-    // any background; the edges first, so they stay below the white
-    const parts: Array<[number, number, number, number]> = [
-      [0, -8, 1, 5],
-      [0, 3, 1, 5],
-      [-8, 0, 5, 1],
-      [3, 0, 5, 1],
-      [0, 0, 1, 1],
-    ];
-    const graphics = this.add.graphics();
+    this.crosshair = this.makeMarker(
+      [
+        [0, -8, 1, 5],
+        [0, 3, 1, 5],
+        [-8, 0, 5, 1],
+        [3, 0, 5, 1],
+        [0, 0, 1, 1],
+      ],
+      0xffffff
+    );
 
-    graphics.fillStyle(0x000000, 1);
-    for (const [x, y, width, height] of parts) {
-      graphics.fillRect(x - 1, y - 1, width + 2, height + 2);
-    }
-
-    graphics.fillStyle(0xffffff, 1);
-    for (const [x, y, width, height] of parts) {
-      graphics.fillRect(x, y, width, height);
-    }
-
-    this.crosshair = graphics.setVisible(false);
+    // Four corners around the target
+    this.lockMark = this.makeMarker(
+      [
+        [-9, -9, 4, 1],
+        [-9, -9, 1, 4],
+        [6, -9, 4, 1],
+        [9, -9, 1, 4],
+        [-9, 8, 4, 1],
+        [-9, 5, 1, 4],
+        [6, 8, 4, 1],
+        [9, 5, 1, 4],
+      ],
+      0xffdd44
+    );
 
     this.input.on("pointermove", () => {
       this.hasMoved = true;
@@ -67,11 +73,46 @@ export class CursorScene extends ContinuousScene {
     this.events.once(Phaser.Scenes.Events.DESTROY, showSystemCursor);
   }
 
+  /**
+   * A marker made of rectangles around (0, 0), each with a black edge to be
+   * seen on any background; the edges first, so they stay below the color.
+   */
+  private makeMarker(
+    parts: Array<[number, number, number, number]>,
+    color: number
+  ): Phaser.GameObjects.Graphics {
+    const graphics = this.add.graphics();
+
+    graphics.fillStyle(0x000000, 1);
+    for (const [x, y, width, height] of parts) {
+      graphics.fillRect(x - 1, y - 1, width + 2, height + 2);
+    }
+
+    graphics.fillStyle(color, 1);
+    for (const [x, y, width, height] of parts) {
+      graphics.fillRect(x, y, width, height);
+    }
+
+    return graphics.setVisible(false);
+  }
+
+  /** From the world to the screen: the camera of the game has a zoom */
+  private toScreen(x: number, y: number): { x: number; y: number } {
+    const camera = this.scene.get("main").cameras.main;
+
+    return {
+      x: Math.floor((x - camera.worldView.x) * camera.zoom),
+      y: Math.floor((y - camera.worldView.y) * camera.zoom),
+    };
+  }
+
   public update(): void {
     this.place();
   }
 
   private place(): void {
+    this.placeLock();
+
     const controller = this.getController();
     const device = controller.getAimDevice();
     const isMouse = device === "mouse";
@@ -93,18 +134,26 @@ export class CursorScene extends ContinuousScene {
     }
 
     const cursor = this.getAimCursor();
-    const isShown = cursor.visible && this.scene.isActive("main");
+    const isRunning = this.scene.isActive("main");
 
-    this.crosshair.setVisible(isShown);
+    this.crosshair.setVisible(cursor.visible && isRunning);
+    if (cursor.visible && isRunning) {
+      const { x, y } = this.toScreen(cursor.x, cursor.y);
 
-    if (isShown) {
-      // From the world to the screen: the camera of the game has a zoom
-      const camera = this.scene.get("main").cameras.main;
+      this.crosshair.setPosition(x, y);
+    }
+  }
 
-      this.crosshair.setPosition(
-        Math.floor((cursor.x - camera.worldView.x) * camera.zoom),
-        Math.floor((cursor.y - camera.worldView.y) * camera.zoom)
-      );
+  /** The lock is shown with every device, the mouse too */
+  private placeLock(): void {
+    const { lock } = this.getAimCursor();
+    const isShown = lock !== null && this.scene.isActive("main");
+
+    this.lockMark.setVisible(isShown);
+    if (lock && isShown) {
+      const { x, y } = this.toScreen(lock.x, lock.y);
+
+      this.lockMark.setPosition(x, y);
     }
   }
 }

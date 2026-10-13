@@ -10,6 +10,7 @@ import {
   stepElevation,
   stickAngle,
 } from "@/entities/player/aimAngles";
+import type { LockedAim } from "@/entities/player/aimLock";
 import type { PlayerAim } from "@/entities/player/PlayerAim";
 import { DirectionAxisX, DirectionAxisY } from "@/miscellaneous/Direction";
 
@@ -34,7 +35,8 @@ export interface FreeAimSources {
  * from where the buttons were aiming; let go of it and the buttons aim again,
  * in eight directions. It tells the `PlayerAim` the angle; with the stick and the
  * keyboard it also moves `cursor`, which the CursorScene draws (the mouse
- * cursor is drawn where the mouse is).
+ * cursor is drawn where the mouse is). A lock on a target (`AimLock`) takes
+ * the aim over, whatever the device: the shots go from the gun to the target.
  */
 export class FreeAim {
   /** The elevation of the aim of the keyboard; null with the fine aim button up */
@@ -50,11 +52,26 @@ export class FreeAim {
    * Call it every frame, after the movement has decided where the Player looks
    *
    * @param delta The time of the frame, in milliseconds
+   * @param lock  Where the lock aims, while the aim is locked on a target
    */
-  public update(aim: PlayerAim, delta = 0): void {
+  public update(
+    aim: PlayerAim,
+    delta = 0,
+    lock: LockedAim | null = null
+  ): void {
     const device = this.sources.device();
     this.cursor.visible = false;
+    this.cursor.lock = null;
     aim.isAdjustingAngle = false;
+
+    if (lock) {
+      // Whatever the device was doing, from here on it starts again
+      this.elevation = null;
+      this.cursor.lock = lock.target;
+      aim.setFree(lock.angle, lock.target);
+
+      return;
+    }
 
     const origin = this.sources.origin();
     // With nothing to aim at the Player aims ahead, where it is going

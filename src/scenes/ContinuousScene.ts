@@ -42,14 +42,15 @@ export abstract class ContinuousScene extends Phaser.Scene {
   }
 
   /**
-   * Where the cursor of the gamepad is in the world: the Player moves it, the
-   * CursorScene draws it. It is only shown, so it is not part of the game state.
+   * Where the cursor of the aim and its lock are in the world: the Player moves
+   * them, the CursorScene draws them. They are only shown, so they are not part
+   * of the game state.
    */
   public getAimCursor(): AimCursorState {
     let cursor = this.registry.get("aimCursor") as AimCursorState | undefined;
 
     if (!cursor) {
-      cursor = { visible: false, x: 0, y: 0 };
+      cursor = { visible: false, x: 0, y: 0, lock: null };
       this.registry.set("aimCursor", cursor);
     }
 

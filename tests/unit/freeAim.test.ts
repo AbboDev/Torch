@@ -15,7 +15,7 @@ function setup(facingX: DirectionAxisX = DirectionAxisX.RIGHT) {
     stick: { x: 0, y: 0 },
     keys: { fineAim: false, up: false, down: false },
   };
-  const cursor: AimCursorState = { visible: false, x: 0, y: 0 };
+  const cursor: AimCursorState = { visible: false, x: 0, y: 0, lock: null };
   const aim = new PlayerAim();
   aim.facing.x = facingX;
   aim.facingForAim.x = facingX;
@@ -227,5 +227,64 @@ describe("FreeAim when the Player does not aim freely", () => {
 
     expect(aim.freeAngle).toBeNull();
     expect(aim.freeSide).toBeNull();
+  });
+});
+
+describe("FreeAim with the aim locked", () => {
+  const lock = { angle: PI / 3, target: { x: 150, y: 190 } };
+
+  it("aims at the target, whatever the device, and shows the lock", () => {
+    for (const device of ["mouse", "gamepad", "keyboard"] as const) {
+      const { freeAim, aim, sources, cursor } = setup();
+      sources.device = device;
+      sources.pointer = { x: 100, y: 0 };
+      sources.stick = { x: -1, y: 0 };
+
+      freeAim.update(aim, 16, lock);
+
+      expect(aim.freeAngle).toBeCloseTo(PI / 3);
+      expect(aim.freeTarget).toEqual({ x: 150, y: 190 });
+      expect(cursor.lock).toEqual({ x: 150, y: 190 });
+      // the cursor of the stick and of the keyboard goes away: the lock shows
+      expect(cursor.visible).toBe(false);
+    }
+  });
+
+  it("looks to the side of the target", () => {
+    const { freeAim, aim } = setup(DirectionAxisX.RIGHT);
+
+    freeAim.update(aim, 16, { angle: PI, target: { x: 0, y: 100 } });
+
+    expect(aim.lookingX).toBe(DirectionAxisX.LEFT);
+  });
+
+  it("goes back to the device when the lock ends", () => {
+    const { freeAim, aim, sources, cursor } = setup();
+    sources.device = "gamepad";
+    sources.stick = { x: 0, y: 1 };
+    freeAim.update(aim, 16, lock);
+
+    freeAim.update(aim, 16, null);
+
+    expect(aim.freeAngle).toBeCloseTo(PI / 2);
+    expect(aim.freeTarget).toBeNull();
+    expect(cursor.lock).toBeNull();
+    expect(cursor.visible).toBe(true);
+  });
+
+  it("starts the fine aim again from the buttons after the lock", () => {
+    const { freeAim, aim, sources } = setup();
+    sources.device = "keyboard";
+    sources.keys = { fineAim: true, up: true, down: false };
+    freeAim.update(aim, 1000);
+
+    freeAim.update(aim, 16, lock);
+    // the buttons compute the aim again at the start of the next frame
+    aim.facingForAim.y = DirectionAxisY.MIDDLE;
+    aim.isAimingDiagonal = false;
+    sources.keys = { fineAim: true, up: false, down: false };
+    freeAim.update(aim, 0);
+
+    expect(aim.freeAngle).toBeCloseTo(0);
   });
 });

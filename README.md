@@ -322,3 +322,17 @@ It looks up to 12 tiles away (`AIM_TARGET_RANGE`).
 - **Placeholders:** the animation (`hero_aim_target_<side>_animation`) borrows the frames of the
   standing pose, faster; change `sheet` in `PlayerAssets.ts` for the real one. The sound is
   `assets/audio/aim_target.wav`, set in `src/config/sounds.ts`: replace the file.
+
+### Lock on a target
+
+The lock button (`F` by default, middle click on the mouse, `RT` on the gamepad) locks the aim on
+the block or the enemy it points at (`src/entities/player/aimLock.ts`), whatever the device: the
+shots go from the gun to the target and the sprite looks at it. Press it again to let go. A marker
+shows the target (`CursorScene`).
+
+- The angle is worked out again at every frame, so it follows the Player and the target when they
+  move.
+- A wall (or any other thing) between them can not be locked through, and it breaks the lock after
+  `LOCK_BREAK_DELAY` (150 ms), unless it goes away before.
+- The lock also ends when the target is gone (a block which is broken) or farther than
+  `AIM_TARGET_RANGE`.

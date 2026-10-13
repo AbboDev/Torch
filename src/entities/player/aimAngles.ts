@@ -11,11 +11,14 @@ export interface Point {
   y: number;
 }
 
-/** The cursor of the gamepad in the world: the CursorScene draws it */
+/** What the CursorScene draws of the aim, in the world */
 export interface AimCursorState {
+  /** The cursor of the gamepad and of the keyboard */
   visible: boolean;
   x: number;
   y: number;
+  /** Where the aim is locked, if it is */
+  lock: Point | null;
 }
 
 /** How far the right stick has to go to aim: below it, drift is ignored */

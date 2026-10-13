@@ -18,6 +18,7 @@ import { createMovementHost } from "@/entities/player/movement/createMovementHos
 import { MovementHost } from "@/entities/player/movement/host";
 import { PlayerMovement } from "@/entities/player/movement/PlayerMovement";
 import { MovementState } from "@/entities/player/movement/state";
+import { AimLock } from "@/entities/player/aimLock";
 import { AimHit, AimTargeting, SOLID } from "@/entities/player/aimTarget";
 import { FreeAim } from "@/entities/player/FreeAim";
 import { PlayerAim } from "@/entities/player/PlayerAim";
@@ -97,6 +98,9 @@ export class Player extends SpriteCollidable {
 
   /** Knows when the aim points at something which can be hit */
   private targeting: AimTargeting;
+
+  /** Keeps the aim on a block or an enemy */
+  private aimLock = new AimLock();
 
   /** Fills the battery up again when it is not used */
   private recharger: BatteryRecharger;
@@ -200,11 +204,7 @@ export class Player extends SpriteCollidable {
     this.freeAim = new FreeAim(
       {
         device: () => this.scene.getController().getAimDevice(),
-        origin: () => {
-          const bounds = this.getBodyBounds();
-
-          return { x: bounds.centerX, y: bounds.centerY };
-        },
+        origin: () => this.getAimOrigin(),
         pointer: () => {
           const pointer = this.scene.input.activePointer;
 
@@ -247,6 +247,7 @@ export class Player extends SpriteCollidable {
     this.once(Phaser.GameObjects.Events.DESTROY, () => {
       this.scene.slopes.untrack(this.body);
       this.scene.getAimCursor().visible = false;
+      this.scene.getAimCursor().lock = null;
     });
 
     // The torch
@@ -378,11 +379,23 @@ export class Player extends SpriteCollidable {
         this.centerOnLadder();
       }
 
-      // Aim with the mouse or the right stick, if one of them is in use
-      this.freeAim.update(this.aim, delta);
-
       // The user can shoot only if the Player has at least one range weapon
       const canShoot = this.scene.getInventory().hasAtLeastOneRangeWeapon();
+
+      // Lock the aim on what it points at, or let it go
+      if (!canShoot) {
+        this.aimLock.release();
+      } else if (this.controls.justPressed(ControllerKey.LOCK)) {
+        this.aimLock.toggle(this.targeting.target);
+      }
+
+      // Aim with the mouse, the right stick or the keyboard; a lock overrides them
+      const locked = this.aimLock.update(
+        this.getAimOrigin(),
+        (x, y) => this.probeAim(x, y),
+        time
+      );
+      this.freeAim.update(this.aim, delta, locked);
 
       if (canShoot) {
         // Handle all the ranged combat actions
@@ -411,6 +424,13 @@ export class Player extends SpriteCollidable {
     if (this.scene.physics.world.drawDebug) {
       this.debug();
     }
+  }
+
+  /** The center of the body: the aim is measured from here */
+  private getAimOrigin(): { x: number; y: number } {
+    const bounds = this.getBodyBounds();
+
+    return { x: bounds.centerX, y: bounds.centerY };
   }
 
   /**
