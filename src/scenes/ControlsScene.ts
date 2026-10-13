@@ -19,6 +19,8 @@ const ACTIONS: ReadonlyArray<[ControllerKey, string]> = [
   [ControllerKey.X, "Dash"],
   [ControllerKey.Y, "Switch weapon"],
   [ControllerKey.L, "Aim"],
+  [ControllerKey.FINE_AIM, "Fine aim"],
+  [ControllerKey.LOCK, "Lock target"],
   [ControllerKey.START, "Menu"],
   [ControllerKey.SELECT, "Controls"],
 ];
@@ -120,8 +122,13 @@ export class ControlsScene extends ContinuousScene {
       .text(width / 2, TILE_SIZE / 2, "controls", style)
       .setOrigin(0.5);
 
+    // The rows are smaller than the title, to fit all the buttons
+    const rowStyle = { fontSize: `${TILE_SIZE * 0.875}px` };
+
     for (let row = 0; row < ROW_COUNT; row++) {
-      this.rows.push(this.add.text(TILE_SIZE * 2, 26 + row * 19, "", style));
+      this.rows.push(
+        this.add.text(TILE_SIZE * 2, 22 + row * 17, "", rowStyle)
+      );
     }
 
     this.footer = this.add.text(TILE_SIZE * 2, 300, "", {
