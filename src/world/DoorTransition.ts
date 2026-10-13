@@ -1,4 +1,4 @@
-import type { Door } from "@/world/doors";
+import type { LocalDoor } from "@/world/doors";
 
 /** Milliseconds the screen takes to go black */
 export const DOOR_FADE_OUT = 250;
@@ -32,7 +32,7 @@ export class DoorTransition {
   }
 
   /** @return False if a transition is already running */
-  public start(door: Door): boolean {
+  public start(door: LocalDoor): boolean {
     if (this.running) {
       return false;
     }

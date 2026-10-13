@@ -1,4 +1,4 @@
-import { GameState, GameStateSnapshot } from "@/state/GameState";
+import { GameState, GameStateSnapshot, SavePointRef } from "@/state/GameState";
 
 export const SAVE_VERSION = 1;
 
@@ -69,11 +69,11 @@ export class SaveManager {
    *
    * @param state       The state to save
    * @param slot        Save slot (default 0)
-   * @param savePointId When saving at a save point, its id: the game will restart from there
+   * @param savePoint When saving at a save point, which one: the game will restart from there
    */
-  public save(state: GameState, slot = 0, savePointId?: string): SaveFile {
-    if (savePointId !== undefined) {
-      state.setSavePoint(savePointId);
+  public save(state: GameState, slot = 0, savePoint?: SavePointRef): SaveFile {
+    if (savePoint !== undefined) {
+      state.setSavePoint(savePoint);
     }
 
     const file: SaveFile = {

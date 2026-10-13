@@ -109,14 +109,15 @@ export function resolveRoom(
 }
 
 /**
- * A stable id of a room to store in a save.
+ * A stable id of a room to store in a save: the map and the id Tiled gave to
+ * the object.
  *
- * The id Tiled gives to the object is unique (names are not: a map can have
- * several rooms called "room_bottom") and it does not change when the room
- * is renamed or moved.
+ * The id of Tiled is unique in a map (names are not: a map can have several
+ * rooms called "room_bottom") and it does not change when the room is renamed
+ * or moved; but two maps can have the same ids, so the map is part of it.
  */
-export function getRoomId(room: { id: number }): string {
-  return `room_${room.id}`;
+export function getRoomId(room: { id: number }, mapKey: string): string {
+  return `${mapKey}/room_${room.id}`;
 }
 
 export interface RoomWithProperties {

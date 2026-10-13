@@ -208,7 +208,7 @@ export abstract class MapScene extends ContinuousScene {
 
     if (outside && !this.hasWarnedOutsideRooms) {
       console.warn(
-        `Position ${x}, ${y} is outside every room: using ${getRoomId(this.rooms[currentRoomNumber])}`
+        `Position ${x}, ${y} is outside every room: using ${this.getRoomId(this.rooms[currentRoomNumber])}`
       );
     }
 
@@ -225,7 +225,7 @@ export abstract class MapScene extends ContinuousScene {
     // Remember the visit in the game state (saved with the game), instead of
     // writing it into the Tiled data: that also works for rooms without properties
     if (!outside) {
-      this.getGameState().visitRoom(MapScene.getRoomId(currentRoom));
+      this.getGameState().visitRoom(this.getRoomId(currentRoom));
     }
 
     const ambientColor = this.lights.ambientColor;
@@ -243,10 +243,10 @@ export abstract class MapScene extends ContinuousScene {
   }
 
   /**
-   * A stable id for a room, usable in saves (see world/rooms.ts)
+   * A stable id for a room, usable in saves: its map and its id (see world/rooms.ts)
    */
-  public static getRoomId(room: TiledObject): string {
-    return getRoomId(room);
+  public getRoomId(room: TiledObject): string {
+    return getRoomId(room, this.mapConfig.key);
   }
 
   /**

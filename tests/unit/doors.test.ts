@@ -1,9 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 import {
-  Door,
   DoorTrigger,
+  LocalDoor,
   MapObject,
   findDoorAt,
+  isLocalDoor,
   parseDoors,
 } from "@/world/doors";
 import {
@@ -41,7 +42,7 @@ describe("parseDoors", () => {
         y: 200,
         width: 16,
         height: 32,
-        target: { id: 50, x: 640, y: 320 },
+        target: { map: null, id: 50, x: 640, y: 320 },
         requiresUp: false,
       },
     ]);
@@ -53,7 +54,7 @@ describe("parseDoors", () => {
       door(7, [{ name: "target", value: "lab_entrance" }]),
     ]);
 
-    expect(doors[0].target.id).toBe(50);
+    expect(doors[0].target).toMatchObject({ map: null, id: 50 });
   });
 
   it("can ask for the Up button", () => {
@@ -93,11 +94,62 @@ describe("parseDoors", () => {
   });
 });
 
+describe("doors to another map", () => {
+  it("keep the map and the object they lead to", () => {
+    const [byId, byName] = parseDoors([
+      door(7, [
+        { name: "target", value: 12 },
+        { name: "targetMap", value: "cave" },
+      ]),
+      door(8, [
+        { name: "target", value: "cave_entrance" },
+        { name: "targetMap", value: " cave " },
+      ]),
+    ]);
+
+    expect(byId.target).toEqual({ map: "cave", target: 12 });
+    expect(byName.target).toEqual({ map: "cave", target: "cave_entrance" });
+    expect(isLocalDoor(byId)).toBe(false);
+  });
+
+  it("need a target too, which is not looked for in this map", () => {
+    const warn = vi.fn();
+
+    const doors = parseDoors(
+      [
+        exit,
+        door(7, [{ name: "targetMap", value: "cave" }]),
+        // an id which exists in this map means nothing in the other one
+        door(8, [
+          { name: "target", value: 50 },
+          { name: "targetMap", value: "cave" },
+        ]),
+      ],
+      warn
+    );
+
+    expect(doors.map((d) => d.id)).toEqual([8]);
+    expect(warn).toHaveBeenCalledTimes(1);
+  });
+
+  it("are the local ones when targetMap is empty", () => {
+    const [local] = parseDoors([
+      exit,
+      door(7, [
+        { name: "target", value: 50 },
+        { name: "targetMap", value: "" },
+      ]),
+    ]);
+
+    expect(isLocalDoor(local)).toBe(true);
+  });
+});
+
 describe("findDoorAt", () => {
   const doors = parseDoors([
     exit,
     door(7, [{ name: "target", value: 50 }]),
-  ]) as Door[];
+  ]).filter(isLocalDoor);
 
   it("finds the door containing a point, borders: left and top in, right and bottom out", () => {
     expect(findDoorAt(doors, 100, 200)?.id).toBe(7);
@@ -170,7 +222,7 @@ describe("DoorTransition", () => {
     return { events, pending, transition: new DoorTransition(host) };
   }
 
-  const door = parseDoors([
+  const [door] = parseDoors([
     exit,
     {
       id: 7,
@@ -181,7 +233,7 @@ describe("DoorTransition", () => {
       height: 32,
       properties: [{ name: "target", value: 50 }],
     },
-  ])[0];
+  ]).filter(isLocalDoor);
 
   it("fades out, enters at the target, fades in and gives back the control", () => {
     const { events, pending, transition } = setup();

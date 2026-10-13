@@ -12,6 +12,9 @@ import { getObjectClass } from "@/world/tiledObjects";
  * - `target` (type object, or a string with the name): the object where the
  *   Player appears, like the "spawn_point". Required. Pointing to the object
  *   by its id is better: names are not unique in a map.
+ * - `targetMap` (string, default none): the name of another map, when the
+ *   target is there: `target` is then the id or the name of an object of that
+ *   map. Changing map is not done by the game yet.
  * - `requiresUp` (bool, default false): the Player must press Up while in the
  *   door, instead of just touching it.
  */
@@ -27,14 +30,38 @@ export interface MapObject extends RoomWithProperties {
   height?: number;
 }
 
-export interface Door {
+/** Where a door leads, in the same map: the position of the target object */
+export interface LocalTarget {
+  map: null;
+  id: number;
+  x: number;
+  y: number;
+}
+
+/** Where a door leads, in another map: that map and the object in it */
+export interface RemoteTarget {
+  map: string;
+  /** The object of the other map, by its id or by its name */
+  target: number | string;
+}
+
+export type DoorTarget = LocalTarget | RemoteTarget;
+
+export interface Door<Target extends DoorTarget = DoorTarget> {
   id: number;
   x: number;
   y: number;
   width: number;
   height: number;
-  target: { id: number; x: number; y: number };
+  target: Target;
   requiresUp: boolean;
+}
+
+/** A door which leads somewhere in the map it is in */
+export type LocalDoor = Door<LocalTarget>;
+
+export function isLocalDoor(door: Door): door is LocalDoor {
+  return door.target.map === null;
 }
 
 /**
@@ -55,21 +82,41 @@ export function parseDoors(
 
     const label = `Door ${object.id}${object.name ? ` "${object.name}"` : ""}`;
     const reference = getRoomProperty(object, "target");
+    const targetMap = getRoomProperty(object, "targetMap");
 
-    const target =
-      typeof reference === "number"
-        ? objects.find((candidate) => candidate.id === reference)
-        : typeof reference === "string" && reference !== ""
-          ? objects.find((candidate) => candidate.name === reference)
-          : undefined;
+    const toAnotherMap =
+      typeof targetMap === "string" && targetMap.trim() !== "";
+
+    let target: DoorTarget | undefined;
+
+    if (toAnotherMap) {
+      // The other map is not loaded: only its name and the reference can be known
+      if (
+        (typeof reference === "number" && reference > 0) ||
+        (typeof reference === "string" && reference !== "")
+      ) {
+        target = { map: targetMap.trim(), target: reference };
+      }
+    } else {
+      const found =
+        typeof reference === "number"
+          ? objects.find((candidate) => candidate.id === reference)
+          : typeof reference === "string" && reference !== ""
+            ? objects.find((candidate) => candidate.name === reference)
+            : undefined;
+
+      if (found && found.id === object.id) {
+        warn(`${label} has itself as "target": it is ignored`);
+        continue;
+      }
+
+      if (found) {
+        target = { map: null, id: found.id, x: found.x ?? 0, y: found.y ?? 0 };
+      }
+    }
 
     if (!target) {
       warn(`${label} has no valid "target": it is ignored`);
-      continue;
-    }
-
-    if (target.id === object.id) {
-      warn(`${label} has itself as "target": it is ignored`);
       continue;
     }
 
@@ -84,7 +131,7 @@ export function parseDoors(
       y: object.y ?? 0,
       width: object.width,
       height: object.height,
-      target: { id: target.id, x: target.x ?? 0, y: target.y ?? 0 },
+      target,
       requiresUp: getRoomProperty(object, "requiresUp") === true,
     });
   }
@@ -93,11 +140,11 @@ export function parseDoors(
 }
 
 /** The first door containing the point (left and top included, right and bottom excluded) */
-export function findDoorAt(
-  doors: readonly Door[],
+export function findDoorAt<Kind extends Door>(
+  doors: readonly Kind[],
   x: number,
   y: number
-): Door | null {
+): Kind | null {
   return (
     doors.find(
       (door) =>
@@ -116,7 +163,7 @@ export function findDoorAt(
  * leads back): the doors do not work again until it has stepped out of every
  * door, or it would go back and forth forever.
  */
-export class DoorTrigger {
+export class DoorTrigger<Kind extends Door = Door> {
   private armed = true;
 
   /**
@@ -127,7 +174,7 @@ export class DoorTrigger {
    *
    * @return The door to use now, if any
    */
-  public update(inside: Door | null, upPressed: boolean): Door | null {
+  public update(inside: Kind | null, upPressed: boolean): Kind | null {
     if (!inside) {
       this.armed = true;
 

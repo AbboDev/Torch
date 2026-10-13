@@ -28,10 +28,11 @@ describe("SaveManager", () => {
     const manager = new SaveManager(new MemoryStorage());
     const state = new GameState();
 
-    manager.save(state, 0, "save_lab");
+    manager.save(state, 0, { map: "chozodia", id: "save_lab" });
 
-    expect(manager.load()?.state.world.savePoint).toBe("save_lab");
-    expect(state.getSavePoint()).toBe("save_lab");
+    const expected = { map: "chozodia", id: "save_lab" };
+    expect(manager.load()?.state.world.savePoint).toEqual(expected);
+    expect(state.getSavePoint()).toEqual(expected);
   });
 
   it("ignores corrupted saves", () => {

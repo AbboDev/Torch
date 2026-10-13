@@ -112,8 +112,9 @@ a border do not overlap. Rooms which touch are joined by a scroll of the camera.
 | `dark`       | string | The ambient color of the room, as `RRGGBB`                          |
 
 A room without `background` keeps the one of the previous room. The saved
-"visited" rooms use the id Tiled gives to the object, so names do not need to
-be unique.
+"visited" rooms are the map and the id Tiled gives to the object
+(`chozodia/room_6`), so names do not need to be unique and two maps can have
+the same ids.
 
 To add a background, add its images to the Preloader and list its layers, from
 the farthest to the nearest, in `src/config/backgrounds.ts`. A test checks that
@@ -125,10 +126,11 @@ An object of type `door` (a rectangle) takes the Player to another place in the
 map, even to a room which does not touch the current one: the screen fades to
 black and the Player appears at the target.
 
-| Property     | Type            | Meaning                                                                                                                                 |
-| ------------ | --------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `target`     | object / string | **Required.** The object where the Player appears (a point, like `spawn_point`). Pick it as an _object_ property: names are not unique. |
-| `requiresUp` | bool            | The Player has to press Up inside the door (default: touching is enough)                                                                |
+| Property     | Type            | Meaning                                                                                                                                                                                     |
+| ------------ | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `target`     | object / string | **Required.** The object where the Player appears (a point, like `spawn_point`). Pick it as an _object_ property: names are not unique.                                                     |
+| `requiresUp` | bool            | The Player has to press Up inside the door (default: touching is enough)                                                                                                                    |
+| `targetMap`  | string          | The name of another map, when the target is there (`target` is then the id or the name of an object of that map). The game does not change map yet: such a door is ignored, with a warning. |
 
 A door without a valid target or size is ignored, with a warning in the console.
 After going through a door the Player can arrive inside another door (the one
@@ -167,5 +169,5 @@ the ramp.
 
 ### Save points
 
-An object of type `save_point`: its `name` is the id stored in the save, and the
-game restarts from there.
+An object of type `save_point`: its `name`, with the name of the map, is what the
+save remembers, and the game restarts from there.

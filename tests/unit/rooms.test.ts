@@ -81,7 +81,11 @@ describe("resolveRoom", () => {
 
 describe("getRoomId", () => {
   it("is unique even for rooms with the same name in Tiled", () => {
-    expect(getRoomId(bottom)).not.toBe(getRoomId(left));
-    expect(getRoomId(bottom)).toBe("room_3");
+    expect(getRoomId(bottom, "chozodia")).not.toBe(getRoomId(left, "chozodia"));
+    expect(getRoomId(bottom, "chozodia")).toBe("chozodia/room_3");
+  });
+
+  it("is not the same in two maps which have an object with the same id", () => {
+    expect(getRoomId(bottom, "chozodia")).not.toBe(getRoomId(bottom, "cave"));
   });
 });

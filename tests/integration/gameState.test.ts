@@ -64,8 +64,8 @@ describe("game state", () => {
     original.set("maxAmmo", 60);
     original.inventory.grant(PowerUps.ROCKET);
     original.inventory.addWeapon("gun").addWeapon("bow");
-    original.visitRoom("room_start");
-    manager.save(original, 0, "save_lab");
+    original.visitRoom("chozodia/room_6");
+    manager.save(original, 0, { map: "chozodia", id: "save_lab" });
 
     const loaded = new GameState();
     const onRestored = vi.fn();
@@ -78,8 +78,8 @@ describe("game state", () => {
     expect(loaded.inventory.equip(PowerUps.ROCKET)).toBe(true);
     expect(loaded.inventory.getWeaponIds()).toEqual(["gun", "bow"]);
     expect(loaded.inventory.getCurrentWeaponId()).toBe("bow");
-    expect(loaded.hasVisitedRoom("room_start")).toBe(true);
-    expect(loaded.getSavePoint()).toBe("save_lab");
+    expect(loaded.hasVisitedRoom("chozodia/room_6")).toBe(true);
+    expect(loaded.getSavePoint()).toEqual({ map: "chozodia", id: "save_lab" });
     expect(onRestored).toHaveBeenCalledTimes(1);
   });
 
@@ -98,12 +98,34 @@ describe("game state", () => {
     const state = new GameState();
     state.set("life", 1);
     state.visitRoom("a");
-    state.setSavePoint("b");
+    state.setSavePoint({ map: "chozodia", id: "b" });
 
     state.reset();
 
     expect(state.get("life")).toBe(DEFAULT_STATS.life);
     expect(state.hasVisitedRoom("a")).toBe(false);
+    expect(state.getSavePoint()).toBeNull();
+  });
+});
+
+describe("the save point of a save", () => {
+  it("is a map and a name, and does not leak into the state which was saved", () => {
+    const state = new GameState();
+    const point = { map: "cave", id: "save_1" };
+
+    state.setSavePoint(point);
+    point.id = "changed";
+
+    expect(state.getSavePoint()).toEqual({ map: "cave", id: "save_1" });
+  });
+
+  it("drops a save point which is only a name, like the ones saved before maps had names", () => {
+    const state = new GameState();
+
+    state.restore({
+      world: { visitedRooms: [], savePoint: "save_lab" as never },
+    });
+
     expect(state.getSavePoint()).toBeNull();
   });
 });

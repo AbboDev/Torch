@@ -40,11 +40,19 @@ export const DEFAULT_STATS: Readonly<PlayerStats> = {
 /** Stats which can never go below zero */
 const NON_NEGATIVE: ReadonlySet<StatKey> = new Set(["life", "battery"]);
 
+/** A save point of a map: the game restarts from there */
+export interface SavePointRef {
+  /** The name of the map (see config/maps.ts) */
+  map: string;
+  /** The name of the object in Tiled */
+  id: string;
+}
+
 export interface WorldSnapshot {
-  /** Stable ids of the rooms the Player has already entered */
+  /** Stable ids of the rooms the Player has already entered, with their map */
   visitedRooms: string[];
-  /** Id of the last save point used: the game restarts from there */
-  savePoint: string | null;
+  /** The last save point used */
+  savePoint: SavePointRef | null;
 }
 
 export interface GameStateSnapshot {
@@ -94,7 +102,7 @@ export class GameState {
 
   private visitedRooms = new Set<string>();
 
-  private savePoint: string | null = null;
+  private savePoint: SavePointRef | null = null;
 
   /**
    * Get the state attached to the Game (Phaser's global registry),
@@ -136,12 +144,12 @@ export class GameState {
     return this.visitedRooms.has(roomId);
   }
 
-  public getSavePoint(): string | null {
+  public getSavePoint(): SavePointRef | null {
     return this.savePoint;
   }
 
-  public setSavePoint(id: string | null): void {
-    this.savePoint = id;
+  public setSavePoint(savePoint: SavePointRef | null): void {
+    this.savePoint = savePoint ? { ...savePoint } : null;
   }
 
   public snapshot(): GameStateSnapshot {
@@ -150,7 +158,7 @@ export class GameState {
       inventory: this.inventory.snapshot(),
       world: {
         visitedRooms: [...this.visitedRooms],
-        savePoint: this.savePoint,
+        savePoint: this.savePoint ? { ...this.savePoint } : null,
       },
     };
   }
@@ -176,7 +184,13 @@ export class GameState {
       )
     );
     const savePoint = snapshot?.world?.savePoint;
-    this.savePoint = typeof savePoint === "string" ? savePoint : null;
+    // A save point is a map and a name (an older save had only a name: it is dropped)
+    this.savePoint =
+      savePoint &&
+      typeof savePoint.map === "string" &&
+      typeof savePoint.id === "string"
+        ? { map: savePoint.map, id: savePoint.id }
+        : null;
 
     this.events.emit("restored");
   }

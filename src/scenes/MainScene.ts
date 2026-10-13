@@ -6,7 +6,13 @@ import { getObjectClass } from "@/world/tiledObjects";
 import { RoomBackground } from "@/world/RoomBackground";
 import { RoomTransition } from "@/world/RoomTransition";
 import { DoorTransition } from "@/world/DoorTransition";
-import { Door, DoorTrigger, findDoorAt, parseDoors } from "@/world/doors";
+import {
+  DoorTrigger,
+  LocalDoor,
+  findDoorAt,
+  isLocalDoor,
+  parseDoors,
+} from "@/world/doors";
 import { toBounds } from "@/world/scroll";
 import { getRoomProperty } from "@/world/rooms";
 import { DEV_LOADOUT } from "@/config/dev";
@@ -50,9 +56,9 @@ export class MainScene extends MapScene {
   /**
    * The doors of the map (objects of type "door" in Tiled, see world/doors.ts)
    */
-  private doors: Door[] = [];
+  private doors: LocalDoor[] = [];
 
-  private doorTrigger = new DoorTrigger();
+  private doorTrigger = new DoorTrigger<LocalDoor>();
 
   /**
    * The fade to black when the Player goes through a door
@@ -82,7 +88,14 @@ export class MainScene extends MapScene {
     // the main spawn point and rooms
     const mapObjects: TiledObject[] = this.getMapObjects("objects");
 
-    this.doors = parseDoors(mapObjects);
+    const doors = parseDoors(mapObjects);
+    this.doors = doors.filter(isLocalDoor);
+
+    for (const door of doors.filter((candidate) => !isLocalDoor(candidate))) {
+      console.warn(
+        `Door ${door.id} leads to another map: changing map is not supported yet, the door is ignored`
+      );
+    }
 
     mapObjects.forEach((object: TiledObject) => {
       if (getObjectClass(object) === "room") {
@@ -210,10 +223,12 @@ export class MainScene extends MapScene {
     );
 
     // Restart from the last used save point, if any, otherwise from the start
-    const savedPointId = this.getGameState().getSavePoint();
+    // (a save point of another map is not for this one)
+    const saved = this.getGameState().getSavePoint();
     const start: TiledObject =
-      this.savePoints.find((point) => point.name === savedPointId) ??
-      this.spawnPoint;
+      (saved?.map === this.mapConfig.key
+        ? this.savePoints.find((point) => point.name === saved.id)
+        : undefined) ?? this.spawnPoint;
 
     const x: number = start.x || 0;
     const y: number = start.y || 0;
