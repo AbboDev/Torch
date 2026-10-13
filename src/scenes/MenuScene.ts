@@ -4,9 +4,16 @@ import { ContinuousScene } from "@/scenes/ContinuousScene";
 import { firstEnabled, moveSelection } from "@/hud/menu";
 import { TILE_SIZE } from "@/config/tiles";
 
+export interface MenuOptions {
+  /** The distance between two items (default: 2.5 tiles) */
+  spacing?: number;
+  /** The item selected at first (default: the first one which is enabled) */
+  selected?: number;
+}
+
 export interface MenuItem {
   label: string;
-  /** A smaller line under the label */
+  /** A smaller text under the label, it may have more lines */
   detail?: string;
   /** A disabled item is grayed out and the cursor skips it (default: true) */
   enabled?: boolean;
@@ -44,10 +51,15 @@ export abstract class MenuScene extends ContinuousScene {
   /**
    * Show the items, replacing the ones already shown
    *
-   * @param items  The items, from the top
-   * @param firstY The y coordinate of the first item
+   * @param items   The items, from the top
+   * @param firstY  The y coordinate of the first item
+   * @param options Spacing and first selection
    */
-  protected buildMenu(items: MenuItem[], firstY: number): void {
+  protected buildMenu(
+    items: MenuItem[],
+    firstY: number,
+    options: MenuOptions = {}
+  ): void {
     [...this.labels, ...this.details].forEach((text) => text.destroy());
 
     this.items = items;
@@ -57,7 +69,7 @@ export abstract class MenuScene extends ContinuousScene {
     this.readyAt = Date.now() + this.inputDelay;
 
     const centerX = this.scale.width / 2;
-    const spacing = TILE_SIZE * 2.5;
+    const spacing = options.spacing ?? TILE_SIZE * 2.5;
 
     items.forEach((item, index) => {
       const y = firstY + index * spacing;
@@ -75,10 +87,16 @@ export abstract class MenuScene extends ContinuousScene {
             color: COLORS.detail,
           })
           .setOrigin(0.5)
+          .setAlign("center")
       );
     });
 
-    this.select(firstEnabled(this.entries()));
+    const wanted = options.selected;
+    this.select(
+      wanted !== undefined && items[wanted]?.enabled !== false
+        ? wanted
+        : firstEnabled(this.entries())
+    );
   }
 
   public update(): void {

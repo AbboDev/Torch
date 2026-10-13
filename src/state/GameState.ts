@@ -64,6 +64,8 @@ export interface GameStateSnapshot {
   stats: PlayerStats;
   inventory: InventorySnapshot;
   world: WorldSnapshot;
+  /** How long the game has been played, in milliseconds */
+  playTime: number;
 }
 
 export interface GameStateEvents extends Record<string, unknown[]> {
@@ -110,6 +112,14 @@ export class GameState {
   private savePoint: SavePointRef | null = null;
 
   private flags = new Set<string>();
+
+  private playTime = 0;
+
+  /**
+   * The save slot this run is played in. It is about the session, not the
+   * game: it is not saved, and loading or resetting the state keeps it.
+   */
+  private activeSlot = 0;
 
   /**
    * Get the state attached to the Game (Phaser's global registry),
@@ -168,6 +178,30 @@ export class GameState {
     return this.flags.has(flag);
   }
 
+  public getActiveSlot(): number {
+    return this.activeSlot;
+  }
+
+  public setActiveSlot(slot: number): void {
+    this.activeSlot = slot;
+  }
+
+  /** Milliseconds played so far in this run */
+  public getPlayTime(): number {
+    return this.playTime;
+  }
+
+  public addPlayTime(milliseconds: number): void {
+    if (Number.isFinite(milliseconds) && milliseconds > 0) {
+      this.playTime += milliseconds;
+    }
+  }
+
+  /** How many different rooms the Player has entered */
+  public getVisitedRoomCount(): number {
+    return this.visitedRooms.size;
+  }
+
   public snapshot(): GameStateSnapshot {
     return {
       stats: { ...this.stats },
@@ -177,6 +211,7 @@ export class GameState {
         savePoint: this.savePoint ? { ...this.savePoint } : null,
         flags: [...this.flags],
       },
+      playTime: this.playTime,
     };
   }
 
@@ -203,6 +238,11 @@ export class GameState {
     this.flags = new Set(
       (snapshot?.world?.flags ?? []).filter((flag) => typeof flag === "string")
     );
+    const playTime = snapshot?.playTime;
+    this.playTime =
+      typeof playTime === "number" && Number.isFinite(playTime)
+        ? Math.max(0, playTime)
+        : 0;
     const savePoint = snapshot?.world?.savePoint;
     // A save point is a map and a name (an older save had only a name: it is dropped)
     this.savePoint =

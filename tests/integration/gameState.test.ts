@@ -79,6 +79,22 @@ describe("game state", () => {
     expect(state.hasFlag("something")).toBe(false);
   });
 
+  it("counts the time played, saves it and ignores invalid values", () => {
+    const state = new GameState();
+
+    state.addPlayTime(1500);
+    state.addPlayTime(-10);
+    state.addPlayTime(Number.NaN);
+    expect(state.getPlayTime()).toBe(1500);
+
+    const loaded = new GameState();
+    loaded.restore(state.snapshot());
+    expect(loaded.getPlayTime()).toBe(1500);
+
+    loaded.restore({ playTime: "soon" } as never);
+    expect(loaded.getPlayTime()).toBe(0);
+  });
+
   it("round-trips through a save and restores everything", () => {
     const manager = new SaveManager(new MemoryStorage());
     const original = new GameState();
@@ -146,7 +162,7 @@ describe("the save point of a save", () => {
     const state = new GameState();
 
     state.restore({
-      world: { visitedRooms: [], savePoint: "save_lab" as never },
+      world: { visitedRooms: [], savePoint: "save_lab" as never, flags: [] },
     });
 
     expect(state.getSavePoint()).toBeNull();

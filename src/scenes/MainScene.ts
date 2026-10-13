@@ -329,6 +329,11 @@ export class MainScene extends MapScene {
     super.update(time, delta);
 
     this.hero.update(time, delta);
+
+    // Only while the game runs: the scene is paused in the inventory
+    if (!this.isDead) {
+      this.getGameState().addPlayTime(delta);
+    }
     // this.cameras.main.centerOnY(this.hero.y - TILE_SIZE * 4.5);
 
     this.updateDoors();
@@ -521,8 +526,10 @@ export class MainScene extends MapScene {
    * Heal the Player and save the game: it restarts from this save point
    */
   private saveAt(point: SavePoint): void {
+    const state = this.getGameState();
+
     try {
-      useSavePoint(this.getGameState(), this.getSaveManager(), {
+      useSavePoint(state, this.getSaveManager(), {
         map: this.mapConfig.key,
         id: point.id,
       });
@@ -535,7 +542,10 @@ export class MainScene extends MapScene {
     }
 
     this.cameras.main.flash(300, 160, 255, 160);
-    this.events.emit("notice", "Game saved");
+    this.events.emit(
+      "notice",
+      `Game saved (slot ${state.getActiveSlot() + 1})`
+    );
   }
 
   /**

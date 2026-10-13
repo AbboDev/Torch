@@ -31,12 +31,15 @@ export class GameOverScene extends MenuScene {
       })
       .setOrigin(0.5);
 
-    const hasSave = this.getSaveManager().has();
+    const state = this.getGameState();
+    const hasSave = this.getSaveManager().has(state.getActiveSlot());
 
     this.buildMenu(
       [
         {
-          label: hasSave ? "Continue from the last save" : "Try again",
+          label: hasSave
+            ? `Continue from the last save (slot ${state.getActiveSlot() + 1})`
+            : "Try again",
           onSelect: () => this.restartGame(),
         },
         {

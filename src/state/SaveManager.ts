@@ -2,6 +2,9 @@ import { GameState, GameStateSnapshot, SavePointRef } from "@/state/GameState";
 
 export const SAVE_VERSION = 1;
 
+/** How many games the Player can keep. Slot numbers go from 0 to SLOT_COUNT - 1 */
+export const SLOT_COUNT = 3;
+
 export interface SaveFile {
   version: number;
   savedAt: string;

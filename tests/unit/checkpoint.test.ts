@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { PowerUps } from "@/miscellaneous/Inventory";
 import {
+  continueGame,
   refillStats,
   respawn,
   startNewGame,
@@ -116,11 +117,85 @@ describe("startNewGame", () => {
     state.inventory.grant(PowerUps.DASH);
     useSavePoint(state, saves, savePoint("save_lab"));
 
-    startNewGame(state, saves);
+    startNewGame(state, saves, 0);
 
     expect(saves.has()).toBe(false);
     expect(state.getSavePoint()).toBeNull();
     expect(state.inventory.equip(PowerUps.DASH)).toBe(false);
     expect(respawn(state, saves)).toBe("new");
+  });
+});
+
+describe("save slots", () => {
+  it("saves in the slot of the run and brings it back from the same one", () => {
+    const saves = new SaveManager(new MemoryStorage());
+    const state = new GameState();
+
+    startNewGame(state, saves, 2);
+    state.inventory.grant(PowerUps.DASH);
+    useSavePoint(state, saves, savePoint("save_lab"));
+
+    expect(saves.has(2)).toBe(true);
+    expect(saves.has(0)).toBe(false);
+
+    state.inventory.grant(PowerUps.ROCKET);
+    state.set("life", 0);
+
+    expect(respawn(state, saves)).toBe("loaded");
+    expect(state.getActiveSlot()).toBe(2);
+    expect(state.inventory.equip(PowerUps.DASH)).toBe(true);
+    expect(state.inventory.equip(PowerUps.ROCKET)).toBe(false);
+  });
+
+  it("keeps the games of the other slots apart", () => {
+    const saves = new SaveManager(new MemoryStorage());
+    const state = new GameState();
+
+    startNewGame(state, saves, 0);
+    state.inventory.grant(PowerUps.DASH);
+    useSavePoint(state, saves, savePoint("save_a"));
+
+    startNewGame(state, saves, 1);
+    useSavePoint(state, saves, savePoint("save_b"));
+
+    expect(saves.load(0)?.state.world.savePoint).toEqual(savePoint("save_a"));
+    expect(saves.load(1)?.state.world.savePoint).toEqual(savePoint("save_b"));
+
+    expect(continueGame(state, saves, 0)).toBe("loaded");
+    expect(state.getActiveSlot()).toBe(0);
+    expect(state.inventory.equip(PowerUps.DASH)).toBe(true);
+  });
+
+  it("starts a new game when the slot played is empty", () => {
+    const saves = new SaveManager(new MemoryStorage());
+    const state = new GameState();
+    state.inventory.grant(PowerUps.DASH);
+
+    expect(continueGame(state, saves, 2)).toBe("new");
+
+    expect(state.getActiveSlot()).toBe(2);
+    expect(state.inventory.equip(PowerUps.DASH)).toBe(false);
+  });
+
+  it("erases only the slot where a new game starts", () => {
+    const saves = new SaveManager(new MemoryStorage());
+    const state = new GameState();
+    useSavePoint(state, saves, savePoint("save_a"), 0);
+    useSavePoint(state, saves, savePoint("save_b"), 1);
+
+    startNewGame(state, saves, 1);
+
+    expect(saves.has(0)).toBe(true);
+    expect(saves.has(1)).toBe(false);
+  });
+
+  it("is not changed by loading or resetting the state", () => {
+    const state = new GameState();
+    state.setActiveSlot(3);
+
+    state.restore(undefined);
+    state.reset();
+
+    expect(state.getActiveSlot()).toBe(3);
   });
 });
