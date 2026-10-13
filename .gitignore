@@ -72,5 +72,5 @@ rawAssets
 .vercel
 
 /*.zip
-
+/*.patch
 .DS_Store
