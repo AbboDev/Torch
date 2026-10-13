@@ -97,6 +97,27 @@ describe("getAnimationAction", () => {
     expect(count).toBe(2 ** 7 * 3 * 4);
   });
 
+  it("has an animation of its own for aiming at something, standing still", () => {
+    expect(getAnimationAction(state({ isAimingAtTarget: true }))).toBe(
+      "aim_target"
+    );
+    expect(getAnimationKey("aim_target", DirectionAxisX.LEFT)).toBe(
+      "hero_aim_target_left_animation"
+    );
+  });
+
+  it("keeps the other animations when it aims at something", () => {
+    const target = { isAimingAtTarget: true };
+
+    expect(getAnimationAction(state({ ...target, velocityX: 100 }))).toBe("walk");
+    expect(getAnimationAction(state({ ...target, isCrouch: true }))).toBe(
+      "crouch_idle"
+    );
+    expect(getAnimationAction(state({ ...target, isOnFloor: false }))).toBe(
+      "jump"
+    );
+  });
+
   it("describes the common cases", () => {
     expect(getAnimationAction(state())).toBe("idle");
     expect(getAnimationAction(state({ velocityX: 100 }))).toBe("walk");

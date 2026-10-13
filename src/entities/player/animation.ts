@@ -15,6 +15,8 @@ export interface AnimationState {
   wasAimingDiagonal: boolean;
   velocityX: number;
   facingY: DirectionAxisY | null;
+  /** The aim points at something which can be hit: a block or an enemy */
+  isAimingAtTarget?: boolean;
 }
 
 /** The action to play: "idle", "walk", "jump", "aim_up_diagonal", ... */
@@ -30,6 +32,11 @@ export function getAnimationAction(state: AnimationState): string {
   if (state.isOnFloor) {
     if (state.isCrouch) {
       return "crouch_idle";
+    }
+
+    // Standing still: walking keeps its own animation
+    if (state.isAimingAtTarget && state.velocityX === 0) {
+      return "aim_target";
     }
 
     if (state.velocityX !== 0) {

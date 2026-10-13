@@ -40,15 +40,19 @@ describe("PlayerAssets", () => {
     legacyCreate(before.scene);
     PlayerAssets.create(after.scene);
 
-    const withoutHangAnimations = (calls: unknown[][]) =>
-      calls.filter(
-        ([name, config]) =>
-          name !== "anims.create" ||
-          !(config as { key: string }).key.startsWith("hero_hang_")
-      );
+    const withoutNewAnimations = (calls: unknown[][]) =>
+      calls.filter(([name, config]) => {
+        if (name !== "anims.create") {
+          return true;
+        }
 
-    expect(withoutHangAnimations(after.calls)).toEqual(
-      withoutHangAnimations(before.calls)
+        const key = (config as { key: string }).key;
+
+        return !key.startsWith("hero_hang_") && !key.includes("aim_target");
+      });
+
+    expect(withoutNewAnimations(after.calls)).toEqual(
+      withoutNewAnimations(before.calls)
     );
     // and it was a lot: 20 sprite sheets and 22 animations
     expect(
@@ -76,6 +80,19 @@ describe("PlayerAssets", () => {
           step.yoyo
       )
     ).toBe(true);
+  });
+
+  it("adds the animations of aiming at something", () => {
+    const keys = getPlayerAssetSteps()
+      .filter(
+        (step) => step.type === "animation" && step.key.includes("aim_target")
+      )
+      .map((step) => step.key);
+
+    expect(keys).toEqual([
+      "hero_aim_target_left_animation",
+      "hero_aim_target_right_animation",
+    ]);
   });
 
   it("loads the atlas of the hero", () => {

@@ -100,6 +100,20 @@ export function getPlayerAssetSteps(): AssetStep[] {
     });
   }
 
+  // PLACEHOLDER: aiming at something which can be hit. It borrows the frames of
+  // the standing pose, faster than the poses are; for the real one, add its
+  // sheet to the atlas and change `sheet`.
+  for (const side of ["left", "right"] as const) {
+    steps.push({
+      type: "animation",
+      key: `hero_aim_target_${side}_animation`,
+      sheet: `hero_idle_${side}`,
+      frames: { start: 0 },
+      frameRate: 12,
+      repeat: -1,
+    });
+  }
+
   return steps;
 }
 
