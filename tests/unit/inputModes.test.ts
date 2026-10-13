@@ -165,6 +165,38 @@ describe("the modes of the Controller", () => {
   });
 });
 
+describe("the aim device", () => {
+  it("is the mouse in keyboard + mouse mode, the stick in gamepad mode", () => {
+    const { controller, plug } = setup();
+    expect(controller.getAimDevice()).toBeNull();
+
+    controller.setMode("keyboardMouse");
+    expect(controller.getAimDevice()).toBe("mouse");
+
+    controller.setMode("gamepad");
+    plug(pad());
+    controller.update();
+    expect(controller.getAimDevice()).toBe("gamepad");
+  });
+
+  it("is none in gamepad mode without a gamepad: the keyboard aims", () => {
+    const { controller } = setup();
+    controller.setMode("gamepad");
+    controller.update();
+
+    expect(controller.getAimDevice()).toBeNull();
+  });
+
+  it("reads the right stick, and is at rest without a gamepad", () => {
+    const { controller, plug } = setup();
+    expect(controller.getAimStick()).toEqual({ x: 0, y: 0 });
+
+    plug(pad([], [0, 0, 0.5, -0.75]));
+    controller.update();
+    expect(controller.getAimStick()).toEqual({ x: 0.5, y: -0.75 });
+  });
+});
+
 describe("the gamepad seen by a menu", () => {
   it("tells if there is a gamepad and which buttons are held", () => {
     const { controller, plug } = setup();

@@ -1,6 +1,7 @@
 import { ButtonState } from "@/input/ButtonState";
 import { ControllerKey } from "@/input/ControllerKey";
 import {
+  AimDevice,
   DEFAULT_BINDINGS,
   InputDevice,
   InputMode,
@@ -282,6 +283,24 @@ export class Controller {
     return (this.pad?.buttons ?? []).flatMap((button, index) =>
       button.pressed ? [`Pad${index}`] : []
     );
+  }
+
+  /**
+   * The device which aims freely now: the mouse in keyboard + mouse mode, the
+   * right stick in gamepad mode (with a gamepad), otherwise none and the
+   * Player aims with the buttons.
+   */
+  public getAimDevice(): AimDevice | null {
+    if (this.mode === "keyboardMouse") {
+      return "mouse";
+    }
+
+    return this.mode === "gamepad" && this.pad ? "gamepad" : null;
+  }
+
+  /** The right stick of the gamepad, from -1 to 1 (0 with no gamepad) */
+  public getAimStick(): { x: number; y: number } {
+    return { x: this.pad?.axes[2] ?? 0, y: this.pad?.axes[3] ?? 0 };
   }
 
   public getMode(): InputMode {

@@ -36,6 +36,9 @@ export const INPUT_MODES: readonly InputMode[] = [
 
 export type InputDevice = "keyboard" | "mouse" | "gamepad";
 
+/** The devices which aim freely; the keyboard aims with its eight directions */
+export type AimDevice = "mouse" | "gamepad";
+
 export const INPUT_DEVICES: readonly InputDevice[] = [
   "keyboard",
   "mouse",
