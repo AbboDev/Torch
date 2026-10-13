@@ -113,8 +113,22 @@ export function aimPose(angle: number, previousSide: Side): AimPose {
 /** How fast the keyboard turns the aim, in radians per second */
 export const KEYBOARD_AIM_SPEED = (Math.PI * 2) / 3;
 
-/** Where the aim starts when the aim key goes down: the diagonal, as it always did */
-export const KEYBOARD_AIM_START = Math.PI / 4;
+/**
+ * The elevation of the aim the buttons give (see `PlayerAim`): the fine aim
+ * starts from it, so it does not jump when the button goes down
+ */
+export function poseElevation(
+  facingY: DirectionAxisY,
+  diagonal: boolean
+): number {
+  const size = diagonal ? Math.PI / 4 : Math.PI / 2;
+
+  if (facingY === DirectionAxisY.UP) {
+    return size;
+  }
+
+  return facingY === DirectionAxisY.DOWN ? -size : 0;
+}
 
 /**
  * The elevation of the aim (radians above the horizon, negative below it)

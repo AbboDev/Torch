@@ -6,6 +6,7 @@ import {
   elevationToAngle,
   octantSign,
   pointOnCircle,
+  poseElevation,
   stepElevation,
   stickAngle,
 } from "@/entities/player/aimAngles";
@@ -133,5 +134,17 @@ describe("the aim of the keyboard", () => {
     expect(elevationToAngle(PI / 4, true)).toBeCloseTo((5 * PI) / 4);
     expect(octantSign(elevationToAngle(PI / 4, true))).toEqual({ x: -1, y: -1 });
     expect(octantSign(elevationToAngle(-PI / 4, true))).toEqual({ x: -1, y: 1 });
+  });
+});
+
+describe("poseElevation", () => {
+  it("is the elevation the buttons aim at, so the fine aim starts from it", () => {
+    const { UP, DOWN, MIDDLE } = DirectionAxisY;
+
+    expect(poseElevation(MIDDLE, false)).toBe(0);
+    expect(poseElevation(UP, true)).toBeCloseTo(PI / 4);
+    expect(poseElevation(UP, false)).toBeCloseTo(PI / 2);
+    expect(poseElevation(DOWN, true)).toBeCloseTo(-PI / 4);
+    expect(poseElevation(DOWN, false)).toBeCloseTo(-PI / 2);
   });
 });

@@ -6,8 +6,8 @@ import { ContinuousScene } from "@/scenes/ContinuousScene";
  * is drawn over every other scene. With the mouse (keyboard + mouse mode) it
  * follows the mouse, menus too, and takes the place of the system cursor. With
  * the gamepad it is the cursor the Player turns around itself with the right
- * stick, and with the keyboard the one of the aim key, only while the game is
- * running.
+ * stick, and with the keyboard the one of the fine aim button, only while the
+ * game is running.
  */
 export class CursorScene extends ContinuousScene {
   private crosshair!: Phaser.GameObjects.Graphics;

@@ -13,7 +13,7 @@ function setup(facingX: DirectionAxisX = DirectionAxisX.RIGHT) {
     device: "mouse" as "keyboard" | "mouse" | "gamepad",
     pointer: { x: 0, y: 0 },
     stick: { x: 0, y: 0 },
-    keys: { aim: false, up: false, down: false },
+    keys: { fineAim: false, up: false, down: false },
   };
   const cursor: AimCursorState = { visible: false, x: 0, y: 0 };
   const aim = new PlayerAim();
@@ -106,8 +106,13 @@ describe("FreeAim with the right stick", () => {
 
 describe("FreeAim with the keyboard", () => {
   const second = 1000;
+  const keys = (fineAim: boolean, up = false, down = false) => ({
+    fineAim,
+    up,
+    down,
+  });
 
-  it("leaves the aim to the buttons while the aim key is up", () => {
+  it("leaves the aim to the buttons while the fine aim button is up", () => {
     const { freeAim, aim, sources, cursor } = setup();
     sources.device = "keyboard";
 
@@ -118,47 +123,49 @@ describe("FreeAim with the keyboard", () => {
     expect(cursor.visible).toBe(false);
   });
 
-  it("starts at the diagonal when the aim key goes down, and shows the cursor", () => {
+  it("starts where the buttons were aiming, and shows the cursor", () => {
     const { freeAim, aim, sources, cursor } = setup();
     sources.device = "keyboard";
-    sources.keys = { aim: true, up: false, down: false };
+    sources.keys = keys(true);
 
+    // aiming ahead with the buttons: the angle does not jump
     freeAim.update(aim, 0);
-
-    expect(aim.freeAngle).toBeCloseTo(-PI / 4);
+    expect(aim.freeAngle).toBeCloseTo(0);
     expect(aim.isAdjustingAngle).toBe(true);
     expect(cursor.visible).toBe(true);
-    expect(cursor.x).toBeGreaterThan(100);
-    expect(cursor.y).toBeLessThan(100);
+    expect(cursor.x).toBeCloseTo(164);
+    expect(cursor.y).toBeCloseTo(100);
   });
 
-  it("starts below with the down key, as the aim key always did", () => {
+  it("starts from the diagonal when the aim button was aiming there", () => {
     const { freeAim, aim, sources } = setup();
     sources.device = "keyboard";
-    sources.keys = { aim: true, up: false, down: true };
+    aim.facingForAim.y = DirectionAxisY.DOWN;
+    aim.isAimingDiagonal = true;
+    sources.keys = keys(true);
 
     freeAim.update(aim, 0);
 
     expect(aim.freeAngle).toBeCloseTo(PI / 4);
   });
 
-  it("raises the angle with up and lowers it with down, while the aim key is held", () => {
+  it("raises the angle with up and lowers it with down, while it is held", () => {
     const { freeAim, aim, sources } = setup();
     sources.device = "keyboard";
-    sources.keys = { aim: true, up: false, down: false };
+    sources.keys = keys(true);
     freeAim.update(aim, 0);
 
-    // 0.3 s up from 45 degrees: 36 degrees more, so 81 above the horizon
-    sources.keys = { aim: true, up: true, down: false };
+    // 0.3 s up at 120 degrees per second: 36 degrees above the horizon
+    sources.keys = keys(true, true);
     freeAim.update(aim, 0.3 * second);
-    expect(aim.freeAngle).toBeCloseTo(-(PI / 4 + 0.3 * ((PI * 2) / 3)));
+    expect(aim.freeAngle).toBeCloseTo(-0.3 * ((PI * 2) / 3));
 
-    sources.keys = { aim: true, up: false, down: true };
+    sources.keys = keys(true, false, true);
     freeAim.update(aim, 0.6 * second);
-    expect(aim.freeAngle).toBeGreaterThan(-PI / 4);
+    expect(aim.freeAngle).toBeGreaterThan(-0.3 * ((PI * 2) / 3));
 
     // the buttons do not move it when they are not held
-    sources.keys = { aim: true, up: false, down: false };
+    sources.keys = keys(true);
     const held = aim.freeAngle;
     freeAim.update(aim, second);
     expect(aim.freeAngle).toBe(held);
@@ -167,27 +174,33 @@ describe("FreeAim with the keyboard", () => {
   it("aims to the side the Player looks at", () => {
     const { freeAim, aim, sources } = setup(DirectionAxisX.LEFT);
     sources.device = "keyboard";
-    sources.keys = { aim: true, up: false, down: false };
+    sources.keys = keys(true, true);
 
-    freeAim.update(aim, 0);
+    freeAim.update(aim, 0.25 * second);
 
-    expect(aim.freeAngle).toBeCloseTo((5 * PI) / 4);
+    // up and to the left
+    expect(Math.cos(aim.freeAngle as number)).toBeLessThan(0);
+    expect(Math.sin(aim.freeAngle as number)).toBeLessThan(0);
     expect(aim.lookingX).toBe(DirectionAxisX.LEFT);
   });
 
-  it("starts again at the diagonal after the aim key is let go", () => {
+  it("starts again from the buttons after the fine aim button is let go", () => {
     const { freeAim, aim, sources } = setup();
     sources.device = "keyboard";
-    sources.keys = { aim: true, up: true, down: false };
+    sources.keys = keys(true, true);
     freeAim.update(aim, second);
 
-    sources.keys = { aim: false, up: false, down: false };
+    sources.keys = keys(false);
     freeAim.update(aim, 16);
     expect(aim.freeAngle).toBeNull();
 
-    sources.keys = { aim: true, up: false, down: false };
+    // the buttons compute the aim again at the start of the next frame
+    aim.facingForAim.y = DirectionAxisY.MIDDLE;
+    aim.isAimingDiagonal = false;
+
+    sources.keys = keys(true);
     freeAim.update(aim, 0);
-    expect(aim.freeAngle).toBeCloseTo(-PI / 4);
+    expect(aim.freeAngle).toBeCloseTo(0);
   });
 });
 

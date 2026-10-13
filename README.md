@@ -128,14 +128,16 @@ scene, and takes the place of the system cursor.
 ### Free aim
 
 With the mouse and with the gamepad the Player aims at any angle (`src/entities/player/FreeAim.ts`);
-with the keyboard it aims in the eight directions of the buttons, and in between with the aim key.
+with the keyboard it aims in the eight directions of the buttons, and in between with the fine aim
+button.
 
 - **Mouse:** the shots go from the gun to the cursor.
 - **Gamepad:** the right stick turns a cursor around the Player, at a fixed distance
   (`AIM_CURSOR_DISTANCE`). With the stick at rest the Player aims ahead, where it is going.
-- **Keyboard:** while the aim key is held, the aim starts at the diagonal and up and down raise and
-  lower the angle (`KEYBOARD_AIM_SPEED`); the cursor shows where it points. Let go of the aim key and
-  the buttons aim again, in eight directions. Holding it, down does not crouch.
+- **Keyboard:** while the fine aim button is held (`D` by default, not the aim button `A`, which
+  still gives the 45 degrees), up and down raise and lower the angle (`KEYBOARD_AIM_SPEED`), starting
+  from where the buttons were aiming; the cursor shows where it points. Let go of it and the buttons
+  aim again, in eight directions. Holding it, down does not crouch.
 
 The sprites only have eight directions, so they take the closest one, while the shots use the exact
 angle (`BulletConfig.angle`). The sprite looks at the side of the aim; the movement keeps its own

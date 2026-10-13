@@ -213,7 +213,7 @@ export class Player extends SpriteCollidable {
         },
         stick: () => this.scene.getController().getAimStick(),
         keys: () => ({
-          aim: this.controls.aim,
+          fineAim: this.controls.fineAim,
           up: this.controls.up,
           down: this.controls.down,
         }),
