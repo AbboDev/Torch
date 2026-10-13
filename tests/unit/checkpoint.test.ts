@@ -1,7 +1,14 @@
-import { describe, expect, it } from "vitest";
-import { refillStats, useSavePoint } from "@/state/checkpoint";
+import { describe, expect, it, vi } from "vitest";
+import { PowerUps } from "@/miscellaneous/Inventory";
+import {
+  refillStats,
+  respawn,
+  startNewGame,
+  useSavePoint,
+} from "@/state/checkpoint";
 import { DEFAULT_STATS, GameState } from "@/state/GameState";
 import { MemoryStorage, SaveManager } from "@/state/SaveManager";
+import { breakableFlag } from "@/world/worldFlags";
 
 const hurt = (state: GameState) => {
   state.set("life", 7);
@@ -9,7 +16,7 @@ const hurt = (state: GameState) => {
   state.set("battery", 2);
 };
 
-const savePoint = { map: "chozodia", id: "save_lab" };
+const savePoint = (id: string) => ({ map: "chozodia", id });
 
 describe("refillStats", () => {
   it("fills life, ammo and battery up to their maximum", () => {
@@ -31,11 +38,89 @@ describe("useSavePoint", () => {
     const state = new GameState();
     hurt(state);
 
-    useSavePoint(state, saves, savePoint);
+    useSavePoint(state, saves, savePoint("save_lab"));
 
     const saved = saves.load();
     expect(saved?.state.stats.life).toBe(DEFAULT_STATS.maxLife);
-    expect(saved?.state.world.savePoint).toEqual(savePoint);
-    expect(state.getSavePoint()).toEqual(savePoint);
+    expect(saved?.state.world.savePoint).toEqual(savePoint("save_lab"));
+    expect(state.getSavePoint()).toEqual(savePoint("save_lab"));
+  });
+});
+
+describe("respawn", () => {
+  it("goes back to the last save and loses what came after it", () => {
+    const saves = new SaveManager(new MemoryStorage());
+    const state = new GameState();
+    state.inventory.grant(PowerUps.DASH);
+    state.setFlag(breakableFlag("map", 1, 2));
+    useSavePoint(state, saves, savePoint("save_lab"));
+
+    state.inventory.grant(PowerUps.ROCKET);
+    state.setFlag(breakableFlag("map", 3, 4));
+    state.visitRoom("room_after_save");
+    state.set("life", 0);
+
+    expect(respawn(state, saves)).toBe("loaded");
+
+    expect(state.get("life")).toBe(DEFAULT_STATS.maxLife);
+    expect(state.getSavePoint()).toEqual(savePoint("save_lab"));
+    expect(state.inventory.equip(PowerUps.DASH)).toBe(true);
+    expect(state.inventory.equip(PowerUps.ROCKET)).toBe(false);
+    expect(state.hasFlag(breakableFlag("map", 1, 2))).toBe(true);
+    expect(state.hasFlag(breakableFlag("map", 3, 4))).toBe(false);
+    expect(state.hasVisitedRoom("room_after_save")).toBe(false);
+  });
+
+  it("starts from scratch when there is no save", () => {
+    const state = new GameState();
+    state.inventory.grant(PowerUps.DASH);
+    state.set("life", 0);
+
+    expect(respawn(state, new SaveManager(new MemoryStorage()))).toBe("new");
+
+    expect(state.get("life")).toBe(DEFAULT_STATS.life);
+    expect(state.inventory.equip(PowerUps.DASH)).toBe(false);
+    expect(state.getSavePoint()).toBeNull();
+  });
+
+  it("starts from scratch when the save is corrupted", () => {
+    const storage = new MemoryStorage();
+    storage.setItem("torch:save:0", "{not json");
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const state = new GameState();
+    state.set("life", 0);
+
+    expect(respawn(state, new SaveManager(storage))).toBe("new");
+    expect(state.get("life")).toBe(DEFAULT_STATS.life);
+  });
+
+  it("does not bring the Player back with no life", () => {
+    const storage = new MemoryStorage();
+    const saves = new SaveManager(storage);
+    const state = new GameState();
+    state.set("life", 0);
+    saves.save(state);
+
+    expect(respawn(new GameState(), saves)).toBe("loaded");
+
+    const revived = new GameState();
+    respawn(revived, saves);
+    expect(revived.get("life")).toBe(DEFAULT_STATS.maxLife);
+  });
+});
+
+describe("startNewGame", () => {
+  it("erases the old save, so dying early does not bring it back", () => {
+    const saves = new SaveManager(new MemoryStorage());
+    const state = new GameState();
+    state.inventory.grant(PowerUps.DASH);
+    useSavePoint(state, saves, savePoint("save_lab"));
+
+    startNewGame(state, saves);
+
+    expect(saves.has()).toBe(false);
+    expect(state.getSavePoint()).toBeNull();
+    expect(state.inventory.equip(PowerUps.DASH)).toBe(false);
+    expect(respawn(state, saves)).toBe("new");
   });
 });

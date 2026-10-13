@@ -40,6 +40,9 @@ import {
 import { DEFAULT_LIGHT } from "@/config/lights";
 import { TILE_SIZE } from "@/config/tiles";
 
+/** How long the screen takes to go black when the Player dies */
+const DEATH_FADE_DURATION = 1200;
+
 const SAVE_PROMPT = "Press UP to save";
 
 const DEBUG_FACE_COLOR = new Phaser.Display.Color(40, 39, 37, 255);
@@ -92,6 +95,11 @@ export class MainScene extends MapScene {
    */
   private prompt: string | null = null;
 
+  /**
+   * The Player has no life left: the game is over and nothing can move again
+   */
+  private isDead = false;
+
   public constructor() {
     super({
       active: false,
@@ -103,12 +111,14 @@ export class MainScene extends MapScene {
   public create(): void {
     super.create();
 
-    // A scene which restarts keeps its fields: start clean
+    // A scene which restarts after a death keeps its fields: start clean
     this.doors = [];
     this.savePoints = [];
+    this.isDead = false;
     this.prompt = null;
     this.doorTrigger = new DoorTrigger();
     this.savePointTrigger = new SavePointTrigger();
+    this.physics.resume();
 
     this.map = this.make.tilemap({ key: this.mapConfig.cacheKey });
 
@@ -306,6 +316,13 @@ export class MainScene extends MapScene {
     this.setupRoom(this.rooms[roomNumber]);
 
     this.physics.add.collider(this.hero, this.platforms);
+
+    // No life left: the game is over
+    this.watchState("stat", (key, value) => {
+      if (key === "life" && value <= 0) {
+        this.die();
+      }
+    });
   }
 
   public update(time: any, delta: number): void {
@@ -324,7 +341,7 @@ export class MainScene extends MapScene {
     const isStartPressed: boolean =
       this.getController().isKeyPressedForFirstTime(ControllerKey.START);
 
-    if (isStartPressed) {
+    if (isStartPressed && !this.isDead) {
       this.scene.pause().wake("inventory");
     }
   }
@@ -378,6 +395,11 @@ export class MainScene extends MapScene {
   }
 
   private unfreeze(): void {
+    // A transition which ends after the Player died must not bring it back
+    if (this.isDead) {
+      return;
+    }
+
     this.hero.canInteract = true;
     this.physics.resume();
   }
@@ -453,10 +475,11 @@ export class MainScene extends MapScene {
   }
 
   /**
-   * The Player can use a save point: in control, not in a transition
+   * The Player can use a save point: in control, not dead, not in a transition
    */
   private canUseSavePoints(): boolean {
     return (
+      !this.isDead &&
       this.hero.canInteract &&
       !this.doorTransition.isRunning &&
       !this.roomTransition.isRunning
@@ -525,6 +548,25 @@ export class MainScene extends MapScene {
 
     this.prompt = prompt;
     this.events.emit("prompt", prompt);
+  }
+
+  /**
+   * The Player has no life left: everything stops, the screen goes black and
+   * the game over screen asks what to do
+   */
+  private die(): void {
+    if (this.isDead) {
+      return;
+    }
+
+    this.isDead = true;
+    this.setPrompt(null);
+    this.freeze();
+    this.hero.setTint(0xff3333);
+
+    this.fadeCamera(true, DEATH_FADE_DURATION, () => {
+      this.scene.launch("gameover");
+    });
   }
 
   /**

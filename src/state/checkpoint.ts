@@ -22,3 +22,41 @@ export function useSavePoint(
 
   return saves.save(state, slot, savePoint);
 }
+
+export type RespawnResult = "loaded" | "new";
+
+/**
+ * After a death: go back to the last save (what happened after it is lost),
+ * or start from scratch if there is none or it can not be read.
+ */
+export function respawn(
+  state: GameState,
+  saves: SaveManager,
+  slot = 0
+): RespawnResult {
+  if (!saves.loadInto(state, slot)) {
+    state.reset();
+
+    return "new";
+  }
+
+  // A hand-edited save with no life would kill the Player again at once
+  if (state.get("life") <= 0) {
+    state.set("life", state.get("maxLife"));
+  }
+
+  return "loaded";
+}
+
+/**
+ * Start a new game: the slot holds the run in progress, so the old save is
+ * erased, or dying before the first save point would bring the old game back.
+ */
+export function startNewGame(
+  state: GameState,
+  saves: SaveManager,
+  slot = 0
+): void {
+  saves.delete(slot);
+  state.reset();
+}

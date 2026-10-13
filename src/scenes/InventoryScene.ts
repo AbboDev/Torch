@@ -132,6 +132,11 @@ export class InventoryScene extends DataScene {
       button?.[1].emit("selected", status);
     });
 
+    // A save has been loaded (or a new game started): show what the Player owns now
+    this.watchState("restored", () => {
+      this.refreshButtons();
+    });
+
     this.watchState("weapon", (weaponId) => {
       if (!weaponId) {
         return;
@@ -192,6 +197,32 @@ export class InventoryScene extends DataScene {
       this.selectNextButton(1, 0);
     } else if (isAPress) {
       this.confirmSelection();
+    }
+  }
+
+  /**
+   * Show the power-ups and weapons the Player owns now, whatever they were
+   */
+  private refreshButtons(): void {
+    const inventory = this.getInventory();
+
+    for (const [item, button] of this.buttons[0]) {
+      if (item.kind === "powerUp") {
+        button.emit("selected", inventory.get(item.id));
+      }
+    }
+
+    for (const [item, button] of this.buttons[1]) {
+      let status = Switch.INDETERMINATE;
+
+      if (inventory.carry(item.id as WeaponId)) {
+        status =
+          inventory.getCurrentWeaponId() === item.id
+            ? Switch.ENABLE
+            : Switch.DISABLE;
+      }
+
+      button.emit("selected", status);
     }
   }
 

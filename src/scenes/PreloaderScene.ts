@@ -85,11 +85,6 @@ export class PreloaderScene extends Phaser.Scene {
     PlayerAssets.create(this);
     BulletAssets.registerBulletAnimations(this);
 
-    this.scene
-      .launch("inventory")
-      .sleep("inventory")
-      .launch("main")
-      .launch("hud")
-      .stop();
+    this.scene.launch("inventory").sleep("inventory").launch("title").stop();
   }
 }
