@@ -3,6 +3,7 @@ import { ControllerKey } from "@/miscellaneous/Controller";
 import { Switch } from "@/miscellaneous/Switch";
 import { PowerUps, WeaponId } from "@/miscellaneous/Inventory";
 import { ItemSwitch } from "@/hud/ItemSwitch";
+import { moveSelection } from "@/hud/menu";
 import { DataScene } from "@/scenes/DataScene";
 import { TILE_SIZE } from "@/config/tiles";
 import { WEAPON_META } from "@/config/weapons";
@@ -14,12 +15,33 @@ type InventoryButton = [InventoryItem, ItemSwitch];
 
 const WEAPON_ORDER: readonly WeaponId[] = ["bow", "gun", "rifle"];
 
+/** The tabs, in order: change them with L (previous) and Select (next) */
+const TABS = ["Inventory", "Exit"] as const;
+const ITEMS_TAB = 0;
+const EXIT_TAB = 1;
+
+/** The entries of the exit tab: "Back to the game" is selected first, so quitting takes a move */
+const EXIT_ENTRIES = ["Back to the game", "Quit to the title screen"] as const;
+
+const TAB_COLORS = { current: "#efc53f", other: "#777777" };
+
 export class InventoryScene extends DataScene {
   private cursor!: Phaser.GameObjects.Triangle;
 
   private buttons: InventoryButton[][] = [];
 
   private selectedButtonIndex: [number, number] = [0, 0];
+
+  private tab = ITEMS_TAB;
+
+  private tabLabels: Phaser.GameObjects.Text[] = [];
+
+  /** What each tab shows, so a tab is shown by making its container visible */
+  private tabContents: Phaser.GameObjects.Container[] = [];
+
+  private exitLabels: Phaser.GameObjects.Text[] = [];
+
+  private exitSelected = 0;
 
   public constructor() {
     super({
@@ -38,10 +60,32 @@ export class InventoryScene extends DataScene {
       fontSize: `${TILE_SIZE}px`,
     };
 
+    // The tab bar stays on top of every tab
+    const tabSpacing = TILE_SIZE * 8;
+    const middle = (TABS.length - 1) / 2;
+
+    this.tabLabels = TABS.map((label, index) =>
+      this.add
+        .text(
+          width / 2 + (index - middle) * tabSpacing,
+          TILE_SIZE / 2,
+          label,
+          style
+        )
+        .setOrigin(0.5)
+    );
+
+    const hintStyle = { fontSize: "10px", color: TAB_COLORS.other };
+    const hintX = (TABS.length * tabSpacing) / 2 + TILE_SIZE;
+
     this.add
-      .text(width / 2, TILE_SIZE / 2, "inventory", style)
-      .setAlign("center")
+      .text(width / 2 - hintX, TILE_SIZE / 2, "< L", hintStyle)
       .setOrigin(0.5);
+    this.add
+      .text(width / 2 + hintX, TILE_SIZE / 2, "SELECT >", hintStyle)
+      .setOrigin(0.5);
+
+    const tabBarSize = this.children.getChildren().length;
 
     this.cursor = this.add
       .triangle(
@@ -123,6 +167,21 @@ export class InventoryScene extends DataScene {
 
     this.selectButton(this.selectedButtonIndex);
 
+    // Everything made since the tab bar belongs to the first tab
+    this.tabContents[ITEMS_TAB] = this.add.container(
+      0,
+      0,
+      this.children.getChildren().slice(tabBarSize)
+    );
+    this.tabContents[EXIT_TAB] = this.createExitTab();
+
+    this.showTab(ITEMS_TAB);
+
+    // It opens on the first tab every time
+    this.events.on(Phaser.Scenes.Events.WAKE, () => {
+      this.showTab(ITEMS_TAB);
+    });
+
     this.cameras.main.setBackgroundColor("rgba(0, 0, 0, 0.75)");
 
     // A power-up picked up while the inventory is closed
@@ -164,7 +223,27 @@ export class InventoryScene extends DataScene {
       this.getController().isKeyPressedForFirstTime(ControllerKey.START);
 
     if (isStartPressed) {
-      this.scene.resume("main").sleep();
+      this.close();
+
+      return;
+    }
+
+    const isPreviousTabPress: boolean =
+      this.getController().isKeyPressedForFirstTime(ControllerKey.L);
+
+    const isNextTabPress: boolean =
+      this.getController().isKeyPressedForFirstTime(ControllerKey.SELECT);
+
+    if (isPreviousTabPress || isNextTabPress) {
+      this.showTab(
+        moveSelection(
+          TABS.map(() => ({ enabled: true })),
+          this.tab,
+          isNextTabPress ? 1 : -1
+        )
+      );
+
+      return;
     }
 
     const isUpPress: boolean = this.getController().isKeyPressedForFirstTime(
@@ -187,7 +266,9 @@ export class InventoryScene extends DataScene {
       ControllerKey.A
     );
 
-    if (isUpPress) {
+    if (this.tab === EXIT_TAB) {
+      this.updateExitTab(isUpPress, isDownPress, isAPress);
+    } else if (isUpPress) {
       this.selectNextButton(0, -1);
     } else if (isDownPress) {
       this.selectNextButton(0, 1);
@@ -198,6 +279,98 @@ export class InventoryScene extends DataScene {
     } else if (isAPress) {
       this.confirmSelection();
     }
+  }
+
+  /** Close the inventory and go back to the game */
+  private close(): void {
+    this.scene.resume("main").sleep();
+  }
+
+  private showTab(index: number): void {
+    this.tab = index;
+
+    this.tabContents.forEach((content, position) => {
+      content.setVisible(position === index);
+    });
+    this.tabLabels.forEach((label, position) => {
+      label.setColor(
+        position === index ? TAB_COLORS.current : TAB_COLORS.other
+      );
+    });
+
+    if (index === EXIT_TAB) {
+      this.selectExitEntry(0);
+    }
+  }
+
+  /**
+   * The tab to leave the game: back to the game, or to the title screen
+   * without saving
+   */
+  private createExitTab(): Phaser.GameObjects.Container {
+    const { width, height } = this.scale;
+    const before = this.children.getChildren().length;
+
+    this.add
+      .text(width / 2, height * 0.3, "Leave the game", {
+        fontSize: `${TILE_SIZE}px`,
+      })
+      .setOrigin(0.5);
+
+    this.exitLabels = EXIT_ENTRIES.map((label, index) =>
+      this.add
+        .text(width / 2, height * 0.45 + index * TILE_SIZE * 2.5, label, {
+          fontSize: `${TILE_SIZE}px`,
+        })
+        .setOrigin(0.5)
+    );
+
+    this.add
+      .text(
+        width / 2,
+        height * 0.45 + EXIT_ENTRIES.length * TILE_SIZE * 2.5,
+        "Quitting does not save: everything since the last save point is lost",
+        { fontSize: "10px", color: "#ff6666" }
+      )
+      .setOrigin(0.5);
+
+    return this.add.container(0, 0, this.children.getChildren().slice(before));
+  }
+
+  private selectExitEntry(index: number): void {
+    this.exitSelected = index;
+
+    this.exitLabels.forEach((label, position) => {
+      const selected = position === index;
+
+      label
+        .setColor(selected ? TAB_COLORS.current : "#ffffff")
+        .setText((selected ? "> " : "") + EXIT_ENTRIES[position]);
+    });
+  }
+
+  private updateExitTab(up: boolean, down: boolean, confirm: boolean): void {
+    const entries = EXIT_ENTRIES.map(() => ({ enabled: true }));
+
+    if (up) {
+      this.selectExitEntry(moveSelection(entries, this.exitSelected, -1));
+    } else if (down) {
+      this.selectExitEntry(moveSelection(entries, this.exitSelected, 1));
+    } else if (confirm) {
+      if (this.exitSelected === 0) {
+        this.close();
+      } else {
+        this.quitToTitle();
+      }
+    }
+  }
+
+  /**
+   * Leave without saving: the game running goes away, and so does what
+   * happened since the last save point
+   */
+  private quitToTitle(): void {
+    this.scene.stop("main").stop("hud").launch("title").sleep();
   }
 
   /**
