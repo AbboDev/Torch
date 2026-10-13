@@ -125,6 +125,20 @@ keyboard). It reads the raw keys, so it works whatever the bindings and the mode
 In keyboard + mouse mode a crosshair (`src/scenes/CursorScene.ts`) follows the mouse, over every
 scene, and takes the place of the system cursor.
 
+### Free aim
+
+With the mouse and with the gamepad the Player aims at any angle (`src/entities/player/FreeAim.ts`);
+with the keyboard it keeps the eight directions of the buttons.
+
+- **Mouse:** the shots go from the gun to the cursor.
+- **Gamepad:** the right stick turns a cursor around the Player, at a fixed distance
+  (`AIM_CURSOR_DISTANCE`). With the stick at rest the Player aims ahead, where it is going.
+
+The sprites only have eight directions, so they take the closest one, while the shots use the exact
+angle (`BulletConfig.angle`). The sprite looks at the side of the aim; the movement keeps its own
+`facing`, so dash and ledges do not change. As before, the Player has to look to a side (walk once)
+before it aims and shoots.
+
 Mode and bindings are stored in their own key (`torch:settings`, see
 `src/input/inputSettings.ts`), apart from the saves. The gamepad has no events: the
 Controller reads it once per frame (`update()`, called from `ContinuousScene`).

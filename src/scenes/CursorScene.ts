@@ -2,9 +2,11 @@ import * as Phaser from "phaser";
 import { ContinuousScene } from "@/scenes/ContinuousScene";
 
 /**
- * The crosshair which follows the mouse. It is a scene of its own, last in the
- * list, so it is drawn over every other scene (menus too). It shows only in
- * keyboard + mouse mode, and then it takes the place of the system cursor.
+ * The crosshair of the aim. It is a scene of its own, last in the list, so it
+ * is drawn over every other scene. With the mouse (keyboard + mouse mode) it
+ * follows the mouse, menus too, and takes the place of the system cursor. With
+ * the gamepad it is the cursor the Player turns around itself with the right
+ * stick, only while the game is running.
  */
 export class CursorScene extends ContinuousScene {
   private crosshair!: Phaser.GameObjects.Graphics;
@@ -52,6 +54,10 @@ export class CursorScene extends ContinuousScene {
       this.hasMoved = true;
     });
 
+    // The camera moves in the frame, after the update: place the cursor of the
+    // gamepad again when it is known where it is, or it would trail behind
+    this.events.on(Phaser.Scenes.Events.PRE_RENDER, () => this.place());
+
     const canvas = this.game.canvas;
     const showSystemCursor = () => {
       canvas.style.cursor = "";
@@ -61,18 +67,44 @@ export class CursorScene extends ContinuousScene {
   }
 
   public update(): void {
-    const show = this.getController().getMode() === "keyboardMouse";
+    this.place();
+  }
 
-    if (show !== this.isShown) {
-      this.isShown = show;
-      this.game.canvas.style.cursor = show ? "none" : "";
+  private place(): void {
+    const controller = this.getController();
+    const device = controller.getAimDevice();
+    const isMouse = device === "mouse";
+
+    if (isMouse !== this.isShown) {
+      this.isShown = isMouse;
+      this.game.canvas.style.cursor = isMouse ? "none" : "";
     }
 
-    // Whole pixels: the game is pixel art, a half pixel would blur the lines
-    const pointer = this.input.activePointer;
+    if (isMouse) {
+      // Whole pixels: the game is pixel art, a half pixel would blur the lines
+      const pointer = this.input.activePointer;
 
-    this.crosshair
-      .setPosition(Math.floor(pointer.x), Math.floor(pointer.y))
-      .setVisible(show && this.hasMoved);
+      this.crosshair
+        .setPosition(Math.floor(pointer.x), Math.floor(pointer.y))
+        .setVisible(this.hasMoved);
+
+      return;
+    }
+
+    const cursor = this.getAimCursor();
+    const isShown =
+      device === "gamepad" && cursor.visible && this.scene.isActive("main");
+
+    this.crosshair.setVisible(isShown);
+
+    if (isShown) {
+      // From the world to the screen: the camera of the game has a zoom
+      const camera = this.scene.get("main").cameras.main;
+
+      this.crosshair.setPosition(
+        Math.floor((cursor.x - camera.worldView.x) * camera.zoom),
+        Math.floor((cursor.y - camera.worldView.y) * camera.zoom)
+      );
+    }
   }
 }
