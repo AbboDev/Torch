@@ -209,5 +209,47 @@ reads both.
 
 ### Save points
 
-An object of type `save_point`: its `name`, with the name of the map, is what the
-save remembers, and the game restarts from there.
+An object of type `save_point` in the `objects` layer. Its `name` is required,
+must be unique in the map and, together with the map key, is stored in the save
+(see `src/world/savePoints.ts`).
+
+- A **rectangle** is the area where the Player can save, and the Player restarts at
+  its top center: draw it 2 tiles tall or more.
+- A **point** works too: the area is 2 tiles wide and 4 tall around it, and the Player
+  restarts exactly on it, like on the `spawn_point`.
+
+Standing in the area, on the floor, **a fresh press of Up** heals the Player (life,
+ammo and battery to the maximum) and saves the game. The game restarts from there.
+
+### The game loop
+
+```text
+Preloader → Title (3 slots) ──→ Main + HUD
+                                   │ life reaches 0
+                                Game Over ──→ last save of the slot (or the start)
+                                          └─→ Title
+```
+
+- **Title**: three save slots (`SLOT_COUNT` in `SaveManager.ts`), each showing what the
+  game in it has reached. An empty slot starts a new game. A slot with a game asks
+  _Continue_ or _Erase it and start over_ (a step of its own, so it is never done by
+  mistake). Slot 1 is the old single save: nothing to migrate.
+- **The run belongs to a slot**: it is kept in the game state (`getActiveSlot`), not in
+  the save. Save points write to it, and going back after a death loads the same one.
+  Starting a new game erases its slot, because the slot holds the run in progress.
+- **Progress of a slot**: `src/state/saveSummary.ts` works it out from the save when the
+  slots are listed (time played, power-ups, weapons, rooms), and nothing is stored. To
+  show something new (a percentage, bosses defeated) add it to `summarize()` and
+  `describeSummary()`: the saves already written show it too.
+- **Leaving a game**: the inventory has tabs, changed with L (previous) and Select
+  (next). The _Exit_ tab goes back to the game, or to the Title without saving: what
+  happened since the last save point is lost (the entry which quits is the second one,
+  so it takes a move on purpose). Add a tab by adding its name to `TABS` in
+  `InventoryScene.ts` and a container to `tabContents`.
+- **Death**: the screen goes black and the Game Over scene asks what to do. Going back
+  loads the last save of the slot, so what happened after it is lost; without a save the
+  game starts from scratch. The logic is in `src/state/checkpoint.ts`.
+- **Flags of the world**: things which change for good (today: destroyed blocks of the
+  `breakables` layer) are flags in the game state (`setFlag` / `hasFlag`), saved with
+  the game. Ids are made in `src/world/worldFlags.ts` and start with the map key.
+- **Settings** are not part of the save: keep them in their own storage key.
