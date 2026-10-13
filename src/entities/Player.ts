@@ -3,6 +3,7 @@ import { DirectionAxisX } from "@/miscellaneous/Direction";
 import { ControllerKey } from "@/miscellaneous/Controller";
 import { PowerUps } from "@/miscellaneous/Inventory";
 import { PLAYER_DEPTH } from "@/config/depths";
+import { SOUNDS } from "@/config/sounds";
 import { TILE_SIZE } from "@/config/tiles";
 import { SpriteCollidable } from "@/entities/collidables/SpriteCollidable";
 import { Arsenal } from "@/entities/weapons/Arsenal";
@@ -17,6 +18,7 @@ import { createMovementHost } from "@/entities/player/movement/createMovementHos
 import { MovementHost } from "@/entities/player/movement/host";
 import { PlayerMovement } from "@/entities/player/movement/PlayerMovement";
 import { MovementState } from "@/entities/player/movement/state";
+import { AimHit, AimTargeting } from "@/entities/player/aimTarget";
 import { FreeAim } from "@/entities/player/FreeAim";
 import { PlayerAim } from "@/entities/player/PlayerAim";
 import { PlayerBody } from "@/entities/player/PlayerBody";
@@ -92,6 +94,9 @@ export class Player extends SpriteCollidable {
 
   /** The aim with the mouse or the right stick of the gamepad */
   private freeAim: FreeAim;
+
+  /** Knows when the aim points at something which can be hit */
+  private targeting: AimTargeting;
 
   /** Fills the battery up again when it is not used */
   private recharger: BatteryRecharger;
@@ -214,6 +219,14 @@ export class Player extends SpriteCollidable {
         }),
       },
       this.scene.getAimCursor()
+    );
+
+    this.targeting = new AimTargeting(
+      (x, y) => this.probeAim(x, y),
+      () =>
+        this.scene.sound.play(SOUNDS.aimTarget.key, {
+          volume: SOUNDS.aimTarget.volume,
+        })
     );
 
     this.recharger = new BatteryRecharger(
@@ -369,10 +382,15 @@ export class Player extends SpriteCollidable {
       this.freeAim.update(this.aim, delta);
 
       // The user can shoot only if the Player has at least one range weapon
-      if (this.scene.getInventory().hasAtLeastOneRangeWeapon()) {
+      const canShoot = this.scene.getInventory().hasAtLeastOneRangeWeapon();
+
+      if (canShoot) {
         // Handle all the ranged combat actions
         this.weapons.update(time);
       }
+
+      // Does the aim point at a block or an enemy a shot would reach?
+      this.targeting.update(canShoot ? this.weapons.getAimRay() : null, time);
     }
 
     // Handle the battery recharge process
@@ -393,6 +411,28 @@ export class Player extends SpriteCollidable {
     if (this.scene.physics.world.drawDebug) {
       this.debug();
     }
+  }
+
+  /**
+   * What the aim finds at a point of the world: the same things which stop or
+   * break a shot (the platforms and the stairs let it through)
+   */
+  private probeAim(x: number, y: number): AimHit | null {
+    const { shootables, breakablesLayer, collisionsLayer, slopes } = this.scene;
+
+    if (shootables.isAt(x, y)) {
+      return "enemy";
+    }
+
+    if (breakablesLayer.getTileAtWorldXY(x, y)) {
+      return "breakable";
+    }
+
+    if (collisionsLayer.getTileAtWorldXY(x, y) || slopes.isInside(x, y)) {
+      return "solid";
+    }
+
+    return null;
   }
 
   /**
@@ -472,6 +512,7 @@ export class Player extends SpriteCollidable {
       isJumping: this.movement.isJumping,
       isStandingJumping: this.movement.isStandingJumping,
       isAimingDiagonal: this.aim.isAimingDiagonal,
+      isAimingAtTarget: this.targeting.isTargeting,
       wasAimingDiagonal: this.aim.wasAimingDiagonal,
       velocityX: this.body.velocity.x,
       facingY: this.aim.facing.y,

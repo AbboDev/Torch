@@ -1,5 +1,6 @@
 import * as Phaser from "phaser";
 import { ContinuousScene } from "@/scenes/ContinuousScene";
+import { Shootables } from "@/world/shootables";
 import { ControllerKey } from "@/miscellaneous/Controller";
 import { MAIN_MAP, MapConfig } from "@/config/maps";
 import { Slopes } from "@/world/Slopes";
@@ -142,8 +143,16 @@ export abstract class MapScene extends ContinuousScene {
    */
   private hasWarnedOutsideRooms = false;
 
+  /**
+   * The things which can be shot and are not tiles (the enemies): the aim of
+   * the Player looks here. It starts empty with every start of the scene.
+   */
+  public shootables = new Shootables();
+
   public create(): void {
     super.create();
+
+    this.shootables = new Shootables();
 
     this.collisionDebugGraphics = this.add
       .graphics()

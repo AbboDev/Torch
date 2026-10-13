@@ -305,3 +305,17 @@ Preloader → Title (3 slots) ──→ Main + HUD
   `breakables` layer) are flags in the game state (`setFlag` / `hasFlag`), saved with
   the game. Ids are made in `src/world/worldFlags.ts` and start with the map key.
 - **Settings** are not part of the save: keep them in their own storage key.
+
+### What the aim points at
+
+When the aim points at something a shot would hit and which reacts to it, a block which breaks or an
+enemy, the Player plays an animation of its own (standing still) and a small sound, once when it
+starts to point at it (`src/entities/player/aimTarget.ts`). A wall in the way hides what is behind.
+It looks up to 12 tiles away (`AIM_TARGET_RANGE`).
+
+- **Blocks** are the ones of the `breakables` layer.
+- **Enemies** do not exist yet: when they do, each one adds a probe to `scene.shootables`
+  (`src/world/shootables.ts`) and removes it when it goes away.
+- **Placeholders:** the animation (`hero_aim_target_<side>_animation`) borrows the frames of the
+  standing pose, faster; change `sheet` in `PlayerAssets.ts` for the real one. The sound is
+  `assets/audio/aim_target.wav`, set in `src/config/sounds.ts`: replace the file.
