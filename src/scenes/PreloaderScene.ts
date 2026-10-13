@@ -1,5 +1,6 @@
 import * as Phaser from "phaser";
 import { MAPS } from "@/config/maps";
+import { SOUNDS } from "@/config/sounds";
 import { PlayerAssets } from "@/entities/player/PlayerAssets";
 import { BulletAssets } from "@/entities/bullets/BulletAssets";
 
@@ -12,6 +13,8 @@ export class PreloaderScene extends Phaser.Scene {
 
   public preload(): void {
     // load assets declared in the preload config
+
+    this.load.audio(SOUNDS.aimTarget.key, SOUNDS.aimTarget.file);
 
     this.load
       .image("life", "assets/sprites/life.png")
