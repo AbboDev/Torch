@@ -7,6 +7,7 @@ import {
   WeaponId,
 } from "@/miscellaneous/Inventory";
 import { Switch } from "@/miscellaneous/Switch";
+import { EncodedExplored, ExploredGrid } from "@/world/explored";
 
 export interface PlayerStats {
   life: number;
@@ -58,6 +59,8 @@ export interface WorldSnapshot {
    * defeated, a door opened...), as ids chosen by the code which sets them
    */
   flags: string[];
+  /** The cells of every map the Player has seen, for the minimap */
+  explored: Record<string, EncodedExplored>;
 }
 
 export interface GameStateSnapshot {
@@ -121,6 +124,12 @@ export class GameState {
    */
   private activeSlot = 0;
 
+  /** The maps in use: what is seen of a map is a grid of cells */
+  private exploredGrids = new Map<string, ExploredGrid>();
+
+  /** What was loaded for the maps which have not been asked for yet */
+  private exploredSaved = new Map<string, unknown>();
+
   /**
    * Get the state attached to the Game (Phaser's global registry),
    * creating it the first time. It survives any scene restart.
@@ -159,6 +168,31 @@ export class GameState {
 
   public hasVisitedRoom(roomId: string): boolean {
     return this.visitedRooms.has(roomId);
+  }
+
+  /**
+   * What the Player has seen of a map. The same grid comes back every time, so
+   * it can be written to: it is part of the state, and is saved with it.
+   *
+   * @param mapId The map, e.g. the key of its file
+   * @param cols  The width of the map, in tiles
+   * @param rows  The height of the map, in tiles
+   */
+  public getExplored(mapId: string, cols: number, rows: number): ExploredGrid {
+    let grid = this.exploredGrids.get(mapId);
+
+    if (!grid || grid.cols !== cols || grid.rows !== rows) {
+      // Loaded, or the map has changed in size: what is known fits the new map
+      grid = ExploredGrid.decode(
+        grid ? grid.encode() : this.exploredSaved.get(mapId),
+        cols,
+        rows
+      );
+      this.exploredGrids.set(mapId, grid);
+      this.exploredSaved.delete(mapId);
+    }
+
+    return grid;
   }
 
   public getSavePoint(): SavePointRef | null {
@@ -210,6 +244,7 @@ export class GameState {
         visitedRooms: [...this.visitedRooms],
         savePoint: this.savePoint ? { ...this.savePoint } : null,
         flags: [...this.flags],
+        explored: this.snapshotExplored(),
       },
       playTime: this.playTime,
     };
@@ -252,7 +287,33 @@ export class GameState {
         ? { map: savePoint.map, id: savePoint.id }
         : null;
 
+    // What is wrong is dropped when the map asks for it (see `ExploredGrid.decode`)
+    this.exploredGrids = new Map();
+    const explored = snapshot?.world?.explored;
+    this.exploredSaved = new Map(
+      explored && typeof explored === "object"
+        ? Object.entries(explored).filter(
+            ([, saved]) => typeof saved === "object" && saved !== null
+          )
+        : []
+    );
+
     this.events.emit("restored");
+  }
+
+  private snapshotExplored(): Record<string, EncodedExplored> {
+    const explored: Record<string, EncodedExplored> = {};
+
+    // Keep what was loaded for the maps not visited since, as it was
+    for (const [mapId, saved] of this.exploredSaved) {
+      explored[mapId] = saved as EncodedExplored;
+    }
+
+    for (const [mapId, grid] of this.exploredGrids) {
+      explored[mapId] = grid.encode();
+    }
+
+    return explored;
   }
 
   /** Start from scratch */
