@@ -563,6 +563,11 @@ export class Player extends SpriteCollidable {
     }
   }
 
+  /** How far the torch lights, in pixels of the world */
+  public getTorchRadius(): number {
+    return this.torchLight.radius;
+  }
+
   protected updateTorch(): void {
     this.body.updateCenter();
 

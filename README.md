@@ -336,3 +336,31 @@ shows the target (`CursorScene`).
   `LOCK_BREAK_DELAY` (150 ms), unless it goes away before.
 - The lock also ends when the target is gone (a block which is broken) or farther than
   `AIM_TARGET_RANGE`.
+
+## 🧭 Minimap
+
+The HUD has a minimap at the left of the screen (`src/hud/MinimapHud.ts`, sizes and place in
+`src/config/minimap.ts`), like the one of Metroid Dread: a frame with a part of the map, the Player
+always in the middle, and only what the Player has already seen is drawn. What the screen shows now
+is brighter, the rest of what was seen is dim.
+
+**It is made from the map, not drawn by hand** (`src/world/minimap.ts`), so it never gets out of date
+when the map changes in Tiled:
+
+- **Terrain** comes from the tile layers: `collision` and `breakables` are walls, `stairs` and
+  `platforms` are platforms, `liquids` is water.
+- **Borders** come from the rooms: it is drawn only inside the objects of type `room`, and the border
+  of every room has its own color, so an opening between two rooms can be seen.
+- **Points of interest** come from objects of the `objects` layer: `save_point` and `door` show by
+  themselves; for anything else add an object of type `poi` with the custom property `kind`
+  (`save`, `door`, `item`, `boss` or `other`, which is the default). They show once their cell has
+  been seen. Put them inside a room.
+
+**What is seen** (`src/world/minimapTracker.ts`): every cell the camera shows, or in a dark room (the
+property `dark` of the room) only the cells the torch lights, as far as it does now. The cells are
+part of the game state and are saved with the game (`GameState.getExplored`, one grid of bits for
+every map, as base64): saves from before the minimap load with nothing seen, and if the map changes
+size what was seen stays where it was.
+
+`src/world/minimapView.ts` works out what to draw, with no Phaser: the unit tests cover it, and the
+real map is checked in `tests/unit/minimapMap.test.ts`.

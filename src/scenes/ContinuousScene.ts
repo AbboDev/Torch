@@ -1,5 +1,6 @@
 import * as Phaser from "phaser";
 import type { AimCursorState } from "@/entities/player/aimAngles";
+import type { MinimapLive } from "@/world/minimapTracker";
 import { Controller } from "@/miscellaneous/Controller";
 import { InputSettingsStore } from "@/input/inputSettings";
 import { Inventory } from "@/miscellaneous/Inventory";
@@ -39,6 +40,19 @@ export abstract class ContinuousScene extends Phaser.Scene {
     }
 
     return controller;
+  }
+
+  /**
+   * What the map tells the minimap of the HUD at every frame: where the Player
+   * is, what the camera shows. It is only shown, so it is not part of the game
+   * state (what the Player has seen is: see `GameState.getExplored`).
+   */
+  public getMinimap(): MinimapLive | undefined {
+    return this.registry.get("minimap") as MinimapLive | undefined;
+  }
+
+  public setMinimap(live: MinimapLive | undefined): void {
+    this.registry.set("minimap", live);
   }
 
   /**

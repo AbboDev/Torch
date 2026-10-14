@@ -3,6 +3,7 @@ import { DataScene } from "@/scenes/DataScene";
 import { TILE_SIZE } from "@/config/tiles";
 import { StatKey } from "@/state/GameState";
 import { WEAPON_META } from "@/config/weapons";
+import { MinimapHud } from "@/hud/MinimapHud";
 
 export class HUDScene extends DataScene {
   private life!: Phaser.GameObjects.Image;
@@ -26,6 +27,8 @@ export class HUDScene extends DataScene {
 
   /** A message which fades away by itself ("Game saved") */
   private notice!: Phaser.GameObjects.Text;
+
+  private minimap!: MinimapHud;
 
   public constructor() {
     super({
@@ -132,6 +135,8 @@ export class HUDScene extends DataScene {
       .setOrigin(0.5)
       .setAlpha(0);
 
+    this.minimap = new MinimapHud(this);
+
     const mainScene = this.scene.get("main");
     const onDebugPlayer = (data: any) => {
       const x = data.position.x.toFixed(3);
@@ -172,6 +177,19 @@ export class HUDScene extends DataScene {
     super.update(time, delta);
 
     this.debugger.setVisible(this.physics.world.drawDebug);
+
+    const live = this.getMinimap();
+
+    this.minimap.update(
+      live,
+      live &&
+        this.getGameState().getExplored(
+          live.mapId,
+          live.map.cols,
+          live.map.rows
+        ),
+      time
+    );
   }
 
   protected updateData(key: StatKey, _value: number): void {

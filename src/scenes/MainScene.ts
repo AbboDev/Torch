@@ -30,6 +30,8 @@ import { toBounds } from "@/world/scroll";
 import { breakableFlag } from "@/world/worldFlags";
 import { useSavePoint } from "@/state/checkpoint";
 import { getRoomProperty } from "@/world/rooms";
+import { buildMinimapMap } from "@/world/minimap";
+import { revealAround } from "@/world/minimapTracker";
 import { DEV_LOADOUT } from "@/config/dev";
 import { applyDevLoadout } from "@/miscellaneous/devLoadout";
 import { TiledObject } from "@/entities/scenarios/TiledObject";
@@ -356,6 +358,8 @@ export class MainScene extends MapScene {
 
     this.physics.add.collider(this.hero, this.platforms);
 
+    this.setupMinimap(mapObjects);
+
     // No life left: the game is over
     this.watchState("stat", (key, value) => {
       if (key === "life" && value <= 0) {
@@ -364,10 +368,71 @@ export class MainScene extends MapScene {
     });
   }
 
+  /**
+   * Make the minimap from the map: the HUD draws it, the Player explores it
+   */
+  private setupMinimap(mapObjects: TiledObject[]): void {
+    const layerNames = new Set(this.map.layers.map((layer) => layer.name));
+
+    this.setMinimap({
+      mapId: this.mapConfig.key,
+      map: buildMinimapMap({
+        cols: this.map.width,
+        rows: this.map.height,
+        tileSize: this.map.tileWidth,
+        isFilled: (layer, col, row) =>
+          layerNames.has(layer) &&
+          (this.map.getTileAt(col, row, false, layer)?.index ?? -1) >= 0,
+        rooms: this.rooms,
+        objects: mapObjects,
+      }),
+      player: { x: 0, y: 0 },
+      view: { x: 0, y: 0, width: 0, height: 0 },
+      isDark: false,
+      torchRadius: 0,
+    });
+  }
+
+  /**
+   * Tell the minimap where the Player is and what the camera shows, and mark
+   * as seen what the Player sees: it is saved with the game
+   */
+  private updateMinimap(): void {
+    const live = this.getMinimap();
+
+    if (!live) {
+      return;
+    }
+
+    const center = this.hero.getCenter();
+    const { worldView } = this.cameras.main;
+    const room = this.rooms[this.hero.currentRoom];
+
+    live.player.x = center.x;
+    live.player.y = center.y;
+    live.view.x = worldView.x;
+    live.view.y = worldView.y;
+    live.view.width = worldView.width;
+    live.view.height = worldView.height;
+    live.isDark = !!room && typeof getRoomProperty(room, "dark") === "string";
+    live.torchRadius = this.hero.getTorchRadius();
+
+    revealAround(
+      live.map,
+      this.getGameState().getExplored(
+        live.mapId,
+        live.map.cols,
+        live.map.rows
+      ),
+      live
+    );
+  }
+
   public update(time: any, delta: number): void {
     super.update(time, delta);
 
     this.hero.update(time, delta);
+    this.updateMinimap();
 
     // Only while the game runs: the scene is paused in the inventory
     if (!this.isDead) {
