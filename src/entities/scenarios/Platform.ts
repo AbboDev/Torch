@@ -3,14 +3,18 @@ import { SpriteCollidable } from "@/entities/collidables/SpriteCollidable";
 import { MapScene } from "@/scenes/MapScene";
 import { WORLD_LAYER_DEPTH } from "@/config/depths";
 import { TILE_SIZE } from "@/config/tiles";
-import { TiledObjectProperty } from "@/entities/scenarios/TiledObject";
-import {
-  PLATFORM_SCHEMA,
-  PlatformDirection,
-  parseProperties,
-} from "@/world/objectSchemas";
+import { PlatformDirection } from "@/world/objectSchemas";
 
 export { PlatformDirection };
+
+/** What a moving platform needs: the properties of its object in Tiled, checked */
+export interface PlatformOptions {
+  /** Pixels per second */
+  speed: number;
+  direction: PlatformDirection;
+  /** How far it moves before turning back, in tiles (0: until a wall) */
+  distance: number;
+}
 
 export class Platform extends SpriteCollidable {
   /**
@@ -32,26 +36,16 @@ export class Platform extends SpriteCollidable {
     public scene: MapScene,
     x: number,
     y: number,
-    properties: TiledObjectProperty[] | undefined
+    options: PlatformOptions
   ) {
     super(scene, x, y, "platform");
 
     this.scene.add.existing(this);
     this.scene.physics.world.enable(this);
 
-    // The properties set in Tiled, checked: what is wrong is told, and the
-    // property has its default
-    const { values, problems } = parseProperties(PLATFORM_SCHEMA, {
-      properties,
-    });
-
-    for (const problem of problems) {
-      console.warn(`Platform at ${x}, ${y}: ${problem}`);
-    }
-
-    this.baseSpeed = values.speed as number;
-    this.direction = values.direction as PlatformDirection;
-    this.distance = values.distance as number;
+    this.baseSpeed = options.speed;
+    this.direction = options.direction;
+    this.distance = options.distance;
 
     this.body.setAllowGravity(false).setImmovable(true);
 

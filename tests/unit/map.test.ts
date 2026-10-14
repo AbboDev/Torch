@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import mapSource from "../../assets/maps/chozodia.json?raw";
 import { BACKGROUNDS } from "@/config/backgrounds";
 import { MapObject, parseDoors } from "@/world/doors";
+import { createMapObjectRegistry } from "@/world/mapObjectHandlers";
 import { getRoomProperty } from "@/world/rooms";
 import { getObjectClass } from "@/world/tiledObjects";
 
@@ -51,5 +52,39 @@ describe("the map chozodia", () => {
     expect(doors).toHaveLength(
       objects.filter((object) => getObjectClass(object) === "door").length
     );
+  });
+});
+
+describe("the objects of the map chozodia, made as the game makes them", () => {
+  const layerObjects = (name: string): MapObject[] =>
+    map.layers
+      .filter((layer: { name: string }) => layer.name === name)
+      .flatMap((layer: { objects: MapObject[] }) => layer.objects);
+
+  it("makes every object, with nothing to say", () => {
+    const registry = createMapObjectRegistry();
+    const warn = vi.fn();
+    const made = { room: 0, spawn: 0, savePoint: 0, door: 0, platform: 0 };
+
+    const context = {
+      addRoom: () => made.room++,
+      addSavePoint: () => made.savePoint++,
+      setSpawnPoint: () => made.spawn++,
+      addDoor: () => made.door++,
+      addPlatform: () => made.platform++,
+    };
+
+    for (const layer of ["objects", "scenario_elements"]) {
+      const objects = layerObjects(layer);
+      const report = registry.spawn(layer, objects, context, warn);
+
+      expect(report.skipped, layer).toEqual([]);
+      expect(report.created, layer).toBe(objects.length);
+    }
+
+    expect(warn).not.toHaveBeenCalled();
+    expect(made.spawn).toBe(1);
+    expect(made.room).toBe(rooms.length);
+    expect(made.platform).toBe(layerObjects("scenario_elements").length);
   });
 });

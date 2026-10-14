@@ -2,17 +2,15 @@ import * as Phaser from "phaser";
 import { MapScene } from "@/scenes/MapScene";
 import { ControllerKey } from "@/miscellaneous/Controller";
 import { SLOPES_LAYER_NAME, renderSlopesDebug } from "@/world/slopesLayer";
-import { getObjectClass } from "@/world/tiledObjects";
 import { RoomBackground } from "@/world/RoomBackground";
 import { RoomTransition } from "@/world/RoomTransition";
 import { DoorTransition } from "@/world/DoorTransition";
+import { DoorTrigger, LocalDoor, findDoorAt, isLocalDoor } from "@/world/doors";
 import {
-  DoorTrigger,
-  LocalDoor,
-  findDoorAt,
-  isLocalDoor,
-  parseDoors,
-} from "@/world/doors";
+  MapObjectContext,
+  createMapObjectRegistry,
+} from "@/world/mapObjectHandlers";
+import { PlatformDirection } from "@/world/objectSchemas";
 import { toBounds } from "@/world/scroll";
 import { getRoomProperty } from "@/world/rooms";
 import { DEV_LOADOUT } from "@/config/dev";
@@ -65,6 +63,9 @@ export class MainScene extends MapScene {
    */
   private doorTransition!: DoorTransition;
 
+  /** The kinds of objects a map can have, and how they are made */
+  private static readonly objects = createMapObjectRegistry<TiledObject>();
+
   /**
    * The save points found in the map: objects of type "save_point" in the
    * "objects" layer of Tiled. Their name is the id stored in the save.
@@ -84,35 +85,14 @@ export class MainScene extends MapScene {
 
     this.map = this.make.tilemap({ key: this.mapConfig.cacheKey });
 
-    // Get the objects layer of the current loaded map for found
-    // the main spawn point and rooms
-    const mapObjects: TiledObject[] = this.getMapObjects("objects");
-
-    const doors = parseDoors(mapObjects);
-    this.doors = doors.filter(isLocalDoor);
-
-    for (const door of doors.filter((candidate) => !isLocalDoor(candidate))) {
-      console.warn(
-        `Door ${door.id} leads to another map: changing map is not supported yet, the door is ignored`
-      );
-    }
-
-    mapObjects.forEach((object: TiledObject) => {
-      if (getObjectClass(object) === "room") {
-        this.rooms.push(object);
-      }
-
-      if (getObjectClass(object) === "save_point") {
-        this.savePoints.push(object);
-      }
-
-      if (
-        object.name === "spawn_point" ||
-        getObjectClass(object) === "spawn_point"
-      ) {
-        this.spawnPoint = object;
-      }
-    });
+    // The rooms, the save points, the spawn point and the doors of the map
+    // (the platforms are made later, when the layers they collide with exist)
+    const objectContext = this.createObjectContext();
+    MainScene.objects.spawn(
+      "objects",
+      this.getMapObjects("objects"),
+      objectContext
+    );
 
     if (!this.spawnPoint) {
       throw "No Spawn Point detected";
@@ -203,17 +183,11 @@ export class MainScene extends MapScene {
       }
     }
 
-    this.getMapObjects("scenario_elements").forEach((object: TiledObject) => {
-      if (getObjectClass(object) === "platform") {
-        const platform = new Platform(
-          this,
-          object.x!,
-          object.y!,
-          object.properties!
-        );
-        this.platforms.add(platform);
-      }
-    });
+    MainScene.objects.spawn(
+      "scenario_elements",
+      this.getMapObjects("scenario_elements"),
+      objectContext
+    );
 
     this.physics.world.setBounds(
       0,
@@ -296,6 +270,44 @@ export class MainScene extends MapScene {
     if (isStartPressed) {
       this.scene.pause().wake("inventory");
     }
+  }
+
+  /**
+   * Where the objects of the map go: the registry (world/mapObjectHandlers.ts)
+   * says which object is what, this says what the scene does with each
+   */
+  private createObjectContext(): MapObjectContext<TiledObject> {
+    return {
+      addRoom: (room) => {
+        this.rooms.push(room);
+      },
+      addSavePoint: (savePoint) => {
+        this.savePoints.push(savePoint);
+      },
+      setSpawnPoint: (spawnPoint) => {
+        this.spawnPoint = spawnPoint;
+      },
+      addDoor: (door) => {
+        if (isLocalDoor(door)) {
+          this.doors.push(door);
+
+          return;
+        }
+
+        console.warn(
+          `Door ${door.id} leads to another map: changing map is not supported yet, the door is ignored`
+        );
+      },
+      addPlatform: (platform, values) => {
+        this.platforms.add(
+          new Platform(this, platform.x!, platform.y!, {
+            speed: values.speed as number,
+            direction: values.direction as PlatformDirection,
+            distance: values.distance as number,
+          })
+        );
+      },
+    };
   }
 
   /**

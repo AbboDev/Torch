@@ -167,6 +167,20 @@ set in Tiled. The Player stands with the center of its body on the ground (chang
 45° ramp the Player goes up as fast as it goes forward, so it is 1.4 times faster along
 the ramp.
 
+### Adding a kind of object (an enemy, a pickup, a switch...)
+
+The objects of a map are made by a registry (`src/world/objectRegistry.ts`): it finds
+what to do with the class of each object, checks its properties with the schema of the
+class, and lets a handler make it. An object which is wrong (a class the game does not
+know, one in the wrong layer, a wrong property) is told in the console and left out,
+and the others are made anyway.
+
+1. Describe it in `src/world/objectSchemas.ts`: its class, the layer it goes in, its
+   properties with type and default, and add it to `OBJECT_SCHEMAS`.
+2. Add a method for it to `MapObjectContext` and a handler in
+   `src/world/mapObjectHandlers.ts` (the handler only says which object is what).
+3. Do what is needed with it in `MainScene.createObjectContext()`.
+
 ### Save points
 
 An object of type `save_point`: its `name`, with the name of the map, is what the

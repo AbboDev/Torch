@@ -1,5 +1,9 @@
 import { RoomWithProperties, getRoomProperty } from "@/world/rooms";
-import { DOOR_SCHEMA, parseProperties } from "@/world/objectSchemas";
+import {
+  DOOR_SCHEMA,
+  PropertyValue,
+  parseProperties,
+} from "@/world/objectSchemas";
 import { getObjectClass } from "@/world/tiledObjects";
 
 /**
@@ -81,70 +85,97 @@ export function parseDoors(
       continue;
     }
 
-    const label = `Door ${object.id}${object.name ? ` "${object.name}"` : ""}`;
     const { values, problems, isBroken } = parseProperties(DOOR_SCHEMA, object);
 
-    // Said once: what makes the door useless, or else what is only wrong
-    const useless = (reason: string) =>
-      warn(`${label} ${reason}: it is ignored`);
-
     if (isBroken) {
-      useless(`has no valid "target" (${problems.join("; ")})`);
-      continue;
-    }
-
-    const reference = values.target as number | string;
-    const targetMap = String(values.targetMap ?? "").trim();
-
-    let target: DoorTarget | undefined;
-
-    if (targetMap !== "") {
-      // The other map is not loaded: only its name and the reference can be known
-      target = { map: targetMap, target: reference };
-    } else {
-      const found =
-        typeof reference === "number"
-          ? objects.find((candidate) => candidate.id === reference)
-          : reference !== ""
-            ? objects.find((candidate) => candidate.name === reference)
-            : undefined;
-
-      if (found && found.id === object.id) {
-        useless(`has itself as "target"`);
-        continue;
-      }
-
-      if (found) {
-        target = { map: null, id: found.id, x: found.x ?? 0, y: found.y ?? 0 };
-      }
-    }
-
-    if (!target) {
-      useless(`has no valid "target"`);
-      continue;
-    }
-
-    if (!object.width || !object.height) {
-      useless("has no size");
+      warn(
+        `${doorLabel(object)} has no valid "target" (${problems.join("; ")}): it is ignored`
+      );
       continue;
     }
 
     for (const problem of problems) {
-      warn(`${label}: ${problem}`);
+      warn(`${doorLabel(object)}: ${problem}`);
     }
 
-    doors.push({
-      id: object.id,
-      x: object.x ?? 0,
-      y: object.y ?? 0,
-      width: object.width,
-      height: object.height,
-      target,
-      requiresUp: values.requiresUp === true,
-    });
+    const door = buildDoor(object, values, objects, warn);
+
+    if (door) {
+      doors.push(door);
+    }
   }
 
   return doors;
+}
+
+function doorLabel(object: MapObject): string {
+  return `Door ${object.id}${object.name ? ` "${object.name}"` : ""}`;
+}
+
+/**
+ * The door an object of the class door is, where its properties (already read
+ * with the schema) lead.
+ *
+ * @param object  The object of the door
+ * @param values  Its properties, with the defaults
+ * @param objects The objects of its layer: the target is one of them
+ *
+ * @return The door, or null (with a warning) if it can not work
+ */
+export function buildDoor(
+  object: MapObject,
+  values: Record<string, PropertyValue | undefined>,
+  objects: readonly MapObject[],
+  warn: (message: string) => void = console.warn
+): Door | null {
+  const useless = (reason: string): null => {
+    warn(`${doorLabel(object)} ${reason}: it is ignored`);
+
+    return null;
+  };
+
+  const reference = values.target as number | string;
+  const targetMap = String(values.targetMap ?? "").trim();
+
+  let target: DoorTarget | undefined;
+
+  if (targetMap !== "") {
+    // The other map is not loaded: only its name and the reference can be known
+    target = { map: targetMap, target: reference };
+  } else {
+    const found =
+      typeof reference === "number"
+        ? objects.find((candidate) => candidate.id === reference)
+        : reference !== ""
+          ? objects.find((candidate) => candidate.name === reference)
+          : undefined;
+
+    if (found && found.id === object.id) {
+      return useless(`has itself as "target"`);
+    }
+
+    if (found) {
+      target = { map: null, id: found.id, x: found.x ?? 0, y: found.y ?? 0 };
+    }
+  }
+
+  if (!target) {
+    return useless(`has no valid "target"`);
+  }
+
+  if (!object.width || !object.height) {
+    return useless("has no size");
+  }
+
+  return {
+    id: object.id,
+    x: object.x ?? 0,
+    y: object.y ?? 0,
+    width: object.width,
+    height: object.height,
+    target,
+    requiresUp: values.requiresUp === true,
+  };
 }
 
 /** The first door containing the point (left and top included, right and bottom excluded) */

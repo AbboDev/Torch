@@ -38,6 +38,8 @@ export interface ObjectSchema {
   /** The color of the object in the editor of Tiled */
   color: string;
   description: string;
+  /** The layer of objects of the map where this kind of object goes */
+  layer: string;
   /** The object needs a name: it is how a save or a script finds it */
   requiresName?: boolean;
   properties: Readonly<Record<string, PropertySpec>>;
@@ -58,6 +60,7 @@ export const PLATFORM_DEFAULT_SPEED = TILE_SIZE * 3;
 
 export const ROOM_SCHEMA: ObjectSchema = {
   class: "room",
+  layer: "objects",
   color: "#ff4f9fe0",
   description:
     "A room: the camera is limited to it. Rooms which touch share a border.",
@@ -79,6 +82,7 @@ export const ROOM_SCHEMA: ObjectSchema = {
 
 export const DOOR_SCHEMA: ObjectSchema = {
   class: "door",
+  layer: "objects",
   color: "#ffe0a040",
   description: "Takes the Player somewhere else in the map, or in another one.",
   properties: {
@@ -103,6 +107,7 @@ export const DOOR_SCHEMA: ObjectSchema = {
 
 export const SAVE_POINT_SCHEMA: ObjectSchema = {
   class: "save_point",
+  layer: "objects",
   color: "#ff50c878",
   description: "Where the game is saved and restarts. Its name is its id.",
   requiresName: true,
@@ -111,6 +116,7 @@ export const SAVE_POINT_SCHEMA: ObjectSchema = {
 
 export const SPAWN_POINT_SCHEMA: ObjectSchema = {
   class: "spawn_point",
+  layer: "objects",
   color: "#ffe04f4f",
   description: "Where the Player starts a new game.",
   properties: {},
@@ -118,6 +124,7 @@ export const SPAWN_POINT_SCHEMA: ObjectSchema = {
 
 export const PLATFORM_SCHEMA: ObjectSchema = {
   class: "platform",
+  layer: "scenario_elements",
   color: "#ff9b59b6",
   description: "A moving platform, in the layer scenario_elements.",
   properties: {
