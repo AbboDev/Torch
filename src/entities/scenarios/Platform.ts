@@ -4,12 +4,13 @@ import { MapScene } from "@/scenes/MapScene";
 import { WORLD_LAYER_DEPTH } from "@/config/depths";
 import { TILE_SIZE } from "@/config/tiles";
 import { TiledObjectProperty } from "@/entities/scenarios/TiledObject";
+import {
+  PLATFORM_SCHEMA,
+  PlatformDirection,
+  parseProperties,
+} from "@/world/objectSchemas";
 
-export enum PlatformDirection {
-  VERTICAL = "vertical",
-  HORIZONTAL = "horizontal",
-  BOTH = "both",
-}
+export { PlatformDirection };
 
 export class Platform extends SpriteCollidable {
   /**
@@ -38,23 +39,19 @@ export class Platform extends SpriteCollidable {
     this.scene.add.existing(this);
     this.scene.physics.world.enable(this);
 
-    if (properties) {
-      for (const property of properties) {
-        switch (property.name) {
-          case "speed":
-            this.baseSpeed = property.value as number;
-            break;
-          case "direction":
-            this.direction = property.value as PlatformDirection;
-            break;
-          case "distance":
-            this.distance = property.value as number;
-            break;
-          default:
-            break;
-        }
-      }
+    // The properties set in Tiled, checked: what is wrong is told, and the
+    // property has its default
+    const { values, problems } = parseProperties(PLATFORM_SCHEMA, {
+      properties,
+    });
+
+    for (const problem of problems) {
+      console.warn(`Platform at ${x}, ${y}: ${problem}`);
     }
+
+    this.baseSpeed = values.speed as number;
+    this.direction = values.direction as PlatformDirection;
+    this.distance = values.distance as number;
 
     this.body.setAllowGravity(false).setImmovable(true);
 

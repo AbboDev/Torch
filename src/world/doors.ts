@@ -1,4 +1,5 @@
 import { RoomWithProperties, getRoomProperty } from "@/world/rooms";
+import { DOOR_SCHEMA, parseProperties } from "@/world/objectSchemas";
 import { getObjectClass } from "@/world/tiledObjects";
 
 /**
@@ -81,32 +82,35 @@ export function parseDoors(
     }
 
     const label = `Door ${object.id}${object.name ? ` "${object.name}"` : ""}`;
-    const reference = getRoomProperty(object, "target");
-    const targetMap = getRoomProperty(object, "targetMap");
+    const { values, problems, isBroken } = parseProperties(DOOR_SCHEMA, object);
 
-    const toAnotherMap =
-      typeof targetMap === "string" && targetMap.trim() !== "";
+    // Said once: what makes the door useless, or else what is only wrong
+    const useless = (reason: string) =>
+      warn(`${label} ${reason}: it is ignored`);
+
+    if (isBroken) {
+      useless(`has no valid "target" (${problems.join("; ")})`);
+      continue;
+    }
+
+    const reference = values.target as number | string;
+    const targetMap = String(values.targetMap ?? "").trim();
 
     let target: DoorTarget | undefined;
 
-    if (toAnotherMap) {
+    if (targetMap !== "") {
       // The other map is not loaded: only its name and the reference can be known
-      if (
-        (typeof reference === "number" && reference > 0) ||
-        (typeof reference === "string" && reference !== "")
-      ) {
-        target = { map: targetMap.trim(), target: reference };
-      }
+      target = { map: targetMap, target: reference };
     } else {
       const found =
         typeof reference === "number"
           ? objects.find((candidate) => candidate.id === reference)
-          : typeof reference === "string" && reference !== ""
+          : reference !== ""
             ? objects.find((candidate) => candidate.name === reference)
             : undefined;
 
       if (found && found.id === object.id) {
-        warn(`${label} has itself as "target": it is ignored`);
+        useless(`has itself as "target"`);
         continue;
       }
 
@@ -116,13 +120,17 @@ export function parseDoors(
     }
 
     if (!target) {
-      warn(`${label} has no valid "target": it is ignored`);
+      useless(`has no valid "target"`);
       continue;
     }
 
     if (!object.width || !object.height) {
-      warn(`${label} has no size: it is ignored`);
+      useless("has no size");
       continue;
+    }
+
+    for (const problem of problems) {
+      warn(`${label}: ${problem}`);
     }
 
     doors.push({
@@ -132,7 +140,7 @@ export function parseDoors(
       width: object.width,
       height: object.height,
       target,
-      requiresUp: getRoomProperty(object, "requiresUp") === true,
+      requiresUp: values.requiresUp === true,
     });
   }
 

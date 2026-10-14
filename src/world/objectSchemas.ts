@@ -43,7 +43,15 @@ export interface ObjectSchema {
   properties: Readonly<Record<string, PropertySpec>>;
 }
 
-export const PLATFORM_DIRECTIONS = ["horizontal", "vertical", "both"] as const;
+/** Where a moving platform moves */
+export enum PlatformDirection {
+  HORIZONTAL = "horizontal",
+  VERTICAL = "vertical",
+  BOTH = "both",
+}
+
+export const PLATFORM_DIRECTIONS: readonly string[] =
+  Object.values(PlatformDirection);
 
 /** The speed of a moving platform when the map does not say */
 export const PLATFORM_DEFAULT_SPEED = TILE_SIZE * 3;
@@ -121,7 +129,7 @@ export const PLATFORM_SCHEMA: ObjectSchema = {
     },
     direction: {
       type: "string",
-      default: "horizontal",
+      default: PlatformDirection.HORIZONTAL,
       oneOf: PLATFORM_DIRECTIONS,
       description: "Where it moves",
     },
