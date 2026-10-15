@@ -26,6 +26,12 @@ const DEBUG_COLLISION_COLORS = {
 export class MainScene extends MapScene {
   private hero!: Player;
 
+  /**
+   * The save points found in the map: objects of type "save_point" in the
+   * "objects" layer of Tiled. Their name is the id stored in the save.
+   */
+  private savePoints: TiledObject[] = [];
+
   public constructor() {
     super({
       active: false,
@@ -45,6 +51,10 @@ export class MainScene extends MapScene {
       (object: TiledObject) => {
         if (object.type === "room") {
           this.rooms.push(object);
+        }
+
+        if (object.type === "save_point") {
+          this.savePoints.push(object);
         }
 
         if (object.name === "spawn_point") {
@@ -147,8 +157,14 @@ export class MainScene extends MapScene {
       this.map.heightInPixels
     );
 
-    const x: number = this.spawnPoint.x || 0;
-    const y: number = this.spawnPoint.y || 0;
+    // Restart from the last used save point, if any, otherwise from the start
+    const savedPointId = this.getGameState().getSavePoint();
+    const start: TiledObject =
+      this.savePoints.find((point) => point.name === savedPointId) ??
+      this.spawnPoint;
+
+    const x: number = start.x || 0;
+    const y: number = start.y || 0;
 
     const roomNumber: number = this.setCurrentRoom(x, y);
 

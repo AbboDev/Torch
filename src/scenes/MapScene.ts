@@ -1,7 +1,7 @@
 import * as Phaser from "phaser";
 import { ContinuousScene } from "@/scenes/ContinuousScene";
 import { ControllerKey } from "@/miscellaneous/Controller";
-import { TiledObject, TiledObjectProperty } from "@/entities/scenarios/TiledObject";
+import { TiledObject } from "@/entities/scenarios/TiledObject";
 import { Platform } from "@/entities/scenarios/Platform";
 
 import { DEFAULT_LIGHT } from "@/config/lights";
@@ -174,42 +174,20 @@ export abstract class MapScene extends ContinuousScene {
 
     let light = DEFAULT_LIGHT;
     const currentRoom = this.rooms[currentRoomNumber];
-    if (!currentRoom.properties) {
-      currentRoom.properties = [];
-    }
 
-    const { properties } = currentRoom;
+    for (const property of currentRoom.properties ?? []) {
+      if (property.name === "dark") {
+        const darkness: string = property.value as string;
 
-    if (properties.length > 0) {
-      let hasVisited = false;
-      for (const property of properties) {
-        switch (property.name) {
-          case "dark": {
-            const darkness: string = property.value as string;
-
-            if (darkness && typeof darkness === "string") {
-              light = Phaser.Display.Color.HexStringToColor(darkness).color;
-            }
-            break;
-          }
-          case "visited":
-            property.value = true;
-            hasVisited = true;
-            break;
-          default:
-            break;
+        if (darkness && typeof darkness === "string") {
+          light = Phaser.Display.Color.HexStringToColor(darkness).color;
         }
       }
-
-      if (!hasVisited) {
-        const visited: TiledObjectProperty = {
-          name: "visited",
-          type: "boolean",
-          value: true,
-        };
-        properties.push(visited);
-      }
     }
+
+    // Remember the visit in the game state (saved with the game), instead of
+    // writing it into the Tiled data: that also works for rooms without properties
+    this.getGameState().visitRoom(MapScene.getRoomId(currentRoom));
 
     const ambientColor = this.lights.ambientColor;
     const currentLight = Phaser.Display.Color.GetColor(
@@ -223,6 +201,14 @@ export abstract class MapScene extends ContinuousScene {
     }
 
     return currentRoomNumber;
+  }
+
+  /**
+   * A stable id for a room, usable in saves: its name in Tiled
+   * (falling back to the Tiled object id).
+   */
+  public static getRoomId(room: TiledObject): string {
+    return room.name || `room_${room.id}`;
   }
 
   public getCurrentRoom(x: number, y: number): boolean | number {
