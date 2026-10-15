@@ -5,9 +5,7 @@ import {
   DirectionAxisX,
 } from "@/miscellaneous/Direction";
 import { ControllerKey } from "@/miscellaneous/Controller";
-import {
-  PowerUps
-} from "@/miscellaneous/Inventory";
+import { PowerUps } from "@/miscellaneous/Inventory";
 import { Hitbox, AreaPosition } from "@/entities/hitboxes/Hitbox";
 import { Arsenal } from "@/entities/weapons/Arsenal";
 import { BulletConfig } from "@/entities/bullets/Bullet";
@@ -1517,9 +1515,7 @@ export class Player extends SpriteCollidable {
       };
 
       const weapon = this.arsenal.getCurrent();
-      const wasFired = weapon
-        ? weapon.fireBullet(time, config)
-        : false;
+      const wasFired = weapon ? weapon.fireBullet(time, config) : false;
 
       if (wasFired) {
         --this.ammo;
