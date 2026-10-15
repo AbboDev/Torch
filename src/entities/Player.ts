@@ -18,6 +18,7 @@ import {
   HIGH_JUMP_SPEED_MULTIPLIER,
 } from "@/entities/player/movement";
 import { computeAim } from "@/entities/player/aim";
+import { PlayerInput } from "@/entities/player/PlayerInput";
 import { SpriteCollidable } from "@/entities/collidables/SpriteCollidable";
 import { MapScene } from "@/scenes/MapScene";
 import { PLAYER_DEPTH } from "@/config/depths";
@@ -51,6 +52,13 @@ export class Player extends SpriteCollidable {
    * @type {Phaser.GameObjects.Light}
    */
   private torchLight: Phaser.GameObjects.Light;
+
+  /**
+   * The buttons of the Player, read once per update
+   *
+   * @type {PlayerInput}
+   */
+  private controls: PlayerInput;
 
   /**
    * The Phaser weapons of this scene. Which weapons the Player owns,
@@ -380,6 +388,7 @@ export class Player extends SpriteCollidable {
     this.body.useDamping = true;
 
     this.arsenal = new Arsenal(this.scene);
+    this.controls = new PlayerInput(this.scene.getController());
 
     this.body.updateCenter();
 
@@ -523,6 +532,9 @@ export class Player extends SpriteCollidable {
   public update(time: any, delta: number): void {
     super.update();
 
+    // Read the buttons once, so the whole update sees the same state
+    this.controls.poll();
+
     this.previousFacing = { ...this.facing };
 
     if (this.canInteract) {
@@ -659,15 +671,13 @@ export class Player extends SpriteCollidable {
    * Handle current aim direction based on facing
    */
   protected tiltAim(): void {
-    const controller = this.scene.getController();
-
     const aim = computeAim(
       {
-        aim: controller.isKeyPressed(ControllerKey.L),
-        up: controller.isKeyPressed(ControllerKey.UP),
-        down: controller.isKeyPressed(ControllerKey.DOWN),
-        left: controller.isKeyPressed(ControllerKey.LEFT),
-        right: controller.isKeyPressed(ControllerKey.RIGHT),
+        aim: this.controls.aim,
+        up: this.controls.up,
+        down: this.controls.down,
+        left: this.controls.left,
+        right: this.controls.right,
       },
       {
         facingY: this.facing.y as DirectionAxisY,
@@ -755,9 +765,7 @@ export class Player extends SpriteCollidable {
    */
   protected jump(): void {
     // Test if the user is pressing the button 'A'
-    const isJumpPress: boolean = this.scene
-      .getController()
-      .isKeyPressed(ControllerKey.A);
+    const isJumpPress: boolean = this.controls.jump;
 
     // First check if Player has unlocked wall jump
     if (this.scene.getInventory().equip(PowerUps.GLOVE)) {
@@ -778,14 +786,14 @@ export class Player extends SpriteCollidable {
             // The Player is touching a wall on left
             walls[0] &&
             // The user is moving on the opposite side of wall (right)
-            this.scene.getController().isKeyPressed(ControllerKey.RIGHT)
+            this.controls.right
           ) {
             sign = 1;
           } else if (
             // The Player is touching a wall on right
             walls[1] &&
             // The user is moving on the opposite side of wall (left)
-            this.scene.getController().isKeyPressed(ControllerKey.LEFT)
+            this.controls.left
           ) {
             sign = -1;
           }
@@ -808,9 +816,7 @@ export class Player extends SpriteCollidable {
     let isClimbing = false;
     if (this.isHanging) {
       if (!this.isPressingJump) {
-        const isUpPress: boolean = this.scene
-          .getController()
-          .isKeyPressed(ControllerKey.UP);
+        const isUpPress: boolean = this.controls.up;
 
         isClimbing = isUpPress || isJumpPress;
 
@@ -937,9 +943,7 @@ export class Player extends SpriteCollidable {
     // Detect if the Player is jumping by checking if his y speed is negative
     if (this.body.velocity.y < 0) {
       // Test if the user is pressing the button 'Up'
-      const isUpPress: boolean = this.scene
-        .getController()
-        .isKeyPressed(ControllerKey.UP);
+      const isUpPress: boolean = this.controls.up;
       // Detect if the user is not pressing the button to jump
       if (!isJumpPress && !this.isClimbing && !isUpPress) {
         // The Player is able to perform a double jump
@@ -965,12 +969,8 @@ export class Player extends SpriteCollidable {
    * Handle all the movement along the x axis
    */
   protected walk(): void {
-    const isRightPress: boolean = this.scene
-      .getController()
-      .isKeyPressed(ControllerKey.RIGHT);
-    const isLeftPress: boolean = this.scene
-      .getController()
-      .isKeyPressed(ControllerKey.LEFT);
+    const isRightPress: boolean = this.controls.right;
+    const isLeftPress: boolean = this.controls.left;
 
     // When the Player is moving, he cannot also be crouch
     if (isRightPress || isLeftPress) {
@@ -1011,12 +1011,10 @@ export class Player extends SpriteCollidable {
    * Handle the dash action
    */
   protected dash(): void {
-    const isDashPress: boolean = this.scene
-      .getController()
-      .isKeyPressed(ControllerKey.X);
+    const isDashPress: boolean = this.controls.dash;
 
     if (this.scene.getInventory().equip(PowerUps.DASH)) {
-      const time = this.scene.getController().getKeyDuration(ControllerKey.X);
+      const time = this.controls.getDashDuration();
 
       if (
         time < 100 &&
@@ -1049,9 +1047,7 @@ export class Player extends SpriteCollidable {
   protected hang(): void {
     if (this.scene.getInventory().equip(PowerUps.HOOK)) {
       if (this.body.velocity.y !== 0 || this.isHanging) {
-        const isDownPress: boolean = this.scene
-          .getController()
-          .isKeyPressed(ControllerKey.DOWN);
+        const isDownPress: boolean = this.controls.down;
 
         // If the Player is hanging from a tile, he can jump down
         if (isDownPress) {
@@ -1159,13 +1155,9 @@ export class Player extends SpriteCollidable {
       }
     );
 
-    const isDownPressed: boolean = this.scene
-      .getController()
-      .isKeyPressed(ControllerKey.DOWN);
+    const isDownPressed: boolean = this.controls.down;
 
-    const isUpPressed: boolean = this.scene
-      .getController()
-      .isKeyPressed(ControllerKey.UP);
+    const isUpPressed: boolean = this.controls.up;
 
     if (this.isOnLadder || isOnTopOfLadder) {
       if (this.isOnFloor() || !this.isOnLadder) {
@@ -1227,13 +1219,11 @@ export class Player extends SpriteCollidable {
   protected crouch(): void {
     // Test if the Player can crouch in the current state and position
     if (this.canCrouch) {
-      const isDownPressed: boolean = this.scene
-        .getController()
-        .isKeyPressedForFirstTime(ControllerKey.DOWN);
+      const isDownPressed: boolean = this.controls.justPressed(
+        ControllerKey.DOWN
+      );
 
-      const isUpPressed: boolean = this.scene
-        .getController()
-        .isKeyPressed(ControllerKey.UP);
+      const isUpPressed: boolean = this.controls.up;
 
       if (isDownPressed && !this.isCrouch) {
         if (!this.isAimingDiagonal || this.previousFacing.y === this.facing.y) {
@@ -1305,7 +1295,7 @@ export class Player extends SpriteCollidable {
    * Handle all the ranged combat actions
    */
   protected handleWeapons(time: any): void {
-    if (this.scene.getController().isKeyPressedForFirstTime(ControllerKey.Y)) {
+    if (this.controls.justPressed(ControllerKey.Y)) {
       this.scene.getInventory().switchToNextWeapon();
     }
 
@@ -1313,9 +1303,7 @@ export class Player extends SpriteCollidable {
       this.arsenal.resetShoot();
     }
 
-    const isShootPress: boolean = this.scene
-      .getController()
-      .isKeyPressed(ControllerKey.B);
+    const isShootPress: boolean = this.controls.shoot;
 
     // The user have to press Shot button and the player should not facing front
     if (
