@@ -145,13 +145,6 @@ export class Player extends SpriteCollidable {
   private canWallJump: boolean = false;
 
   /**
-   * The Player had actually performed the wall jump
-   *
-   * @type {Boolean}
-   */
-  private hasDoneWallJump: boolean = false;
-
-  /**
    * Check if the user had previously
    * performed a jump without releasing the key
    *
@@ -166,14 +159,6 @@ export class Player extends SpriteCollidable {
    * @type {Boolean}
    */
   private isPressingShot: boolean = false;
-
-  /**
-   * Check if the user had previously
-   * performed a dash without releasing the key
-   *
-   * @type {Boolean}
-   */
-  private isPressingDash: boolean = false;
 
   /**
    * Default multiplier of jump speed
@@ -733,10 +718,10 @@ export class Player extends SpriteCollidable {
     // Handle the battery recharge process
     this.updateBattery();
 
-    // Change the current animation based on previous operations
+    // Apply the position correction requested during this update
     this.adjustPosition();
 
-    // Change the current animation based on previous operations
+    // Keep the hitboxes and the torch attached to the body
     this.updateHitboxes();
 
     // Change the current animation based on previous operations
@@ -949,7 +934,6 @@ export class Player extends SpriteCollidable {
       // Perform wall jump only if the Player
       // is not on the ground and is touching only one wall
       this.canWallJump = !this.isOnFloor() && wallsCount.length === 1;
-      this.hasDoneWallJump = false;
 
       if (this.canWallJump) {
         // The user have to press again the jump key to perform the action
@@ -976,9 +960,6 @@ export class Player extends SpriteCollidable {
           if (sign !== 0) {
             // The Player is actually performing a jump
             this.isJumping = true;
-
-            // The Player has done a wall jump
-            this.hasDoneWallJump = true;
 
             // Then push the player on the opposite side of wall and to the ceil
             this.setVelocity(
@@ -1008,8 +989,8 @@ export class Player extends SpriteCollidable {
       if (this.isOnFloor() && !this.isPressingJump) {
         if (this.body.blocked.right || this.body.blocked.left) {
           const bounds: Phaser.Geom.Rectangle = this.getBodyBounds();
-          let hasFreeUpperTile: Phaser.Tilemaps.Tile | null = null;
-          let hasTileOnFoot: Phaser.Tilemaps.Tile | null = null;
+          let upperTile: Phaser.Tilemaps.Tile | null = null;
+          let footTile: Phaser.Tilemaps.Tile | null = null;
 
           const isLeft = this.body.blocked.left;
           const x = isLeft
@@ -1026,11 +1007,11 @@ export class Player extends SpriteCollidable {
           const bottom = Math.floor((bounds.centerY - 1) / TILE_SIZE);
 
           for (const layer of layers) {
-            if (hasFreeUpperTile) {
+            if (upperTile) {
               break;
             }
 
-            hasFreeUpperTile = this.scene.map.getTileAt(
+            upperTile = this.scene.map.getTileAt(
               xTile,
               bottom,
               undefined,
@@ -1039,11 +1020,11 @@ export class Player extends SpriteCollidable {
           }
 
           for (const layer of layers) {
-            if (hasTileOnFoot) {
+            if (footTile) {
               break;
             }
 
-            hasTileOnFoot = this.scene.map.getTileAt(
+            footTile = this.scene.map.getTileAt(
               xTile,
               bottom + 1,
               undefined,
@@ -1051,7 +1032,7 @@ export class Player extends SpriteCollidable {
             );
           }
 
-          isClimbing = !hasFreeUpperTile && hasTileOnFoot !== null;
+          isClimbing = !upperTile && footTile !== null;
         }
 
         if (!isClimbing) {
@@ -1121,7 +1102,7 @@ export class Player extends SpriteCollidable {
 
     // Detect if the Player is jumping by checking if his y speed is negative
     if (this.body.velocity.y < 0) {
-      // Test if the user is pressing the button 'A'
+      // Test if the user is pressing the button 'Up'
       const isUpPress: boolean = this.scene
         .getController()
         .isKeyPressed(ControllerKey.UP);
@@ -1132,7 +1113,9 @@ export class Player extends SpriteCollidable {
 
         const newVelocity = this.body.velocity.y + -(this.body.velocity.y / 2);
 
-        // The Player slowly stop to jump and perform a linear fall
+        // NOTE: while going up newVelocity is always negative, so the
+        // Math.max makes this cut the jump dead (y speed = 0) instead of
+        // damping it. Use Math.min(newVelocity, 0) for a softer cut.
         this.setVelocityY(Math.max(newVelocity, 0));
       }
     }
@@ -1224,8 +1207,6 @@ export class Player extends SpriteCollidable {
         );
       }
     }
-
-    this.isPressingDash = isDashPress;
   }
 
   /**
@@ -1738,9 +1719,11 @@ export class Player extends SpriteCollidable {
   }
 
   /**
-   * Calculate the y coordinate where the bullet should spawn
+   * Ask to move the body to a new position at the end of the update
+   * (see adjustPosition). A coordinate left as null is not changed.
    *
-   * @return {number} The calculated Y coordinate
+   * @param {number|Phaser.Math.Vector2|null} x The new x, or a full position
+   * @param {number} y The new y
    */
   private setNewPosition(
     x: number | Phaser.Math.Vector2 | null,
@@ -1805,22 +1788,6 @@ export class Player extends SpriteCollidable {
       bounds.top + (this.height - this.body.height) * (1 - this.originY),
       this.body.width,
       this.body.height
-    );
-  }
-
-  public getBodyOffset(width?: number, height?: number): Phaser.Math.Vector2 {
-    if (typeof height === "undefined") {
-      if (typeof width === "undefined") {
-        width = Player.BODY_WIDTH;
-        height = Player.BODY_HEIGHT;
-      } else {
-        height = width;
-      }
-    }
-
-    return new Phaser.Math.Vector2(
-      (this.width - (width as number)) * (1 - this.originX),
-      (this.height - height) * (1 - this.originY)
     );
   }
 
