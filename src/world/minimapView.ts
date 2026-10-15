@@ -1,6 +1,5 @@
 import { ExploredGrid } from "@/world/explored";
-import { MinimapMap, PoiKind, Terrain } from "@/world/minimap";
-import type { Point, Rect } from "@/world/minimapTracker";
+import { MinimapMap, Point, PoiKind, Rect, Terrain } from "@/world/minimap";
 
 /**
  * What the minimap shows, as cells and markers with no dependency on Phaser.

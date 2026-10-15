@@ -82,6 +82,29 @@ describe("the minimap of the map chozodia", () => {
     expect(minimap.inRoom[row * map.width + col]).toBe(1);
   });
 
+  it("knows which rooms are dark, as the game does", () => {
+    const flags = rooms.map((room, index) => [
+      room.name,
+      minimap.rooms[index].dark,
+    ]);
+
+    // the two rooms below have the property dark in Tiled, the first one has not
+    expect(flags).toEqual(
+      rooms.map((room) => [
+        room.name,
+        room.properties?.some((p) => p.name === "dark") ?? false,
+      ])
+    );
+    expect(minimap.rooms.some((room) => room.dark)).toBe(true);
+    expect(minimap.rooms.some((room) => !room.dark)).toBe(true);
+  });
+
+  it("has a room for every cell inside the rooms, and only for them", () => {
+    minimap.roomOf.forEach((room, index) => {
+      expect(room >= 0).toBe(minimap.inRoom[index] === 1);
+    });
+  });
+
   it("has every point of interest inside a room, or it would never be seen", () => {
     for (const poi of minimap.pois) {
       expect(minimap.inRoom[poi.row * map.width + poi.col], poi.id).toBe(1);

@@ -1,11 +1,22 @@
 import { describe, expect, it, vi } from "vitest";
-import { Terrain, buildMinimapMap } from "@/world/minimap";
+import {
+  Hazard,
+  Terrain,
+  buildMinimapMap,
+  getRoomFlags,
+} from "@/world/minimap";
 import type { MapObject } from "@/world/doors";
 
 /** A map of 6 x 4 tiles of 16 pixels, with the layers as lists of "col,row" */
 function build(
   layers: Record<string, string[]> = {},
-  rooms = [{ x: 0, y: 0, width: 96, height: 64 }],
+  rooms: Array<{
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    properties?: Array<{ name: string; value: unknown }>;
+  }> = [{ x: 0, y: 0, width: 96, height: 64 }],
   objects: MapObject[] = []
 ) {
   return buildMinimapMap({
@@ -121,5 +132,93 @@ describe("buildMinimapMap: points of interest", () => {
     expect(map.pois).toEqual([{ id: "poi_5", kind: "other", col: 0, row: 0 }]);
     expect(warn).toHaveBeenCalledTimes(2);
     warn.mockRestore();
+  });
+});
+
+describe("buildMinimapMap: the room of every cell", () => {
+  it("tells the room of every cell, and -1 outside the rooms", () => {
+    const map = build({}, [
+      { x: 0, y: 0, width: 48, height: 64 },
+      { x: 48, y: 0, width: 48, height: 32 },
+    ]);
+
+    expect(Array.from(map.roomOf.slice(0, 6))).toEqual([0, 0, 0, 1, 1, 1]);
+    // the second room is only half as tall
+    expect(map.roomOf[3 * 6 + 4]).toBe(-1);
+    expect(map.roomOf[3 * 6 + 1]).toBe(0);
+  });
+
+  it("gives a cell the first room which has it", () => {
+    const map = build({}, [
+      { x: 0, y: 0, width: 64, height: 64 },
+      { x: 32, y: 0, width: 64, height: 64 },
+    ]);
+
+    // the columns 2 and 3 are in both rooms: the first one has them
+    expect(map.roomOf[2]).toBe(0);
+    expect(map.roomOf[3]).toBe(0);
+    expect(map.roomOf[4]).toBe(1);
+  });
+
+  it("keeps the flags of every room, in the order of the rooms", () => {
+    const map = build({}, [
+      { x: 0, y: 0, width: 48, height: 64 },
+      {
+        x: 48,
+        y: 0,
+        width: 48,
+        height: 64,
+        properties: [{ name: "hot", value: true }],
+      },
+    ]);
+
+    expect(map.rooms).toEqual([
+      { dark: false, hazard: Hazard.NONE },
+      { dark: false, hazard: Hazard.HOT },
+    ]);
+  });
+});
+
+describe("getRoomFlags", () => {
+  const flags = (...properties: Array<[string, unknown]>) =>
+    getRoomFlags({
+      id: 1,
+      properties: properties.map(([name, value]) => ({ name, value })),
+    });
+
+  it("reads dark as the game does: a color", () => {
+    expect(flags(["dark", "000000"]).dark).toBe(true);
+    expect(flags(["dark", ""]).dark).toBe(false);
+    expect(flags(["dark", true]).dark).toBe(false);
+    expect(flags().dark).toBe(false);
+  });
+
+  it("reads hot and toxic", () => {
+    expect(flags(["hot", true]).hazard).toBe(Hazard.HOT);
+    expect(flags(["toxic", true]).hazard).toBe(Hazard.TOXIC);
+    expect(flags(["hot", false], ["toxic", false]).hazard).toBe(Hazard.NONE);
+  });
+
+  it("lets either be together with dark", () => {
+    expect(flags(["dark", "101010"], ["hot", true])).toEqual({
+      dark: true,
+      hazard: Hazard.HOT,
+    });
+    expect(flags(["dark", "101010"], ["toxic", true])).toEqual({
+      dark: true,
+      hazard: Hazard.TOXIC,
+    });
+  });
+
+  it("does not take hot and toxic together: it is hot, with a warning", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    expect(flags(["toxic", true], ["hot", true]).hazard).toBe(Hazard.HOT);
+    expect(warn).toHaveBeenCalledTimes(1);
+    warn.mockRestore();
+  });
+
+  it("takes only a real true: a text is not", () => {
+    expect(flags(["hot", "true"]).hazard).toBe(Hazard.NONE);
   });
 });

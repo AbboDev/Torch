@@ -1,12 +1,18 @@
 import type { MapObject } from "@/world/doors";
-import { RoomBounds, getRoomProperty } from "@/world/rooms";
+import {
+  RoomBounds,
+  RoomWithProperties,
+  getRoomProperty,
+} from "@/world/rooms";
 
 /**
  * The data of a minimap, with no dependency on Phaser. It is made from the
  * map the game already has, so it is always the same as the map in Tiled:
  *
  * - the terrain comes from the tile layers (a wall is a wall, water is water);
- * - the borders come from the rooms (objects of type "room");
+ * - the borders and the flags come from the rooms (objects of type "room"):
+ *   `dark` (as in the game), and `hot` or `toxic` (bool), which can not be set
+ *   together: the minimap colors the room for them;
  * - the points of interest come from objects: the "save_point" and the "door"
  *   ones count by themselves, and any other is an object of type "poi" whose
  *   custom property `kind` is one of `POI_KINDS` ("save", "door", "item",
@@ -23,6 +29,36 @@ export const Terrain = {
 } as const;
 
 export type TerrainType = (typeof Terrain)[keyof typeof Terrain];
+
+export interface Point {
+  x: number;
+  y: number;
+}
+
+export interface Rect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/** What a room can be, besides dark: the two can not be together */
+export const Hazard = {
+  NONE: 0,
+  /** High temperature */
+  HOT: 1,
+  /** Toxic air */
+  TOXIC: 2,
+} as const;
+
+export type HazardType = (typeof Hazard)[keyof typeof Hazard];
+
+/** The flags of a room which the minimap shows */
+export interface MinimapRoom {
+  /** The room is dark: only what the torch lights is seen */
+  dark: boolean;
+  hazard: HazardType;
+}
 
 export const POI_KINDS = ["save", "door", "item", "boss", "other"] as const;
 
@@ -45,6 +81,10 @@ export interface MinimapMap {
   terrain: Uint8Array;
   /** 1 for the cells inside a room: only these are ever drawn */
   inRoom: Uint8Array;
+  /** The room of every cell (an index of `rooms`), or -1 outside of them */
+  roomOf: Int16Array;
+  /** The flags of the rooms, in the order of the rooms of the map */
+  rooms: MinimapRoom[];
   /** 1 for the cells on the border of their room */
   edge: Uint8Array;
   pois: MinimapPoi[];
@@ -56,7 +96,7 @@ export interface MinimapSource {
   tileSize: number;
   /** Is there a tile in the layer, at this cell? */
   isFilled(layer: string, col: number, row: number): boolean;
-  rooms: readonly RoomBounds[];
+  rooms: ReadonlyArray<RoomBounds & RoomWithProperties & { id?: number }>;
   objects: readonly MapObject[];
 }
 
@@ -120,11 +160,40 @@ function getPoiKind(object: MapObject): PoiKind | null {
   return "other";
 }
 
+/**
+ * The flags of a room, as set in Tiled: `dark` is a string (the color of the
+ * dark) as the game reads it, `hot` and `toxic` are bool. A room which has both
+ * is wrong: it is `hot`, and a warning says so.
+ */
+export function getRoomFlags(
+  room: RoomWithProperties & { id?: number }
+): MinimapRoom {
+  const darkness = getRoomProperty(room, "dark");
+  const isHot = getRoomProperty(room, "hot") === true;
+  const isToxic = getRoomProperty(room, "toxic") === true;
+
+  if (isHot && isToxic) {
+    console.warn(
+      `Room ${room.id ?? "?"}: "hot" and "toxic" can not be together: it is "hot"`
+    );
+  }
+
+  let hazard: HazardType = Hazard.NONE;
+  if (isHot) {
+    hazard = Hazard.HOT;
+  } else if (isToxic) {
+    hazard = Hazard.TOXIC;
+  }
+
+  return { dark: typeof darkness === "string" && darkness !== "", hazard };
+}
+
 export function buildMinimapMap(source: MinimapSource): MinimapMap {
   const { cols, rows, tileSize } = source;
   const terrain = new Uint8Array(cols * rows);
   const inRoom = new Uint8Array(cols * rows);
   const edge = new Uint8Array(cols * rows);
+  const roomOf = new Int16Array(cols * rows).fill(-1);
 
   for (let row = 0; row < rows; row++) {
     for (let col = 0; col < cols; col++) {
@@ -132,7 +201,7 @@ export function buildMinimapMap(source: MinimapSource): MinimapMap {
     }
   }
 
-  for (const room of source.rooms) {
+  source.rooms.forEach((room, roomIndex) => {
     // The rooms share their borders, and rows and columns are whole tiles
     const left = Math.max(0, Math.floor((room.x ?? 0) / tileSize));
     const top = Math.max(0, Math.floor((room.y ?? 0) / tileSize));
@@ -149,12 +218,17 @@ export function buildMinimapMap(source: MinimapSource): MinimapMap {
       for (let col = left; col < right; col++) {
         inRoom[row * cols + col] = 1;
 
+        // Where the rooms share a cell, the first one has it
+        if (roomOf[row * cols + col] < 0) {
+          roomOf[row * cols + col] = roomIndex;
+        }
+
         if (col === left || col === right - 1 || row === top || row === bottom - 1) {
           edge[row * cols + col] = 1;
         }
       }
     }
-  }
+  });
 
   const pois: MinimapPoi[] = [];
 
@@ -180,5 +254,15 @@ export function buildMinimapMap(source: MinimapSource): MinimapMap {
     pois.push({ id: `${object.type}_${object.id}`, kind, col, row });
   }
 
-  return { cols, rows, tileSize, terrain, inRoom, edge, pois };
+  return {
+    cols,
+    rows,
+    tileSize,
+    terrain,
+    inRoom,
+    roomOf,
+    rooms: source.rooms.map(getRoomFlags),
+    edge,
+    pois,
+  };
 }

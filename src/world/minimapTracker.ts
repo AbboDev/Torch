@@ -1,17 +1,5 @@
 import type { ExploredGrid } from "@/world/explored";
-import type { MinimapMap } from "@/world/minimap";
-
-export interface Point {
-  x: number;
-  y: number;
-}
-
-export interface Rect {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
+import type { MinimapMap, Point, Rect } from "@/world/minimap";
 
 /**
  * What the game tells the minimap at every frame, all in pixels of the world.
