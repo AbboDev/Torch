@@ -1732,13 +1732,14 @@ export class Player extends SpriteCollidable {
     if (x instanceof Phaser.Math.Vector2) {
       this.adjustTo = x;
     } else if (!this.adjustTo) {
-      this.adjustTo = new Phaser.Math.Vector2(x || -1, y || -1);
+      this.adjustTo = new Phaser.Math.Vector2(x ?? -1, y ?? -1);
     } else {
-      if (x) {
+      // 0 is a valid coordinate: only null/undefined mean "leave it as is"
+      if (x !== null) {
         this.adjustTo.set(x, this.adjustTo.y);
       }
 
-      if (y) {
+      if (y !== undefined) {
         this.adjustTo.set(this.adjustTo.x, y);
       }
     }
