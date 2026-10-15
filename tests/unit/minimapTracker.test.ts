@@ -73,7 +73,8 @@ describe("revealAround: a dark room", () => {
   const dark = (overrides = {}) =>
     live({
       player: { x: 30 * 16 + 8, y: 6 * 16 + 8 },
-      view: { x: 320, y: 16, width: 320, height: 176 },
+      // the screen shows the room from the column 20, down to the row 16
+      view: { x: 320, y: 16, width: 320, height: 256 },
       ...overrides,
     });
 
@@ -137,6 +138,27 @@ describe("revealAround: a dark room", () => {
 
     expect(grid.has(24, 6)).toBe(false);
     expect(grid.has(26, 6)).toBe(true);
+  });
+});
+
+describe("revealAround: the light does not go through the walls", () => {
+  it("does not reveal a dark room which the screen does not show", () => {
+    const grid = new ExploredGrid(40, 20);
+
+    // the Player is in the room which is not dark, near the dark one: the
+    // torch reaches into it, but the screen shows only the room of the Player
+    revealAround(
+      map,
+      grid,
+      live({
+        player: { x: 24 * 16 + 8, y: 6 * 16 + 8 },
+        view: { x: 80, y: 16, width: 320, height: 176 },
+      })
+    );
+
+    expect(grid.has(24, 6)).toBe(true);
+    expect(grid.has(26, 6)).toBe(false);
+    expect(grid.has(28, 6)).toBe(false);
   });
 });
 

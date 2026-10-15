@@ -39,6 +39,12 @@ const frame = (col: number, row: number, torchRadius = 30) => ({
   torchRadius,
 });
 
+/** The same, with the screen showing 20 x 8 cells from (20, 0): the dark room */
+const darkFrame = (col: number, row: number, torchRadius = 30) => ({
+  ...frame(col, row, torchRadius),
+  visible: { x: 200, y: 0, width: 200, height: 80 },
+});
+
 describe("getViewCells", () => {
   it("is the cells the rectangle touches", () => {
     expect(getViewCells(map, { x: 5, y: 5, width: 20, height: 10 })).toEqual({
@@ -68,8 +74,8 @@ describe("isCellVisible", () => {
     expect(isCellVisible(map, 5, 6, frame(5, 3))).toBe(false);
   });
 
-  it("is only what the torch reaches, in a dark room", () => {
-    const dark = frame(25, 4, 30);
+  it("is only what the torch reaches on the screen, in a dark room", () => {
+    const dark = darkFrame(25, 4, 30);
 
     expect(isCellVisible(map, 25, 4, dark)).toBe(true);
     expect(isCellVisible(map, 28, 4, dark)).toBe(true);
@@ -79,20 +85,30 @@ describe("isCellVisible", () => {
   });
 
   it("does not take the screen for light in a dark room", () => {
-    // the screen shows the cell (5, 3) but the room there is lit; show a dark room
-    const screenOnDark = {
-      player: { x: 255, y: 45 },
-      visible: { x: 200, y: 0, width: 100, height: 60 },
-      torchRadius: 20,
+    // the screen shows all the cells around, the torch only the near ones
+    const dark = darkFrame(25, 4, 20);
+
+    expect(isCellVisible(map, 20, 0, dark)).toBe(false);
+    expect(isCellVisible(map, 25, 4, dark)).toBe(true);
+  });
+
+  it("does not take the torch for light where the screen does not show", () => {
+    // the Player is near the border of the dark room: the torch reaches the
+    // cells next to it, but the screen shows only the lit room
+    const lit = {
+      player: { x: 205, y: 45 },
+      visible: { x: 0, y: 0, width: 200, height: 90 },
+      torchRadius: 50,
     };
 
-    expect(isCellVisible(map, 20, 0, screenOnDark)).toBe(false);
-    expect(isCellVisible(map, 25, 4, screenOnDark)).toBe(true);
+    expect(isCellVisible(map, 22, 4, lit)).toBe(false);
+    // and the lit room is seen, as the screen shows it
+    expect(isCellVisible(map, 19, 4, lit)).toBe(true);
   });
 
   it("follows the torch when it is stronger", () => {
-    expect(isCellVisible(map, 31, 4, frame(25, 4, 30))).toBe(false);
-    expect(isCellVisible(map, 31, 4, frame(25, 4, 70))).toBe(true);
+    expect(isCellVisible(map, 31, 4, darkFrame(25, 4, 30))).toBe(false);
+    expect(isCellVisible(map, 31, 4, darkFrame(25, 4, 70))).toBe(true);
   });
 
   it("is never true outside the rooms", () => {
@@ -102,19 +118,19 @@ describe("isCellVisible", () => {
 });
 
 describe("getCandidateCells", () => {
-  it("is the box around the screen and the torch, cut at the map", () => {
+  it("is the box of the screen, cut at the map: only what it shows can be seen", () => {
     expect(getCandidateCells(map, frame(25, 4, 30))).toEqual({
-      col0: 0,
-      row0: 0,
-      col1: 29,
-      row1: 8,
-    });
-    expect(getCandidateCells(map, frame(0, 0, 30))).toEqual({
       col0: 0,
       row0: 0,
       col1: 10,
       row1: 6,
     });
+    expect(
+      getCandidateCells(map, {
+        ...frame(0, 0),
+        visible: { x: -50, y: -50, width: 100, height: 100 },
+      })
+    ).toEqual({ col0: 0, row0: 0, col1: 5, row1: 5 });
   });
 });
 
@@ -138,12 +154,19 @@ describe("isEnemyVisible", () => {
     expect(isEnemyVisible(map, seen(), at(35, 1), player)).toBe(false);
   });
 
-  it("shows an enemy in a dark room only inside the torch light", () => {
-    const dark = frame(25, 4, 30);
+  it("shows an enemy in a dark room only inside the torch light, on the screen", () => {
+    const dark = darkFrame(25, 4, 30);
 
     expect(isEnemyVisible(map, seen(), at(27, 4), dark)).toBe(true);
     expect(isEnemyVisible(map, seen(), at(35, 4), dark)).toBe(false);
-    expect(isEnemyVisible(map, seen(), at(35, 4), frame(32, 4, 30))).toBe(true);
+    expect(isEnemyVisible(map, seen(), at(35, 4), darkFrame(32, 4, 30))).toBe(true);
+    // in the light of the torch, but out of the screen
+    expect(
+      isEnemyVisible(map, seen(), at(23, 4), {
+        ...dark,
+        visible: { x: 250, y: 0, width: 100, height: 80 },
+      })
+    ).toBe(false);
   });
 
   it("does not show an enemy where the Player has not been", () => {

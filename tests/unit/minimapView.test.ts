@@ -373,14 +373,23 @@ describe("getMarkers: the enemies", () => {
     const { map, explored } = setup([{ name: "dark", value: "000000" }]);
     explored.revealRect(0, 0, 12, 6);
 
-    // the torch reaches 2 cells around (5, 3): (7, 3) is in the light, (7, 2) is not
-    const markers = getMarkers(map, explored, frame, window, false, [
+    // the screen shows all the room; the torch reaches 2 cells around (5, 3):
+    // (7, 3) is in the light, (7, 2) and (8, 3) are not
+    const wide = { ...frame, visible: { x: 0, y: 0, width: 120, height: 60 } };
+    const markers = getMarkers(map, explored, wide, window, false, [
       at(7, 3),
       at(7, 2),
     ]);
 
     expect(kinds(markers)).toEqual(["enemy", "player"]);
     expect(mine(markers)[0]).toMatchObject({ col: 4, row: 1 });
+
+    // in the light, but the screen does not show it
+    const narrow = { ...frame, visible: { x: 40, y: 20, width: 20, height: 30 } };
+
+    expect(kinds(getMarkers(map, explored, narrow, window, false, [at(7, 3)]))).toEqual([
+      "player",
+    ]);
   });
 });
 

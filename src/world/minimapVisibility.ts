@@ -6,8 +6,8 @@ import type { MinimapMap, Point, Rect } from "@/world/minimap";
  * is seen depends on the room:
  *
  * - in a room without the flag `dark` it is all that the screen shows;
- * - in a dark room it is only what the torch reaches, however much of the
- *   room the screen shows.
+ * - in a dark room it is only what the torch reaches *and* the screen shows:
+ *   the light does not go through the walls to a room the screen does not show.
  *
  * The rest of what was seen is memory, and the minimap shows it as such.
  */
@@ -69,9 +69,18 @@ function isInTorch(map: MinimapMap, col: number, row: number, frame: MinimapFram
   );
 }
 
+function isInView(map: MinimapMap, col: number, row: number, frame: MinimapFrame) {
+  const view = getViewCells(map, frame.visible);
+
+  return (
+    col >= view.col0 && col < view.col1 && row >= view.row0 && row < view.row1
+  );
+}
+
 /**
- * The Player sees the cell now: in a dark room if the torch reaches it, in any
- * other room if the screen shows it. A cell outside the rooms is never seen.
+ * The Player sees the cell now: in any room if the screen shows it, and in a
+ * dark room only if the torch reaches it too. A cell outside the rooms is never
+ * seen.
  */
 export function isCellVisible(
   map: MinimapMap,
@@ -85,35 +94,29 @@ export function isCellVisible(
     return false;
   }
 
-  if (map.rooms[room].dark) {
-    return isInTorch(map, col, row, frame);
+  if (!isInView(map, col, row, frame)) {
+    return false;
   }
 
-  const view = getViewCells(map, frame.visible);
-
-  return (
-    col >= view.col0 && col < view.col1 && row >= view.row0 && row < view.row1
-  );
+  return !map.rooms[room].dark || isInTorch(map, col, row, frame);
 }
 
-/** The cells worth looking at: around what the screen shows and the torch reaches */
+/** The cells worth looking at: only the ones the screen shows can be seen */
 export function getCandidateCells(map: MinimapMap, frame: MinimapFrame): CellBox {
   const view = getViewCells(map, frame.visible);
-  const player = getPlayerCell(map, frame);
-  const reach = Math.ceil(frame.torchRadius / map.tileSize);
 
   return {
-    col0: Math.max(0, Math.min(view.col0, player.col - reach)),
-    row0: Math.max(0, Math.min(view.row0, player.row - reach)),
-    col1: Math.min(map.cols, Math.max(view.col1, player.col + reach + 1)),
-    row1: Math.min(map.rows, Math.max(view.row1, player.row + reach + 1)),
+    col0: Math.max(0, view.col0),
+    row0: Math.max(0, view.row0),
+    col1: Math.min(map.cols, view.col1),
+    row1: Math.min(map.rows, view.row1),
   };
 }
 
 /**
  * The minimap shows an enemy if its cell has been seen and it is lit: in a
- * dark room only inside the torch light, in any other room all the enemies of
- * the room the Player is in.
+ * dark room only inside the torch light and on the screen, in any other room
+ * all the enemies of the room the Player is in.
  */
 export function isEnemyVisible(
   map: MinimapMap,
@@ -130,7 +133,7 @@ export function isEnemyVisible(
   }
 
   if (map.rooms[room].dark) {
-    return isInTorch(map, col, row, frame);
+    return isInView(map, col, row, frame) && isInTorch(map, col, row, frame);
   }
 
   const player = getPlayerCell(map, frame);
