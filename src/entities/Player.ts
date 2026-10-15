@@ -9,6 +9,15 @@ import { PowerUps } from "@/miscellaneous/Inventory";
 import { Hitbox, AreaPosition } from "@/entities/hitboxes/Hitbox";
 import { Arsenal } from "@/entities/weapons/Arsenal";
 import { BulletConfig } from "@/entities/bullets/Bullet";
+import {
+  DASH_SPEED_MULTIPLIER,
+  MovementContext,
+  getJumpSpeedMultiplier,
+  getRunSpeed,
+  getRunSpeedMultiplier,
+  HIGH_JUMP_SPEED_MULTIPLIER,
+} from "@/entities/player/movement";
+import { computeAim } from "@/entities/player/aim";
 import { SpriteCollidable } from "@/entities/collidables/SpriteCollidable";
 import { MapScene } from "@/scenes/MapScene";
 import { PLAYER_DEPTH } from "@/config/depths";
@@ -159,62 +168,6 @@ export class Player extends SpriteCollidable {
    * @type {Boolean}
    */
   private isPressingShot: boolean = false;
-
-  /**
-   * Default multiplier of jump speed
-   *
-   * @type {Number}
-   */
-  static JUMP_SPEED_MULTIPLIER: number = 1.25;
-
-  /**
-   * Multiplier of jump speed offers by dedicated powerup
-   *
-   * @type {Number}
-   */
-  static WALL_JUMP_SPEED_MULTIPLIER: number = 1.1;
-
-  /**
-   * Multiplier of jump speed offers by dedicated powerup
-   *
-   * @type {Number}
-   */
-  static HIGH_JUMP_SPEED_MULTIPLIER: number = 1.5;
-
-  /**
-   * Default multiplier of run speed
-   *
-   * @type {Number}
-   */
-  static RUN_SPEED_MULTIPLIER: number = 0.75;
-
-  /**
-   * Multiplier of dash speed offers by dedicated powerup
-   *
-   * @type {Number}
-   */
-  static DASH_SPEED_MULTIPLIER: number = 2;
-
-  /**
-   * Multiplier of run speed offers by dedicated powerup
-   *
-   * @type {Number}
-   */
-  static BOOSTED_RUN_SPEED_MULTIPLIER: number = 1.5;
-
-  /**
-   * Multiplier of swim x speed when not active the dedicated powerup
-   *
-   * @type {Number}
-   */
-  static SWIM_X_SPEED_MULTIPLIER: number = 0.5;
-
-  /**
-   * Multiplier of swim y speed when not active the dedicated powerup
-   *
-   * @type {Number}
-   */
-  static SWIM_Y_SPEED_MULTIPLIER: number = 1;
 
   /**
    * The max distance from wall where the player can yet perform a wall jump
@@ -706,46 +659,29 @@ export class Player extends SpriteCollidable {
    * Handle current aim direction based on facing
    */
   protected tiltAim(): void {
-    const isAimPress: boolean = this.scene
-      .getController()
-      .isKeyPressed(ControllerKey.L);
+    const controller = this.scene.getController();
 
-    const isUpPressed: boolean = this.scene
-      .getController()
-      .isKeyPressed(ControllerKey.UP);
+    const aim = computeAim(
+      {
+        aim: controller.isKeyPressed(ControllerKey.L),
+        up: controller.isKeyPressed(ControllerKey.UP),
+        down: controller.isKeyPressed(ControllerKey.DOWN),
+        left: controller.isKeyPressed(ControllerKey.LEFT),
+        right: controller.isKeyPressed(ControllerKey.RIGHT),
+      },
+      {
+        facingY: this.facing.y as DirectionAxisY,
+        facingForAimY: this.facingForAim.y as DirectionAxisY,
+        isAimingDiagonal: this.isAimingDiagonal,
+        wasAimingDiagonal: this.wasAimingDiagonal,
+      },
+      this.body.velocity.y
+    );
 
-    const isDownPressed: boolean = this.scene
-      .getController()
-      .isKeyPressed(ControllerKey.DOWN);
-
-    const isLeftPressed: boolean = this.scene
-      .getController()
-      .isKeyPressed(ControllerKey.LEFT);
-
-    const isRightPressed: boolean = this.scene
-      .getController()
-      .isKeyPressed(ControllerKey.RIGHT);
-
-    const isAimingWhileMoving =
-      (isLeftPressed || isRightPressed) && (isUpPressed || isDownPressed);
-
-    this.wasAimingDiagonal = this.isAimingDiagonal;
-
-    if (isUpPressed || (isAimPress && !this.isAimingDiagonal)) {
-      this.facing.y = DirectionAxisY.UP;
-      this.facingForAim.y = DirectionAxisY.UP;
-    } else if (
-      isDownPressed &&
-      (this.body.velocity.y !== 0 || isAimPress || isAimingWhileMoving)
-    ) {
-      this.facing.y = DirectionAxisY.DOWN;
-      this.facingForAim.y = DirectionAxisY.DOWN;
-    } else if (!this.isAimingDiagonal) {
-      this.facing.y = DirectionAxisY.MIDDLE;
-      this.facingForAim.y = DirectionAxisY.MIDDLE;
-    }
-
-    this.isAimingDiagonal = isAimPress || isAimingWhileMoving;
+    this.facing.y = aim.facingY;
+    this.facingForAim.y = aim.facingForAimY;
+    this.isAimingDiagonal = aim.isAimingDiagonal;
+    this.wasAimingDiagonal = aim.wasAimingDiagonal;
   }
 
   /**
@@ -1525,37 +1461,34 @@ export class Player extends SpriteCollidable {
     );
   }
 
+  /**
+   * What the Player owns and is doing, as needed by the speed rules
+   */
+  protected getMovementContext(): MovementContext {
+    const inventory = this.scene.getInventory();
+
+    return {
+      isSwimming: this.isSwimming,
+      hasFan: inventory.equip(PowerUps.FAN),
+      hasGlove: inventory.equip(PowerUps.GLOVE),
+      hasRocket: inventory.equip(PowerUps.ROCKET),
+      hasBoots: inventory.equip(PowerUps.BOOTS),
+      hasBooster: inventory.equip(PowerUps.BOOSTER),
+      canWallJump: this.canWallJump,
+      canDoubleJump: this.canDoubleJump,
+    };
+  }
+
   protected getJumpSpeedMultiplier(): number {
-    if (this.isSwimming && !this.scene.getInventory().equip(PowerUps.FAN)) {
-      return Player.SWIM_Y_SPEED_MULTIPLIER;
-    }
-
-    if (this.scene.getInventory().equip(PowerUps.GLOVE) && this.canWallJump) {
-      return Player.WALL_JUMP_SPEED_MULTIPLIER;
-    }
-
-    if (
-      this.scene.getInventory().equip(PowerUps.ROCKET) &&
-      this.canDoubleJump
-    ) {
-      return Player.JUMP_SPEED_MULTIPLIER;
-    }
-
-    if (this.scene.getInventory().equip(PowerUps.BOOTS)) {
-      return Player.HIGH_JUMP_SPEED_MULTIPLIER;
-    }
-
-    return Player.JUMP_SPEED_MULTIPLIER;
+    return getJumpSpeedMultiplier(this.getMovementContext());
   }
 
   public getMaxJumpSpeed(): number {
-    return this.baseSpeed * Player.HIGH_JUMP_SPEED_MULTIPLIER;
+    return this.baseSpeed * HIGH_JUMP_SPEED_MULTIPLIER;
   }
 
   public getRunSpeed(): number {
-    return this.isSwimming && !this.scene.getInventory().equip(PowerUps.FAN)
-      ? this.baseSpeed * Player.SWIM_X_SPEED_MULTIPLIER
-      : this.baseSpeed * 2;
+    return getRunSpeed(this.baseSpeed, this.getMovementContext());
   }
 
   public getStandingRunSpeed(): number {
@@ -1567,7 +1500,7 @@ export class Player extends SpriteCollidable {
   }
 
   public getDashSpeed(): number {
-    return this.baseSpeed * Player.DASH_SPEED_MULTIPLIER;
+    return this.baseSpeed * DASH_SPEED_MULTIPLIER;
   }
 
   public getMaxRunSpeed(): number {
@@ -1575,15 +1508,7 @@ export class Player extends SpriteCollidable {
   }
 
   public getRunSpeedMultiplier(): number {
-    if (this.isSwimming && !this.scene.getInventory().equip(PowerUps.FAN)) {
-      return Player.SWIM_X_SPEED_MULTIPLIER;
-    }
-
-    if (this.scene.getInventory().equip(PowerUps.BOOSTER)) {
-      return Player.BOOSTED_RUN_SPEED_MULTIPLIER;
-    }
-
-    return Player.RUN_SPEED_MULTIPLIER;
+    return getRunSpeedMultiplier(this.getMovementContext());
   }
 
   /**
