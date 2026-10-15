@@ -1,5 +1,11 @@
 import type { ExploredGrid } from "@/world/explored";
 import type { MinimapMap, Point, Rect } from "@/world/minimap";
+import {
+  MinimapFrame,
+  getCandidateCells,
+  getPlayerCell,
+  isCellVisible,
+} from "@/world/minimapVisibility";
 
 /**
  * What the game tells the minimap at every frame, all in pixels of the world.
@@ -13,39 +19,36 @@ export interface MinimapLive {
   player: Point;
   /** What the camera shows now */
   view: Rect;
-  /** The room is dark: only what the torch lights is seen */
-  isDark: boolean;
   /** How far the torch lights, in pixels */
   torchRadius: number;
 }
 
 /**
- * Mark as seen what the Player sees now: all that is on the screen, or in a
- * dark room just what the torch lights. The cell of the Player is always seen.
+ * Mark as seen what the Player sees now (see `minimapVisibility`): in a room
+ * which is not dark all that the screen shows, in a dark room only the cells
+ * the torch lights, as far as it does now. The cell of the Player is always
+ * seen.
  */
 export function revealAround(
   map: MinimapMap,
   grid: ExploredGrid,
-  live: Pick<MinimapLive, "player" | "view" | "isDark" | "torchRadius">
+  live: Pick<MinimapLive, "player" | "view" | "torchRadius">
 ): void {
-  const size = map.tileSize;
-  const col = Math.floor(live.player.x / size);
-  const row = Math.floor(live.player.y / size);
+  const frame: MinimapFrame = {
+    player: live.player,
+    visible: live.view,
+    torchRadius: live.torchRadius,
+  };
+  const player = getPlayerCell(map, frame);
+  const box = getCandidateCells(map, frame);
 
-  grid.reveal(col, row);
+  grid.reveal(player.col, player.row);
 
-  if (live.isDark) {
-    grid.revealCircle(col, row, live.torchRadius / size);
-
-    return;
+  for (let row = box.row0; row < box.row1; row++) {
+    for (let col = box.col0; col < box.col1; col++) {
+      if (isCellVisible(map, col, row, frame)) {
+        grid.reveal(col, row);
+      }
+    }
   }
-
-  const { view } = live;
-
-  grid.revealRect(
-    Math.floor(view.x / size),
-    Math.floor(view.y / size),
-    Math.ceil((view.x + view.width) / size),
-    Math.ceil((view.y + view.height) / size)
-  );
 }

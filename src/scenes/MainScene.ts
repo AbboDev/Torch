@@ -388,7 +388,6 @@ export class MainScene extends MapScene {
       }),
       player: { x: 0, y: 0 },
       view: { x: 0, y: 0, width: 0, height: 0 },
-      isDark: false,
       torchRadius: 0,
     });
   }
@@ -406,7 +405,6 @@ export class MainScene extends MapScene {
 
     const center = this.hero.getCenter();
     const { worldView } = this.cameras.main;
-    const room = this.rooms[this.hero.currentRoom];
 
     live.player.x = center.x;
     live.player.y = center.y;
@@ -414,7 +412,6 @@ export class MainScene extends MapScene {
     live.view.y = worldView.y;
     live.view.width = worldView.width;
     live.view.height = worldView.height;
-    live.isDark = !!room && typeof getRoomProperty(room, "dark") === "string";
     live.torchRadius = this.hero.getTorchRadius();
 
     revealAround(
