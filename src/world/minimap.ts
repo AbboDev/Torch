@@ -79,9 +79,7 @@ export interface MinimapMap {
   tileSize: number;
   /** The terrain of every cell, row after row (see `Terrain`) */
   terrain: Uint8Array;
-  /** 1 for the cells inside a room: only these are ever drawn */
-  inRoom: Uint8Array;
-  /** The room of every cell (an index of `rooms`), or -1 outside of them */
+  /** The room of every cell (an index of `rooms`), or -1 outside of them: only these are drawn */
   roomOf: Int16Array;
   /** The flags of the rooms, in the order of the rooms of the map */
   rooms: MinimapRoom[];
@@ -191,7 +189,6 @@ export function getRoomFlags(
 export function buildMinimapMap(source: MinimapSource): MinimapMap {
   const { cols, rows, tileSize } = source;
   const terrain = new Uint8Array(cols * rows);
-  const inRoom = new Uint8Array(cols * rows);
   const edge = new Uint8Array(cols * rows);
   const roomOf = new Int16Array(cols * rows).fill(-1);
 
@@ -216,8 +213,6 @@ export function buildMinimapMap(source: MinimapSource): MinimapMap {
 
     for (let row = top; row < bottom; row++) {
       for (let col = left; col < right; col++) {
-        inRoom[row * cols + col] = 1;
-
         // Where the rooms share a cell, the first one has it
         if (roomOf[row * cols + col] < 0) {
           roomOf[row * cols + col] = roomIndex;
@@ -259,7 +254,6 @@ export function buildMinimapMap(source: MinimapSource): MinimapMap {
     rows,
     tileSize,
     terrain,
-    inRoom,
     roomOf,
     rooms: source.rooms.map(getRoomFlags),
     edge,

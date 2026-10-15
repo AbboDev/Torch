@@ -66,7 +66,7 @@ describe("the minimap of the map chozodia", () => {
             y < (room.y ?? 0) + (room.height ?? 0)
         );
 
-        expect(minimap.inRoom[row * map.width + col] === 1).toBe(inRoom);
+        expect(minimap.roomOf[row * map.width + col] >= 0).toBe(inRoom);
         expected += inRoom ? 1 : 0;
       }
     }
@@ -79,7 +79,7 @@ describe("the minimap of the map chozodia", () => {
     const col = Math.floor((spawn?.x ?? 0) / map.tilewidth);
     const row = Math.floor((spawn?.y ?? 0) / map.tileheight);
 
-    expect(minimap.inRoom[row * map.width + col]).toBe(1);
+    expect(minimap.roomOf[row * map.width + col]).toBeGreaterThan(-1);
   });
 
   it("knows which rooms are dark, as the game does", () => {
@@ -99,15 +99,9 @@ describe("the minimap of the map chozodia", () => {
     expect(minimap.rooms.some((room) => !room.dark)).toBe(true);
   });
 
-  it("has a room for every cell inside the rooms, and only for them", () => {
-    minimap.roomOf.forEach((room, index) => {
-      expect(room >= 0).toBe(minimap.inRoom[index] === 1);
-    });
-  });
-
   it("has every point of interest inside a room, or it would never be seen", () => {
     for (const poi of minimap.pois) {
-      expect(minimap.inRoom[poi.row * map.width + poi.col], poi.id).toBe(1);
+      expect(minimap.roomOf[poi.row * map.width + poi.col], poi.id).toBeGreaterThan(-1);
     }
   });
 });

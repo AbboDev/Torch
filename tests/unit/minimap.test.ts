@@ -29,7 +29,8 @@ function build(
   });
 }
 
-const at = (cells: Uint8Array, col: number, row: number) => cells[row * 6 + col];
+const at = (cells: ArrayLike<number>, col: number, row: number) =>
+  cells[row * 6 + col];
 
 describe("buildMinimapMap: terrain", () => {
   it("takes the terrain from the tile layers", () => {
@@ -62,11 +63,11 @@ describe("buildMinimapMap: rooms", () => {
     const map = build({}, [{ x: 16, y: 0, width: 40, height: 32 }]);
 
     // x from 16 to 56 is the columns 1, 2 and 3 (the last one only in part)
-    expect(at(map.inRoom, 0, 0)).toBe(0);
-    expect(at(map.inRoom, 1, 0)).toBe(1);
-    expect(at(map.inRoom, 3, 1)).toBe(1);
-    expect(at(map.inRoom, 4, 0)).toBe(0);
-    expect(at(map.inRoom, 1, 2)).toBe(0);
+    expect(at(map.roomOf, 0, 0)).toBe(-1);
+    expect(at(map.roomOf, 1, 0)).toBe(0);
+    expect(at(map.roomOf, 3, 1)).toBe(0);
+    expect(at(map.roomOf, 4, 0)).toBe(-1);
+    expect(at(map.roomOf, 1, 2)).toBe(-1);
   });
 
   it("marks the border of every room, also where two rooms touch", () => {
@@ -79,13 +80,13 @@ describe("buildMinimapMap: rooms", () => {
     expect(at(map.edge, 3, 0)).toBe(1);
     expect(at(map.edge, 3, 1)).toBe(1);
     expect(at(map.edge, 3, 2)).toBe(1);
-    expect(at(map.inRoom, 3, 3)).toBe(1);
+    expect(at(map.roomOf, 3, 3)).toBe(1);
   });
 
   it("does not go out of the map", () => {
     const map = build({}, [{ x: -32, y: -32, width: 400, height: 400 }]);
 
-    expect(map.inRoom.every((cell) => cell === 1)).toBe(true);
+    expect(map.roomOf.every((room) => room === 0)).toBe(true);
   });
 });
 

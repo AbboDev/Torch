@@ -3,13 +3,13 @@ import { MINIMAP } from "@/config/minimap";
 import type { ExploredGrid } from "@/world/explored";
 import type { MinimapLive } from "@/world/minimapTracker";
 import {
-  PALETTE,
-  getLitCells,
+  getCellColor,
   getMarkers,
   getWindowOrigin,
   renderCells,
   toRuns,
 } from "@/world/minimapView";
+import { getViewCells } from "@/world/minimapVisibility";
 
 /**
  * The minimap in the HUD: a frame with a part of the map, and the Player always
@@ -64,9 +64,13 @@ export class MinimapHud {
     }
 
     const { window, scale, markerSize, blinkMs } = MINIMAP;
-    const frame = { player: live.player, visible: live.view };
+    const frame = {
+      player: live.player,
+      visible: live.view,
+      torchRadius: live.torchRadius,
+    };
     const { left, top } = getWindowOrigin(live.map, live.player, window);
-    const lit = getLitCells(live.map, live.view);
+    const lit = getViewCells(live.map, live.view);
 
     const key = [
       live.mapId,
@@ -76,6 +80,8 @@ export class MinimapHud {
       lit.row0,
       lit.col1,
       lit.row1,
+      // the light of the torch: it decides what is seen in a dark room
+      Math.round(live.torchRadius),
       explored.revision,
     ].join(",");
 
@@ -86,7 +92,7 @@ export class MinimapHud {
       const cells = renderCells(live.map, explored, frame, window);
 
       for (const run of toRuns(cells, window.cols, window.rows)) {
-        const { color, alpha } = PALETTE[run.cell];
+        const { color, alpha } = getCellColor(run.cell);
 
         this.cells
           .fillStyle(color, alpha)
