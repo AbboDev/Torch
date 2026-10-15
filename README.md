@@ -340,9 +340,8 @@ shows the target (`CursorScene`).
 ## 🧭 Minimap
 
 The HUD has a minimap at the left of the screen (`src/hud/MinimapHud.ts`, sizes and place in
-`src/config/minimap.ts`), like the one of Metroid Dread: a frame with a part of the map, the Player
-always in the middle, and only what the Player has already seen is drawn. What the screen shows now
-is brighter, the rest of what was seen is dim.
+`src/config/minimap.ts`), like the one of Metroid Dread: a frame with a part of the map and the Player
+always in the middle. It is progressive: **nothing of an area is drawn until the Player has seen it**.
 
 **It is made from the map, not drawn by hand** (`src/world/minimap.ts`), so it never gets out of date
 when the map changes in Tiled:
@@ -356,11 +355,43 @@ when the map changes in Tiled:
   (`save`, `door`, `item`, `boss` or `other`, which is the default). They show once their cell has
   been seen. Put them inside a room.
 
-**What is seen** (`src/world/minimapTracker.ts`): every cell the camera shows, or in a dark room (the
-property `dark` of the room) only the cells the torch lights, as far as it does now. The cells are
-part of the game state and are saved with the game (`GameState.getExplored`, one grid of bits for
-every map, as base64): saves from before the minimap load with nothing seen, and if the map changes
-size what was seen stays where it was.
+### Fog of war
+
+What the Player sees now (`src/world/minimapVisibility.ts`) depends on the room:
+
+| Room | Seen now |
+| ---- | -------- |
+| without `dark` | all that the screen shows |
+| with `dark` | only what the torch reaches, as far as it does now, and the screen shows |
+
+The light does not go through the walls to a room the screen does not show. Every cell seen is remembered, and drawn in one of three tones: **bright** if it is seen now, **dim** if
+it is not (the fog of war), **darker still** if it is in a dark room, to show that nothing is seen there
+beyond the torch. What has not been seen is not drawn at all.
+
+The cells seen are part of the game state and are saved with the game (`GameState.getExplored`, one
+grid of bits for every map, as base64): saves from before the minimap load with nothing seen, and if the
+map changes size what was seen stays where it was.
+
+### Flags of the rooms
+
+Custom properties of the object `room` in Tiled:
+
+| Property | Type | Effect on the minimap |
+| -------- | ---- | --------------------- |
+| `dark` | string (a color) | as in the game; darker fog, and the torch decides what is seen |
+| `hot` | bool | the room is reddish (high temperature) |
+| `toxic` | bool | the room is greenish (toxic air) |
+
+`hot` and `toxic` can not be set together: the room is `hot` and a warning is logged. Either can be set
+together with `dark`. The colors are in `LIT_COLORS` (`src/world/minimapView.ts`), a table to change.
+The flags only color the minimap for now.
+
+### Enemies
+
+The minimap shows the enemies which are lit (`isEnemyVisible`): in a dark room only the ones inside the
+light of the torch, in any other room all the enemies of the room the Player is in, if the cell where
+they are has been seen. There are no enemies yet: each one adds itself to `scene.shootables`
+(`src/world/shootables.ts`) and the minimap takes their position from there.
 
 `src/world/minimapView.ts` works out what to draw, with no Phaser: the unit tests cover it, and the
 real map is checked in `tests/unit/minimapMap.test.ts`.
