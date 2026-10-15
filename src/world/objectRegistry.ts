@@ -21,13 +21,15 @@ export interface ObjectHandler<Context, Item extends TiledObjectLike> {
    * @param values  Its properties, with the defaults, already checked
    * @param context What the handler adds to
    * @param layer   All the objects of the layer it is in (a door finds its target there)
+   *
+   * @return Nothing, or the reason the object could not be made
    */
   create(
     object: Item,
     values: Record<string, PropertyValue | undefined>,
     context: Context,
     layer: readonly Item[]
-  ): void;
+  ): void | string;
 }
 
 export interface SpawnReport {
@@ -35,6 +37,8 @@ export interface SpawnReport {
   created: number;
   /** The objects left out, with the reason */
   skipped: { id: number; reason: string }[];
+  /** What is wrong but did not stop the object being made (an unknown property) */
+  warnings: string[];
 }
 
 /**
@@ -87,7 +91,7 @@ export class ObjectRegistry<
     context: Context,
     warn: (message: string) => void = console.warn
   ): SpawnReport {
-    const report: SpawnReport = { created: 0, skipped: [] };
+    const report: SpawnReport = { created: 0, skipped: [], warnings: [] };
     const unknownClasses = new Set<string>();
 
     const skip = (object: Item, reason: string) => {
@@ -145,10 +149,17 @@ export class ObjectRegistry<
       }
 
       for (const problem of problems) {
+        report.warnings.push(`${kind} ${object.id}: ${problem}`);
         warn(`${kind} ${object.id}: ${problem}`);
       }
 
-      handler.create(object, values, context, objects);
+      const problem = handler.create(object, values, context, objects);
+
+      if (typeof problem === "string") {
+        skip(object, problem);
+        continue;
+      }
+
       report.created++;
     }
 

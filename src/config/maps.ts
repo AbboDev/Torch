@@ -13,3 +13,22 @@ export const MAIN_MAP: MapConfig = {
   key: "chozodia",
   cacheKey: "chozodia_map",
 };
+
+/** The tile layers every map of the game must have (MainScene creates them) */
+export const REQUIRED_TILE_LAYERS: readonly string[] = [
+  "background",
+  "frontground",
+  "global_frontground",
+  "stairs",
+  "liquids",
+  "collision",
+  "platforms",
+  "breakables",
+];
+
+/** The tilesets every map of the game must have (the names of the images in Tiled) */
+export const REQUIRED_TILESETS: readonly string[] = [
+  "chozodia",
+  "liquids",
+  "full_liquids",
+];

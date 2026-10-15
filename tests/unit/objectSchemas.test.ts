@@ -148,6 +148,7 @@ describe("the schemas of the game", () => {
       "door",
       "save_point",
       "spawn_point",
+      "marker",
       "platform",
     ]);
   });

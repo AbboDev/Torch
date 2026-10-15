@@ -122,6 +122,15 @@ export const SPAWN_POINT_SCHEMA: ObjectSchema = {
   properties: {},
 };
 
+export const MARKER_SCHEMA: ObjectSchema = {
+  class: "marker",
+  layer: "objects",
+  color: "#ffb0b0b0",
+  description:
+    "A place in the map which other objects refer to, like where a door leads.",
+  properties: {},
+};
+
 export const PLATFORM_SCHEMA: ObjectSchema = {
   class: "platform",
   layer: "scenario_elements",
@@ -156,6 +165,7 @@ export const OBJECT_SCHEMAS: readonly ObjectSchema[] = [
   DOOR_SCHEMA,
   SAVE_POINT_SCHEMA,
   SPAWN_POINT_SCHEMA,
+  MARKER_SCHEMA,
   PLATFORM_SCHEMA,
 ];
 

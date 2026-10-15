@@ -59,7 +59,7 @@ describe("ObjectRegistry", () => {
       warn
     );
 
-    expect(report).toEqual({ created: 2, skipped: [] });
+    expect(report).toEqual({ created: 2, skipped: [], warnings: [] });
     expect(created).toEqual([
       [1, { life: 3, boss: false, layerSize: 2 }],
       [2, { life: 9, boss: true, layerSize: 2 }],
@@ -193,6 +193,20 @@ describe("ObjectRegistry", () => {
     expect(created.map(([id]) => id)).toEqual([2, 4]);
   });
 
+  it("leaves out an object when its handler says it can not be made", () => {
+    const registry = new ObjectRegistry<string[], MapObject>().register({
+      schema: enemy,
+      create: (item) => (item.id === 1 ? "has no room to stand" : undefined),
+    });
+    const warn = vi.fn();
+
+    const report = registry.spawn("objects", [object(1), object(2)], [], warn);
+
+    expect(report.created).toBe(1);
+    expect(report.skipped).toEqual([{ id: 1, reason: "has no room to stand" }]);
+    expect(warn).toHaveBeenCalledTimes(1);
+  });
+
   it("does not take two handlers for a class", () => {
     const { registry } = setup();
 
@@ -320,11 +334,12 @@ describe("the objects of the map of the game", () => {
     expect(warn).toHaveBeenCalledTimes(1);
   });
 
-  it("has the five kinds of the game", () => {
+  it("has the six kinds of the game", () => {
     expect(registry.getClasses()).toEqual([
       "room",
       "save_point",
       "spawn_point",
+      "marker",
       "door",
       "platform",
     ]);

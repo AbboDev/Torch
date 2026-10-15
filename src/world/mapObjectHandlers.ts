@@ -2,6 +2,7 @@ import { Door, MapObject, buildDoor } from "@/world/doors";
 import { ObjectRegistry } from "@/world/objectRegistry";
 import {
   DOOR_SCHEMA,
+  MARKER_SCHEMA,
   PLATFORM_SCHEMA,
   PropertyValue,
   ROOM_SCHEMA,
@@ -44,13 +45,20 @@ export function createMapObjectRegistry<Item extends MapObject = MapObject>() {
         context.setSpawnPoint(spawnPoint),
     })
     .register({
+      // Nothing to make: it is only a place, which a door finds in its layer
+      schema: MARKER_SCHEMA,
+      create: () => {},
+    })
+    .register({
       schema: DOOR_SCHEMA,
       create: (object, values, context, layer) => {
-        const door = buildDoor(object, values, layer);
+        const result = buildDoor(object, values, layer);
 
-        if (door) {
-          context.addDoor(door);
+        if ("problem" in result) {
+          return result.problem;
         }
+
+        context.addDoor(result.door);
       },
     })
     .register({

@@ -98,10 +98,12 @@ export function parseDoors(
       warn(`${doorLabel(object)}: ${problem}`);
     }
 
-    const door = buildDoor(object, values, objects, warn);
+    const result = buildDoor(object, values, objects);
 
-    if (door) {
-      doors.push(door);
+    if ("door" in result) {
+      doors.push(result.door);
+    } else {
+      warn(`${doorLabel(object)} ${result.problem}: it is ignored`);
     }
   }
 
@@ -120,19 +122,14 @@ function doorLabel(object: MapObject): string {
  * @param values  Its properties, with the defaults
  * @param objects The objects of its layer: the target is one of them
  *
- * @return The door, or null (with a warning) if it can not work
+ * @return The door, or what is wrong with the object if it can not work
  */
 export function buildDoor(
   object: MapObject,
   values: Record<string, PropertyValue | undefined>,
-  objects: readonly MapObject[],
-  warn: (message: string) => void = console.warn
-): Door | null {
-  const useless = (reason: string): null => {
-    warn(`${doorLabel(object)} ${reason}: it is ignored`);
-
-    return null;
-  };
+  objects: readonly MapObject[]
+): { door: Door } | { problem: string } {
+  const useless = (problem: string) => ({ problem });
 
   const reference = values.target as number | string;
   const targetMap = String(values.targetMap ?? "").trim();
@@ -168,13 +165,15 @@ export function buildDoor(
   }
 
   return {
-    id: object.id,
-    x: object.x ?? 0,
-    y: object.y ?? 0,
-    width: object.width,
-    height: object.height,
-    target,
-    requiresUp: values.requiresUp === true,
+    door: {
+      id: object.id,
+      x: object.x ?? 0,
+      y: object.y ?? 0,
+      width: object.width,
+      height: object.height,
+      target,
+      requiresUp: values.requiresUp === true,
+    },
   };
 }
 

@@ -10,6 +10,7 @@ import {
   MapObjectContext,
   createMapObjectRegistry,
 } from "@/world/mapObjectHandlers";
+import { validateMap } from "@/world/mapValidation";
 import { PlatformDirection } from "@/world/objectSchemas";
 import { toBounds } from "@/world/scroll";
 import { getRoomProperty } from "@/world/rooms";
@@ -84,6 +85,20 @@ export class MainScene extends MapScene {
     super.create();
 
     this.map = this.make.tilemap({ key: this.mapConfig.cacheKey });
+
+    // While developing, tell what is wrong in the map before it breaks
+    if (import.meta.env.DEV) {
+      const { errors, warnings } = validateMap(
+        this.cache.tilemap.get(this.mapConfig.cacheKey)?.data
+      );
+
+      errors.forEach((error) =>
+        console.error(`[${this.mapConfig.key}] ${error}`)
+      );
+      warnings.forEach((warning) =>
+        console.warn(`[${this.mapConfig.key}] ${warning}`)
+      );
+    }
 
     // The rooms, the save points, the spawn point and the doors of the map
     // (the platforms are made later, when the layers they collide with exist)

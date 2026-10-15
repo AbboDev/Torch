@@ -181,6 +181,19 @@ and the others are made anyway.
    `src/world/mapObjectHandlers.ts` (the handler only says which object is what).
 3. Do what is needed with it in `MainScene.createObjectContext()`.
 
+### Checking the maps
+
+`src/world/mapValidation.ts` checks a map as the game reads it, and `tests/unit/maps.test.ts`
+runs it on **every** file of `assets/maps/`: the layers and tilesets the scene needs, the size of
+the tiles, every object (class, layer, properties), rooms which overlap (touching borders are
+fine), one spawn point inside a room, save points with different names inside a room, doors which
+lead inside a room. Errors fail the tests. What is probably a mistake but works (two rooms with the
+same name, an area with no save point, an unknown property) is printed; run
+`VITE_STRICT_MAPS=1 npm test` (PowerShell: `$env:VITE_STRICT_MAPS=1; npm test`) to make it fail
+too. With `npm run dev` the same check runs when the game starts and writes to the console.
+
+A place which a door leads to is an object of class `marker`.
+
 ### Save points
 
 An object of type `save_point`: its `name`, with the name of the map, is what the
