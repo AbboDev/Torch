@@ -141,6 +141,51 @@ describe("revealAround: a dark room", () => {
   });
 });
 
+describe("revealAround: the levels of darkness", () => {
+  const levelMap = (darkness: string) =>
+    buildMinimapMap({
+      cols: 40,
+      rows: 20,
+      tileSize: 16,
+      isFilled: () => false,
+      rooms: [
+        {
+          id: 1,
+          x: 0,
+          y: 0,
+          width: 640,
+          height: 320,
+          properties: [
+            { name: "dark", value: "404040" },
+            { name: "darkness", value: darkness },
+          ],
+        },
+      ],
+      objects: [],
+    });
+
+  it("reveals all the screen in a room a little shaded, whatever the torch", () => {
+    const grid = new ExploredGrid(40, 20);
+
+    revealAround(levelMap("shaded"), grid, live({ torchRadius: 16 }));
+
+    expect(grid.count()).toBe(20 * 11);
+  });
+
+  it("reveals only what the torch lights in a corrupted room", () => {
+    for (const level of ["corrupted_partial", "corrupted_total"]) {
+      const grid = new ExploredGrid(40, 20);
+
+      revealAround(levelMap(level), grid, live());
+
+      expect(grid.has(8, 6)).toBe(true);
+      expect(grid.has(16, 6)).toBe(true);
+      expect(grid.has(17, 6)).toBe(false);
+      expect(grid.has(0, 1)).toBe(false);
+    }
+  });
+});
+
 describe("revealAround: the light does not go through the walls", () => {
   it("does not reveal a dark room which the screen does not show", () => {
     const grid = new ExploredGrid(40, 20);

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import mapSource from "../../assets/maps/chozodia.json?raw";
+import { Darkness } from "@/world/darkness";
 import type { MapObject } from "@/world/doors";
 import { Terrain, buildMinimapMap } from "@/world/minimap";
 
@@ -85,7 +86,7 @@ describe("the minimap of the map chozodia", () => {
   it("knows which rooms are dark, as the game does", () => {
     const flags = rooms.map((room, index) => [
       room.name,
-      minimap.rooms[index].dark,
+      minimap.rooms[index].darkness === Darkness.DARK,
     ]);
 
     // the two rooms below have the property dark in Tiled, the first one has not
@@ -95,8 +96,8 @@ describe("the minimap of the map chozodia", () => {
         room.properties?.some((p) => p.name === "dark") ?? false,
       ])
     );
-    expect(minimap.rooms.some((room) => room.dark)).toBe(true);
-    expect(minimap.rooms.some((room) => !room.dark)).toBe(true);
+    expect(minimap.rooms.some((room) => room.darkness === Darkness.DARK)).toBe(true);
+    expect(minimap.rooms.some((room) => room.darkness === Darkness.NONE)).toBe(true);
   });
 
   it("has every point of interest inside a room, or it would never be seen", () => {

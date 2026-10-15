@@ -1,3 +1,4 @@
+import { isTorchOnly } from "@/world/darkness";
 import { ExploredGrid } from "@/world/explored";
 import {
   Hazard,
@@ -195,9 +196,9 @@ export function renderCells(
         continue;
       }
 
-      const { dark, hazard } = map.rooms[room];
+      const { darkness, hazard } = map.rooms[room];
       const index = mapRow * map.cols + mapCol;
-      let tone: ToneType = dark ? Tone.DARK : Tone.DIM;
+      let tone: ToneType = isTorchOnly(darkness) ? Tone.DARK : Tone.DIM;
 
       if (isCellVisible(map, mapCol, mapRow, frame)) {
         tone = Tone.LIT;

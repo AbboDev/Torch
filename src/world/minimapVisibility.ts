@@ -1,3 +1,4 @@
+import { isTorchOnly } from "@/world/darkness";
 import type { ExploredGrid } from "@/world/explored";
 import type { MinimapMap, Point, Rect } from "@/world/minimap";
 
@@ -5,9 +6,11 @@ import type { MinimapMap, Point, Rect } from "@/world/minimap";
  * What the Player can see right now, with no dependency on Phaser. How much
  * is seen depends on the room:
  *
- * - in a room without the flag `dark` it is all that the screen shows;
- * - in a dark room it is only what the torch reaches *and* the screen shows:
- *   the light does not go through the walls to a room the screen does not show.
+ * - with the light on, or in a room a little shaded, it is all that the screen
+ *   shows;
+ * - in a dark room (completely dark or corrupted, see `darkness`) it is only
+ *   what the torch reaches *and* the screen shows: the light does not go
+ *   through the walls to a room the screen does not show.
  *
  * The rest of what was seen is memory, and the minimap shows it as such.
  */
@@ -98,7 +101,7 @@ export function isCellVisible(
     return false;
   }
 
-  return !map.rooms[room].dark || isInTorch(map, col, row, frame);
+  return !isTorchOnly(map.rooms[room].darkness) || isInTorch(map, col, row, frame);
 }
 
 /** The cells worth looking at: only the ones the screen shows can be seen */
@@ -132,7 +135,7 @@ export function isEnemyVisible(
     return false;
   }
 
-  if (map.rooms[room].dark) {
+  if (isTorchOnly(map.rooms[room].darkness)) {
     return isInView(map, col, row, frame) && isInTorch(map, col, row, frame);
   }
 

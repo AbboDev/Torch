@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { Darkness } from "@/world/darkness";
 import { ExploredGrid } from "@/world/explored";
 import { buildMinimapMap } from "@/world/minimap";
 import {
@@ -177,5 +178,85 @@ describe("isEnemyVisible", () => {
 
   it("does not show an enemy outside the rooms", () => {
     expect(isEnemyVisible(map, seen(), at(5, 9), frame(5, 3))).toBe(false);
+  });
+});
+
+describe("the levels of darkness", () => {
+  /** A map of 20 x 6 tiles of 10 pixels with a single room, of the level given */
+  const levelMap = (darkness: string | null) =>
+    buildMinimapMap({
+      cols: 20,
+      rows: 6,
+      tileSize: 10,
+      isFilled: () => false,
+      rooms: [
+        {
+          id: 1,
+          x: 0,
+          y: 0,
+          width: 200,
+          height: 60,
+          properties:
+            darkness === null
+              ? []
+              : [
+                  // the color goes with every level but "none"
+                  ...(darkness === "none"
+                    ? []
+                    : [{ name: "dark", value: "404040" }]),
+                  { name: "darkness", value: darkness },
+                ],
+        },
+      ],
+      objects: [],
+    });
+
+  /** The Player at (3, 3) with the torch reaching 2 cells, the screen showing 12 */
+  const near = {
+    player: { x: 35, y: 35 },
+    visible: { x: 0, y: 0, width: 120, height: 60 },
+    torchRadius: 20,
+  };
+
+  it("sees all the screen with the light on or in a room a little shaded", () => {
+    for (const level of [null, "none", "shaded"]) {
+      expect(isCellVisible(levelMap(level), 11, 0, near)).toBe(true);
+    }
+  });
+
+  it("sees only the light of the torch in a dark or a corrupted room", () => {
+    for (const level of ["dark", "corrupted_partial", "corrupted_total"]) {
+      const map = levelMap(level);
+
+      expect(isCellVisible(map, 4, 3, near)).toBe(true);
+      expect(isCellVisible(map, 11, 0, near)).toBe(false);
+    }
+  });
+
+  it("shows the enemies of the room, if the room is a little shaded", () => {
+    const grid = new ExploredGrid(20, 6);
+    grid.revealRect(0, 0, 20, 6);
+
+    expect(isEnemyVisible(levelMap("shaded"), grid, { x: 105, y: 5 }, near)).toBe(
+      true
+    );
+  });
+
+  it("shows the enemies only in the light of the torch, if the room is corrupted", () => {
+    const grid = new ExploredGrid(20, 6);
+    grid.revealRect(0, 0, 20, 6);
+
+    for (const level of ["dark", "corrupted_partial", "corrupted_total"]) {
+      const map = levelMap(level);
+
+      expect(isEnemyVisible(map, grid, { x: 45, y: 35 }, near)).toBe(true);
+      expect(isEnemyVisible(map, grid, { x: 105, y: 5 }, near)).toBe(false);
+    }
+  });
+
+  it("tells the darkness of the room of a cell", () => {
+    expect(levelMap("corrupted_total").rooms[0].darkness).toBe(
+      Darkness.CORRUPTED_TOTAL
+    );
   });
 });

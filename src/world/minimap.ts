@@ -1,3 +1,4 @@
+import { DarknessType, getDarkness } from "@/world/darkness";
 import type { MapObject } from "@/world/doors";
 import {
   RoomBounds,
@@ -11,8 +12,8 @@ import {
  *
  * - the terrain comes from the tile layers (a wall is a wall, water is water);
  * - the borders and the flags come from the rooms (objects of type "room"):
- *   `dark` (as in the game), and `hot` or `toxic` (bool), which can not be set
- *   together: the minimap colors the room for them;
+ *   the level of darkness (see `darkness`), and `hot` or `toxic` (bool), which
+ *   can not be set together: the minimap colors the room for them;
  * - the points of interest come from objects: the "save_point" and the "door"
  *   ones count by themselves, and any other is an object of type "poi" whose
  *   custom property `kind` is one of `POI_KINDS` ("save", "door", "item",
@@ -55,8 +56,8 @@ export type HazardType = (typeof Hazard)[keyof typeof Hazard];
 
 /** The flags of a room which the minimap shows */
 export interface MinimapRoom {
-  /** The room is dark: only what the torch lights is seen */
-  dark: boolean;
+  /** How dark the room is: from the light on to a corrupted dark */
+  darkness: DarknessType;
   hazard: HazardType;
 }
 
@@ -159,14 +160,13 @@ function getPoiKind(object: MapObject): PoiKind | null {
 }
 
 /**
- * The flags of a room, as set in Tiled: `dark` is a string (the color of the
- * dark) as the game reads it, `hot` and `toxic` are bool. A room which has both
+ * The flags of a room, as set in Tiled: the level of darkness (see
+ * `getDarkness`), and `hot` and `toxic`, which are bool. A room which has both
  * is wrong: it is `hot`, and a warning says so.
  */
 export function getRoomFlags(
   room: RoomWithProperties & { id?: number }
 ): MinimapRoom {
-  const darkness = getRoomProperty(room, "dark");
   const isHot = getRoomProperty(room, "hot") === true;
   const isToxic = getRoomProperty(room, "toxic") === true;
 
@@ -183,7 +183,7 @@ export function getRoomFlags(
     hazard = Hazard.TOXIC;
   }
 
-  return { dark: typeof darkness === "string" && darkness !== "", hazard };
+  return { darkness: getDarkness(room), hazard };
 }
 
 export function buildMinimapMap(source: MinimapSource): MinimapMap {

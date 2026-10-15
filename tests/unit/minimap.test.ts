@@ -5,6 +5,7 @@ import {
   buildMinimapMap,
   getRoomFlags,
 } from "@/world/minimap";
+import { Darkness } from "@/world/darkness";
 import type { MapObject } from "@/world/doors";
 
 /** A map of 6 x 4 tiles of 16 pixels, with the layers as lists of "col,row" */
@@ -174,8 +175,8 @@ describe("buildMinimapMap: the room of every cell", () => {
     ]);
 
     expect(map.rooms).toEqual([
-      { dark: false, hazard: Hazard.NONE },
-      { dark: false, hazard: Hazard.HOT },
+      { darkness: Darkness.NONE, hazard: Hazard.NONE },
+      { darkness: Darkness.NONE, hazard: Hazard.HOT },
     ]);
   });
 });
@@ -187,11 +188,17 @@ describe("getRoomFlags", () => {
       properties: properties.map(([name, value]) => ({ name, value })),
     });
 
-  it("reads dark as the game does: a color", () => {
-    expect(flags(["dark", "000000"]).dark).toBe(true);
-    expect(flags(["dark", ""]).dark).toBe(false);
-    expect(flags(["dark", true]).dark).toBe(false);
-    expect(flags().dark).toBe(false);
+  it("reads the darkness: a color is dark, as the game does, and the name tells the level", () => {
+    expect(flags(["dark", "000000"]).darkness).toBe(Darkness.DARK);
+    expect(flags(["dark", ""]).darkness).toBe(Darkness.NONE);
+    expect(flags(["dark", true]).darkness).toBe(Darkness.NONE);
+    expect(flags().darkness).toBe(Darkness.NONE);
+    expect(
+      flags(["dark", "808080"], ["darkness", "shaded"]).darkness
+    ).toBe(Darkness.SHADED);
+    expect(
+      flags(["dark", "301040"], ["darkness", "corrupted_total"]).darkness
+    ).toBe(Darkness.CORRUPTED_TOTAL);
   });
 
   it("reads hot and toxic", () => {
@@ -202,11 +209,11 @@ describe("getRoomFlags", () => {
 
   it("lets either be together with dark", () => {
     expect(flags(["dark", "101010"], ["hot", true])).toEqual({
-      dark: true,
+      darkness: Darkness.DARK,
       hazard: Hazard.HOT,
     });
     expect(flags(["dark", "101010"], ["toxic", true])).toEqual({
-      dark: true,
+      darkness: Darkness.DARK,
       hazard: Hazard.TOXIC,
     });
   });
