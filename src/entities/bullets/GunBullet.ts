@@ -1,4 +1,3 @@
-import * as Phaser from "phaser";
 import { MapScene } from "@/scenes/MapScene";
 import { Bullet } from "@/entities/bullets/Bullet";
 import { TILE_SIZE } from "@/config/tiles";
@@ -17,16 +16,5 @@ export class GunBullet extends Bullet {
     super(scene, x, y, sprite);
 
     this.speed = TILE_SIZE * 4;
-  }
-
-  public static preload(scene: Phaser.Scene): void {
-    super.preload(scene);
-
-    const spriteSize: Phaser.Types.Loader.FileTypes.ImageFrameConfig = {
-      frameWidth: 4,
-      frameHeight: 4,
-    };
-
-    scene.load.spritesheet("bullet", "assets/sprites/bullet.png", spriteSize);
   }
 }
