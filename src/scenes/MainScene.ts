@@ -4,9 +4,6 @@ import { ControllerKey } from "@/miscellaneous/Controller";
 import { TiledObject } from "@/entities/scenarios/TiledObject";
 import { Platform } from "@/entities/scenarios/Platform";
 import { Player } from "@/entities/Player";
-import { Bow } from "@/entities/weapons/Bow";
-import { Gun } from "@/entities/weapons/Gun";
-import { Rifle } from "@/entities/weapons/Rifle";
 import {
   BACKGROUND_DEPTH,
   BELOW_LAYER_DEPTH,
@@ -155,10 +152,16 @@ export class MainScene extends MapScene {
 
     const roomNumber: number = this.setCurrentRoom(x, y);
 
-    this.getInventory()
-      .pushWeapon(new Gun(this))
-      .pushWeapon(new Rifle(this))
-      .pushWeapon(new Bow(this));
+    // Development loadout, only for a game which has no weapons yet
+    // (a loaded save or a restarted scene keeps what the Player owns)
+    const inventory = this.getInventory();
+    if (!inventory.hasAtLeastOneRangeWeapon()) {
+      inventory
+        .addWeapon("gun")
+        .addWeapon("rifle")
+        .addWeapon("bow")
+        .switchCurrentWeapon("gun");
+    }
 
     this.hero = new Player(this, x, y, roomNumber);
 

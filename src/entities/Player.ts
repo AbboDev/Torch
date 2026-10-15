@@ -9,10 +9,7 @@ import {
   PowerUps
 } from "@/miscellaneous/Inventory";
 import { Hitbox, AreaPosition } from "@/entities/hitboxes/Hitbox";
-import { Bow } from "@/entities/weapons/Bow";
-import { Gun } from "@/entities/weapons/Gun";
-import { Rifle } from "@/entities/weapons/Rifle";
-import { Weapon } from "@/entities/weapons/Weapon";
+import { Arsenal } from "@/entities/weapons/Arsenal";
 import { BulletConfig } from "@/entities/bullets/Bullet";
 import { SpriteCollidable } from "@/entities/collidables/SpriteCollidable";
 import { MapScene } from "@/scenes/MapScene";
@@ -21,53 +18,11 @@ import { TILE_SIZE } from "@/config/tiles";
 
 export class Player extends SpriteCollidable {
   /**
-   * Current health points
-   *
-   * @type {Number}
-   */
-  private _life: number = 99;
-
-  /**
-   * Maximum health points
-   *
-   * @type {Number}
-   */
-  private _maxLife: number = 99;
-
-  /**
-   * Current ammo
-   *
-   * @type {Number}
-   */
-  private _ammo: number = 30;
-
-  /**
-   * Maximum ammo
-   *
-   * @type {Number}
-   */
-  private _maxAmmo: number = 30;
-
-  /**
-   * Current battery level
-   *
-   * @type {Number}
-   */
-  private _battery: number = 0;
-
-  /**
    * Last battery level
    *
    * @type {Number}
    */
   public lastBattery: number = 0;
-
-  /**
-   * Maximum battery level
-   *
-   * @type {Number}
-   */
-  private _maxBattery: number = 99;
 
   /**
    * The timeout after which the battery start recharging
@@ -91,25 +46,12 @@ export class Player extends SpriteCollidable {
   private torchLight: Phaser.GameObjects.Light;
 
   /**
-   * The Gun associated to Player
+   * The Phaser weapons of this scene. Which weapons the Player owns,
+   * and which one is active, lives in the Inventory (the game state).
    *
-   * @type {Gun}
+   * @type {Arsenal}
    */
-  public gun!: Gun;
-
-  /**
-   * The Rifle associated to Player
-   *
-   * @type {Rifle}
-   */
-  public rifle!: Rifle;
-
-  /**
-   * The Rifle associated to Player
-   *
-   * @type {Bow}
-   */
-  public bow!: Bow;
+  private arsenal: Arsenal;
 
   /**
    * The correct position where the Player where collocated
@@ -501,9 +443,7 @@ export class Player extends SpriteCollidable {
 
     this.body.useDamping = true;
 
-    this.gun = new Gun(this.scene);
-    this.rifle = new Rifle(this.scene);
-    this.bow = new Bow(this.scene);
+    this.arsenal = new Arsenal(this.scene);
 
     this.body.updateCenter();
 
@@ -556,78 +496,61 @@ export class Player extends SpriteCollidable {
 
     // TODO: activate after create normal maps for sprite
     // this.setPipeline('Light2D');
+  }
 
-    this.scene.registry
-      .set("ammo", this.ammo)
-      .set("maxAmmo", this.maxAmmo)
-      .set("life", this.life)
-      .set("maxLife", this.maxLife)
-      .set("battery", this.battery)
-      .set("maxBattery", this.maxBattery);
+  // Stats live in the game state (so they are saved and shown by the HUD);
+  // these accessors keep the rest of the Player code unchanged.
+
+  private get gameState() {
+    return this.scene.getGameState();
   }
 
   public get life(): number {
-    return this._life;
+    return this.gameState.get("life");
   }
 
   public set life(value: number) {
-    let newValue: number = value;
-    if (newValue < 0) {
-      newValue = 0;
-    }
-
-    this._life = newValue;
-    this.scene.registry.set("life", this._life);
+    this.gameState.set("life", value);
   }
 
   public get maxLife(): number {
-    return this._maxLife;
+    return this.gameState.get("maxLife");
   }
 
   public set maxLife(value: number) {
-    this._maxLife = value;
-    this.scene.registry.set("maxLife", this._maxLife);
+    this.gameState.set("maxLife", value);
   }
 
   public get ammo(): number {
-    return this._ammo;
+    return this.gameState.get("ammo");
   }
 
   public set ammo(value: number) {
-    this._ammo = value;
-    this.scene.registry.set("ammo", this._ammo);
+    this.gameState.set("ammo", value);
   }
 
   public get maxAmmo(): number {
-    return this._maxAmmo;
+    return this.gameState.get("maxAmmo");
   }
 
   public set maxAmmo(value: number) {
-    this._maxAmmo = value;
-    this.scene.registry.set("maxAmmo", this._maxAmmo);
+    this.gameState.set("maxAmmo", value);
   }
 
   public get battery(): number {
-    return this._battery;
+    return this.gameState.get("battery");
   }
 
   public set battery(value: number) {
-    let newValue: number = value;
-    if (newValue < 0) {
-      newValue = 0;
-    }
-
-    this._battery = newValue;
-    this.scene.registry.set("battery", this._battery);
+    this.gameState.set("battery", value);
   }
 
   public get maxBattery(): number {
-    return this._maxBattery;
+    return this.gameState.get("maxBattery");
   }
 
   public set maxBattery(value: number) {
-    this._maxBattery = value;
-    this.scene.registry.set("maxBattery", this._maxBattery);
+    this.gameState.set("maxBattery", value);
   }
 
   public static preload(scene: Phaser.Scene): void {
@@ -1574,7 +1497,7 @@ export class Player extends SpriteCollidable {
     }
 
     if (!this.isPressingShot) {
-      this.scene.getInventory().resetWeaponsShoot();
+      this.arsenal.resetShoot();
     }
 
     const isShootPress: boolean = this.scene
@@ -1593,10 +1516,10 @@ export class Player extends SpriteCollidable {
         position: this.getShotPosition(),
       };
 
-      const weapon: Weapon = this.scene
-        .getInventory()
-        .getCurrentWeapon() as Weapon;
-      const wasFired = weapon.fireBullet(time, config);
+      const weapon = this.arsenal.getCurrent();
+      const wasFired = weapon
+        ? weapon.fireBullet(time, config)
+        : false;
 
       if (wasFired) {
         --this.ammo;
