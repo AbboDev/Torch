@@ -1,4 +1,4 @@
-import { isTorchOnly } from "@/world/darkness";
+import { Darkness, DarknessType, isTorchOnly } from "@/world/darkness";
 import { ExploredGrid } from "@/world/explored";
 import {
   Hazard,
@@ -26,7 +26,13 @@ import {
  * - `DARK`: the same, in a dark room, where nothing is seen beyond the torch:
  *   the fog is darker than the other.
  *
- * The rooms with the flag `hot` or `toxic` have their own colors.
+ * The rooms with the flag `hot` or `toxic` have their own colors, and the level
+ * of darkness of a room (see `darkness`) changes them more:
+ *
+ * - a room a little shaded is a little darker, in every tone;
+ * - a dark room has the fog of the dark;
+ * - a corrupted room has the fog of the dark and a tint of violet, more
+ *   magenta when it is corrupted all over.
  */
 export interface MinimapWindow {
   /** The size of the window, in cells. Odd, so the Player has a middle cell */
@@ -54,27 +60,35 @@ export const NONE = 0;
 
 const KINDS = 5;
 const TONES = 3;
+const HAZARDS = 3;
 
-/** The value of a cell of the window: what it is, in which room, in which tone */
+/**
+ * The value of a cell of the window: what it is, in which kind of room (how
+ * dark, how hot or toxic) and in which tone. It fits in a byte.
+ */
 export function cellCode(
   kind: KindType,
   hazard: HazardType,
+  darkness: DarknessType,
   tone: ToneType
 ): number {
-  return 1 + (hazard * KINDS + kind) * TONES + tone;
+  return 1 + ((darkness * HAZARDS + hazard) * KINDS + kind) * TONES + tone;
 }
 
 export function describeCell(code: number): {
   kind: KindType;
   hazard: HazardType;
+  darkness: DarknessType;
   tone: ToneType;
 } {
   const index = code - 1;
+  const room = Math.floor(index / (TONES * KINDS));
 
   return {
     tone: (index % TONES) as ToneType,
     kind: (Math.floor(index / TONES) % KINDS) as KindType,
-    hazard: Math.floor(index / (TONES * KINDS)) as HazardType,
+    hazard: (room % HAZARDS) as HazardType,
+    darkness: Math.floor(room / HAZARDS) as DarknessType,
   };
 }
 
@@ -115,20 +129,52 @@ const TONE_STYLE: Record<ToneType, { factor: number; alpha: number }> = {
   [Tone.DARK]: { factor: 0.2, alpha: 0.95 },
 };
 
-function darken(color: number, factor: number): number {
-  const channel = (shift: number) =>
-    Math.round(((color >> shift) & 0xff) * factor);
+/** How much darker a room a little shaded is, in every tone */
+const SHADE_FACTOR: Partial<Record<DarknessType, number>> = {
+  [Darkness.SHADED]: 0.78,
+};
 
-  return (channel(16) << 16) | (channel(8) << 8) | channel(0);
+/** The tint of a corrupted room, and how much of it is in the colors */
+const CORRUPTION_TINT: Partial<
+  Record<DarknessType, { color: number; amount: number }>
+> = {
+  [Darkness.CORRUPTED_PARTIAL]: { color: 0x8a4dff, amount: 0.4 },
+  [Darkness.CORRUPTED_TOTAL]: { color: 0xd1189f, amount: 0.65 },
+};
+
+const channelOf = (color: number, shift: number) => (color >> shift) & 0xff;
+
+const join = (red: number, green: number, blue: number) =>
+  (Math.round(red) << 16) | (Math.round(green) << 8) | Math.round(blue);
+
+function darken(color: number, factor: number): number {
+  return join(
+    channelOf(color, 16) * factor,
+    channelOf(color, 8) * factor,
+    channelOf(color, 0) * factor
+  );
+}
+
+/** `amount` of the color `tint`, the rest of the color `color` */
+function mix(color: number, tint: number, amount: number): number {
+  const channel = (shift: number) =>
+    channelOf(color, shift) * (1 - amount) + channelOf(tint, shift) * amount;
+
+  return join(channel(16), channel(8), channel(0));
 }
 
 /** The color of a cell of the window, by its value (see `cellCode`) */
 export function getCellColor(code: number): PaletteColor {
-  const { kind, hazard, tone } = describeCell(code);
+  const { kind, hazard, darkness, tone } = describeCell(code);
   const style = TONE_STYLE[tone];
+  const tint = CORRUPTION_TINT[darkness];
+  const base = LIT_COLORS[hazard][kind];
 
   return {
-    color: darken(LIT_COLORS[hazard][kind], style.factor),
+    color: darken(
+      tint ? mix(base, tint.color, tint.amount) : base,
+      style.factor * (SHADE_FACTOR[darkness] ?? 1)
+    ),
     alpha: style.alpha,
   };
 }
@@ -207,6 +253,7 @@ export function renderCells(
       cells[row * window.cols + col] = cellCode(
         getKind(map.terrain[index], map.edge[index] === 1),
         hazard,
+        darkness,
         tone
       );
     }

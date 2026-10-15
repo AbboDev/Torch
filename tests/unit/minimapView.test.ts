@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { Darkness, DarknessType } from "@/world/darkness";
 import { ExploredGrid } from "@/world/explored";
-import { Hazard, buildMinimapMap } from "@/world/minimap";
+import { Hazard, HazardType, buildMinimapMap } from "@/world/minimap";
 import {
   ENEMY_COLOR,
   Kind,
@@ -8,6 +9,7 @@ import {
   PLAYER_COLORS,
   POI_COLORS,
   Tone,
+  ToneType,
   cellCode,
   describeCell,
   getCellColor,
@@ -51,28 +53,33 @@ const at = (cells: Uint8Array, col: number, row: number) =>
 
 const { FLOOR, WALL, LIQUID, EDGE } = Kind;
 const { NONE: NO_HAZARD, HOT, TOXIC } = Hazard;
+const NO_DARKNESS = Darkness.NONE;
 
 describe("cellCode", () => {
   it("is never the value of a cell which is not drawn, and tells every cell apart", () => {
     const codes = new Set<number>();
 
-    for (const hazard of [NO_HAZARD, HOT, TOXIC]) {
-      for (const kind of Object.values(Kind)) {
-        for (const tone of Object.values(Tone)) {
-          const code = cellCode(kind, hazard, tone);
+    for (const darkness of Object.values(Darkness)) {
+      for (const hazard of [NO_HAZARD, HOT, TOXIC]) {
+        for (const kind of Object.values(Kind)) {
+          for (const tone of Object.values(Tone)) {
+            const code = cellCode(kind, hazard, darkness, tone);
 
-          expect(code).not.toBe(NONE);
-          expect(describeCell(code)).toEqual({ kind, hazard, tone });
-          codes.add(code);
+            expect(code).not.toBe(NONE);
+            expect(describeCell(code)).toEqual({ kind, hazard, darkness, tone });
+            codes.add(code);
+          }
         }
       }
     }
 
-    expect(codes.size).toBe(3 * 5 * 3);
+    expect(codes.size).toBe(5 * 3 * 5 * 3);
   });
 
   it("fits in a byte", () => {
-    expect(cellCode(EDGE, TOXIC, Tone.DARK)).toBeLessThan(256);
+    expect(
+      cellCode(EDGE, TOXIC, Darkness.CORRUPTED_TOTAL, Tone.DARK)
+    ).toBeLessThan(256);
   });
 });
 
@@ -83,9 +90,9 @@ describe("getCellColor: the fog", () => {
   it("is darker for what is not seen now, and darker still in a dark room", () => {
     for (const hazard of [NO_HAZARD, HOT, TOXIC]) {
       for (const kind of Object.values(Kind)) {
-        const lit = getCellColor(cellCode(kind, hazard, Tone.LIT)).color;
-        const dim = getCellColor(cellCode(kind, hazard, Tone.DIM)).color;
-        const dark = getCellColor(cellCode(kind, hazard, Tone.DARK)).color;
+        const lit = getCellColor(cellCode(kind, hazard, NO_DARKNESS, Tone.LIT)).color;
+        const dim = getCellColor(cellCode(kind, hazard, NO_DARKNESS, Tone.DIM)).color;
+        const dark = getCellColor(cellCode(kind, hazard, NO_DARKNESS, Tone.DARK)).color;
 
         expect(brightness(lit)).toBeGreaterThan(brightness(dim));
         expect(brightness(dim)).toBeGreaterThan(brightness(dark));
@@ -94,23 +101,23 @@ describe("getCellColor: the fog", () => {
   });
 
   it("is solid where the Player sees, and a little clear in the fog", () => {
-    expect(getCellColor(cellCode(FLOOR, NO_HAZARD, Tone.LIT)).alpha).toBe(1);
-    expect(getCellColor(cellCode(FLOOR, NO_HAZARD, Tone.DIM)).alpha).toBeLessThan(1);
+    expect(getCellColor(cellCode(FLOOR, NO_HAZARD, NO_DARKNESS, Tone.LIT)).alpha).toBe(1);
+    expect(getCellColor(cellCode(FLOOR, NO_HAZARD, NO_DARKNESS, Tone.DIM)).alpha).toBeLessThan(1);
   });
 });
 
 describe("getCellColor: the rooms with a flag", () => {
   it("has its own colors for hot, toxic and the others", () => {
     const colors = [NO_HAZARD, HOT, TOXIC].map(
-      (hazard) => getCellColor(cellCode(FLOOR, hazard, Tone.LIT)).color
+      (hazard) => getCellColor(cellCode(FLOOR, hazard, NO_DARKNESS, Tone.LIT)).color
     );
 
     expect(new Set(colors).size).toBe(3);
   });
 
   it("makes hot reddish and toxic greenish", () => {
-    const hot = getCellColor(cellCode(FLOOR, HOT, Tone.LIT)).color;
-    const toxic = getCellColor(cellCode(FLOOR, TOXIC, Tone.LIT)).color;
+    const hot = getCellColor(cellCode(FLOOR, HOT, NO_DARKNESS, Tone.LIT)).color;
+    const toxic = getCellColor(cellCode(FLOOR, TOXIC, NO_DARKNESS, Tone.LIT)).color;
     const red = (c: number) => (c >> 16) & 0xff;
     const green = (c: number) => (c >> 8) & 0xff;
     const blue = (c: number) => c & 0xff;
@@ -123,8 +130,8 @@ describe("getCellColor: the rooms with a flag", () => {
 
   it("keeps the same difference between the tones in every room", () => {
     for (const hazard of [HOT, TOXIC]) {
-      const lit = getCellColor(cellCode(WALL, hazard, Tone.LIT)).color;
-      const dark = getCellColor(cellCode(WALL, hazard, Tone.DARK)).color;
+      const lit = getCellColor(cellCode(WALL, hazard, NO_DARKNESS, Tone.LIT)).color;
+      const dark = getCellColor(cellCode(WALL, hazard, NO_DARKNESS, Tone.DARK)).color;
 
       expect(dark).not.toBe(lit);
     }
@@ -162,7 +169,7 @@ describe("renderCells", () => {
     expect(describeCell(at(cells, 1, 1)).tone).toBe(Tone.LIT);
     expect(describeCell(at(cells, 3, 1)).tone).toBe(Tone.LIT);
     expect(describeCell(at(cells, 4, 1)).tone).toBe(Tone.DIM);
-    expect(at(cells, 2, 2)).toBe(cellCode(FLOOR, NO_HAZARD, Tone.LIT));
+    expect(at(cells, 2, 2)).toBe(cellCode(FLOOR, NO_HAZARD, NO_DARKNESS, Tone.LIT));
   });
 
   it("draws the walls, the water and the borders of the rooms", () => {
@@ -171,8 +178,8 @@ describe("renderCells", () => {
 
     const cells = renderCells(map, explored, frame, window);
 
-    expect(at(cells, 1, 0)).toBe(cellCode(WALL, NO_HAZARD, Tone.LIT));
-    expect(at(cells, 2, 0)).toBe(cellCode(LIQUID, NO_HAZARD, Tone.LIT));
+    expect(at(cells, 1, 0)).toBe(cellCode(WALL, NO_HAZARD, NO_DARKNESS, Tone.LIT));
+    expect(at(cells, 2, 0)).toBe(cellCode(LIQUID, NO_HAZARD, NO_DARKNESS, Tone.LIT));
 
     // the border of the room is at the row 5: the window goes down to see it
     const low = renderCells(
@@ -181,7 +188,7 @@ describe("renderCells", () => {
       { ...frame, player: { x: 55, y: 45 } },
       window
     );
-    expect(at(low, 2, 2)).toBe(cellCode(EDGE, NO_HAZARD, Tone.DIM));
+    expect(at(low, 2, 2)).toBe(cellCode(EDGE, NO_HAZARD, NO_DARKNESS, Tone.DIM));
   });
 
   it("does not draw outside the rooms, or outside the map", () => {
@@ -237,8 +244,8 @@ describe("renderCells: the flags of the room", () => {
 
       const cells = renderCells(map, explored, frame, window);
 
-      expect(at(cells, 2, 1)).toBe(cellCode(FLOOR, hazard, Tone.LIT));
-      expect(at(cells, 1, 0)).toBe(cellCode(WALL, hazard, Tone.LIT));
+      expect(at(cells, 2, 1)).toBe(cellCode(FLOOR, hazard, NO_DARKNESS, Tone.LIT));
+      expect(at(cells, 1, 0)).toBe(cellCode(WALL, hazard, NO_DARKNESS, Tone.LIT));
     }
   });
 
@@ -268,8 +275,122 @@ describe("renderCells: the flags of the room", () => {
 
     const cells = renderCells(map, explored, frame, window);
 
-    expect(at(cells, 2, 1)).toBe(cellCode(FLOOR, TOXIC, Tone.LIT));
-    expect(at(cells, 0, 0)).toBe(cellCode(FLOOR, TOXIC, Tone.DARK));
+    expect(at(cells, 2, 1)).toBe(cellCode(FLOOR, TOXIC, Darkness.DARK, Tone.LIT));
+    expect(at(cells, 0, 0)).toBe(cellCode(FLOOR, TOXIC, Darkness.DARK, Tone.DARK));
+  });
+});
+
+describe("getCellColor: the levels of darkness", () => {
+  const color = (
+    darkness: DarknessType,
+    tone: ToneType,
+    hazard: HazardType = NO_HAZARD
+  ) => getCellColor(cellCode(FLOOR, hazard, darkness, tone)).color;
+  const brightness = (c: number) =>
+    ((c >> 16) & 0xff) + ((c >> 8) & 0xff) + (c & 0xff);
+
+  it("does not change the colors of a dark room in the light of the torch", () => {
+    expect(color(Darkness.DARK, Tone.LIT)).toBe(color(Darkness.NONE, Tone.LIT));
+  });
+
+  it("makes a room a little shaded a little darker, in every tone", () => {
+    for (const tone of [Tone.LIT, Tone.DIM]) {
+      const shaded = brightness(color(Darkness.SHADED, tone));
+      const plain = brightness(color(Darkness.NONE, tone));
+
+      expect(shaded).toBeLessThan(plain);
+      // a little: it is not the fog of the dark
+      expect(shaded).toBeGreaterThan(brightness(color(Darkness.DARK, Tone.DARK)));
+    }
+  });
+
+  it("keeps the shade between the light and the fog", () => {
+    const shadedLit = brightness(color(Darkness.SHADED, Tone.LIT));
+
+    expect(shadedLit).toBeLessThan(brightness(color(Darkness.NONE, Tone.LIT)));
+    expect(shadedLit).toBeGreaterThan(brightness(color(Darkness.NONE, Tone.DIM)));
+  });
+
+  it("tints a corrupted room, more when it is corrupted all over", () => {
+    const plain = color(Darkness.DARK, Tone.LIT);
+    const partial = color(Darkness.CORRUPTED_PARTIAL, Tone.LIT);
+    const total = color(Darkness.CORRUPTED_TOTAL, Tone.LIT);
+
+    expect(new Set([plain, partial, total]).size).toBe(3);
+    // violet at first, then magenta: less green and more red
+    expect((total >> 16) & 0xff).toBeGreaterThan((partial >> 16) & 0xff);
+    expect((total >> 8) & 0xff).toBeLessThan((partial >> 8) & 0xff);
+    // and the tint is farther from the color of the room as it grows
+    const away = (c: number) =>
+      Math.abs(((c >> 16) & 0xff) - ((plain >> 16) & 0xff)) +
+      Math.abs(((c >> 8) & 0xff) - ((plain >> 8) & 0xff)) +
+      Math.abs((c & 0xff) - (plain & 0xff));
+    expect(away(total)).toBeGreaterThan(away(partial));
+  });
+
+  it("keeps the fog of the dark in a corrupted room", () => {
+    for (const darkness of [Darkness.CORRUPTED_PARTIAL, Darkness.CORRUPTED_TOTAL]) {
+      expect(brightness(color(darkness, Tone.DARK))).toBeLessThan(
+        brightness(color(darkness, Tone.LIT))
+      );
+    }
+  });
+
+  it("tells a room which is hot or toxic even when it is corrupted", () => {
+    for (const darkness of [Darkness.CORRUPTED_PARTIAL, Darkness.CORRUPTED_TOTAL]) {
+      const colors = [NO_HAZARD, HOT, TOXIC].map((hazard) =>
+        color(darkness, Tone.LIT, hazard)
+      );
+
+      expect(new Set(colors).size).toBe(3);
+    }
+  });
+});
+
+describe("renderCells: the levels of darkness", () => {
+  const level = (name: string) =>
+    setup([
+      { name: "dark", value: "404040" },
+      { name: "darkness", value: name },
+    ]);
+  const wide = { ...frame, visible: { x: 20, y: 0, width: 80, height: 60 } };
+
+  it("draws a room a little shaded as the light on, in the shade: all the screen is seen", () => {
+    const { map, explored } = level("shaded");
+    explored.revealRect(0, 0, 12, 6);
+
+    const cells = renderCells(map, explored, wide, window);
+
+    // (3, 2), farther than the torch from the Player, is seen as the screen shows it
+    expect(at(cells, 0, 0)).toBe(
+      cellCode(FLOOR, NO_HAZARD, Darkness.SHADED, Tone.LIT)
+    );
+    // and what the screen does not show is the fog of the other rooms, not the dark
+    const away = renderCells(
+      map,
+      explored,
+      { ...wide, visible: { x: 1000, y: 1000, width: 10, height: 10 } },
+      window
+    );
+    expect(describeCell(at(away, 0, 0)).tone).toBe(Tone.DIM);
+  });
+
+  it("draws a corrupted room as a dark one: only the torch is seen", () => {
+    for (const name of ["corrupted_partial", "corrupted_total"]) {
+      const { map, explored } = level(name);
+      explored.revealRect(0, 0, 12, 6);
+
+      const cells = renderCells(map, explored, wide, window);
+      const darkness = describeCell(at(cells, 2, 1)).darkness;
+
+      expect(describeCell(at(cells, 2, 1)).tone).toBe(Tone.LIT);
+      expect(describeCell(at(cells, 0, 0)).tone).toBe(Tone.DARK);
+      expect(darkness).toBe(
+        name === "corrupted_total"
+          ? Darkness.CORRUPTED_TOTAL
+          : Darkness.CORRUPTED_PARTIAL
+      );
+    }
   });
 });
 
