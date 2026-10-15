@@ -6,7 +6,7 @@ import {
 } from "@/miscellaneous/Direction";
 import { ControllerKey } from "@/miscellaneous/Controller";
 import { PowerUps } from "@/miscellaneous/Inventory";
-import { Hitbox, AreaPosition } from "@/entities/hitboxes/Hitbox";
+import { PlayerSensors } from "@/entities/player/PlayerSensors";
 import { Arsenal } from "@/entities/weapons/Arsenal";
 import { BulletConfig } from "@/entities/bullets/Bullet";
 import {
@@ -185,6 +185,13 @@ export class Player extends SpriteCollidable {
   static WALL_DETECTION_DISTANCE: number = TILE_SIZE / 4;
 
   /**
+   * When falling fast the hand sensor can travel more than the height of the
+   * area where a ledge can be grabbed in a single frame, and skip it.
+   * Turn this on to look for ledges along the whole path of the sensor.
+   */
+  static SWEPT_LEDGE_DETECTION: boolean = false;
+
+  /**
    * The Y position to subtract from current Y to spawn bullets
    *
    * @type {Number}
@@ -227,39 +234,12 @@ export class Player extends SpriteCollidable {
   private baseSpeed: number;
 
   /**
-   * The hitbox dedicated to detect overlapping with walls on the left
+   * What the Player is touching around the body: walls, ledges, ladders
+   * and moving platforms
    *
-   * @type {Hitbox}
+   * @type {PlayerSensors}
    */
-  private leftWallHitbox: Hitbox;
-
-  /**
-   * The hitbox dedicated to detect overlapping with walls on the right
-   *
-   * @type {Hitbox}
-   */
-  private rightWallHitbox: Hitbox;
-
-  /**
-   * The hitbox dedicated to detect overlapping with tiles on the left
-   *
-   * @type {Hitbox}
-   */
-  private leftHangHitbox: Hitbox;
-
-  /**
-   * The hitbox dedicated to detect overlapping with tiles on the right
-   *
-   * @type {Hitbox}
-   */
-  private rightHangHitbox: Hitbox;
-
-  /**
-   * The hitbox dedicated to detect if there's a ladder under Player feet
-   *
-   * @type {Hitbox}
-   */
-  private ladderHitbox: Hitbox;
+  private sensors: PlayerSensors;
 
   /**
    * The current room number
@@ -394,45 +374,13 @@ export class Player extends SpriteCollidable {
 
     const bounds = this.getBodyBounds();
 
-    this.leftWallHitbox = new Hitbox(
-      this.scene,
-      bounds.left - Player.WALL_DETECTION_DISTANCE / 2,
-      bounds.centerY,
-      Player.WALL_DETECTION_DISTANCE,
-      this.body.halfHeight
-    );
-
-    this.rightWallHitbox = new Hitbox(
-      this.scene,
-      bounds.right + Player.WALL_DETECTION_DISTANCE / 2,
-      bounds.centerY,
-      Player.WALL_DETECTION_DISTANCE,
-      this.body.halfHeight
-    );
-
-    this.leftHangHitbox = new Hitbox(
-      this.scene,
-      bounds.left - Player.WALL_DETECTION_DISTANCE / 2 - 1,
-      bounds.top + Player.WALL_DETECTION_DISTANCE / 2 + 1,
-      Player.WALL_DETECTION_DISTANCE,
-      Player.WALL_DETECTION_DISTANCE
-    );
-
-    this.rightHangHitbox = new Hitbox(
-      this.scene,
-      bounds.right + Player.WALL_DETECTION_DISTANCE / 2 + 1,
-      bounds.top + Player.WALL_DETECTION_DISTANCE / 2 + 1,
-      Player.WALL_DETECTION_DISTANCE,
-      Player.WALL_DETECTION_DISTANCE
-    );
-
-    this.ladderHitbox = new Hitbox(
-      this.scene,
-      bounds.centerX,
-      bounds.bottom,
-      this.body.width,
-      2
-    );
+    this.sensors = new PlayerSensors(this.scene, this.body, {
+      wallDistance: Player.WALL_DETECTION_DISTANCE,
+      // The wall sensors keep the height of the standing body
+      wallHeight: this.body.halfHeight,
+      ladderWidth: this.body.width,
+      sweptLedgeDetection: Player.SWEPT_LEDGE_DETECTION,
+    });
 
     this.torchLight = this.scene.lights
       .addLight(bounds.centerX, bounds.centerY, TILE_SIZE * 8)
@@ -584,8 +532,8 @@ export class Player extends SpriteCollidable {
     // Apply the position correction requested during this update
     this.adjustPosition();
 
-    // Keep the hitboxes and the torch attached to the body
-    this.updateHitboxes();
+    // Keep the torch attached to the body
+    this.updateTorch();
 
     // Change the current animation based on previous operations
     this.animate();
@@ -770,7 +718,10 @@ export class Player extends SpriteCollidable {
     // First check if Player has unlocked wall jump
     if (this.scene.getInventory().equip(PowerUps.GLOVE)) {
       // Test if the Player is near walls
-      const walls: boolean[] = this.isTouchingWalls() as boolean[];
+      const walls: boolean[] = [
+        this.sensors.isTouchingWall(DirectionAxisX.LEFT),
+        this.sensors.isTouchingWall(DirectionAxisX.RIGHT),
+      ];
       const wallsCount = walls.filter((wall) => wall);
 
       // Perform wall jump only if the Player
@@ -1056,69 +1007,19 @@ export class Player extends SpriteCollidable {
           return;
         }
 
-        let hitbox!: Hitbox;
-        let isTouchingTiles = false;
-        let hasTileOnHand = false;
+        let side: DirectionAxisX.LEFT | DirectionAxisX.RIGHT | undefined;
 
         if (this.facing.x === DirectionAxisX.LEFT) {
-          hitbox = this.leftHangHitbox;
+          side = DirectionAxisX.LEFT;
         } else if (this.facing.x === DirectionAxisX.RIGHT) {
-          hitbox = this.rightHangHitbox;
+          side = DirectionAxisX.RIGHT;
         }
 
-        if (typeof hitbox !== "undefined") {
-          // Test if Player's hitbox is touching a tile
-          isTouchingTiles = hitbox.overlapTilesArea(AreaPosition.TOP_HALF);
-          let currentTile!: Phaser.Tilemaps.Tile;
+        if (typeof side !== "undefined") {
+          // The tile the Player is touching with the hand, if it can be grabbed
+          const ledge = this.sensors.findLedge(side);
 
-          if (isTouchingTiles) {
-            // If the Player is touching a tile test which tiles
-            // are inside the hitbox area
-
-            let tiles: Phaser.Tilemaps.Tile[] = [];
-
-            let layers: Phaser.Tilemaps.TilemapLayer[] = this.scene.worldLayer;
-            if (!Array.isArray(layers)) {
-              layers = [layers];
-            }
-
-            let lastLayer!: Phaser.Tilemaps.TilemapLayer;
-            for (const layer of layers) {
-              if (
-                tiles.length > 0 ||
-                ["stairs", "platforms"].indexOf(layer.layer.name) > -1
-                // The Player should not be able to hang on stairs nor one way platforms
-              ) {
-                break;
-              }
-
-              tiles =
-                this.scene.map.getTilesWithinShape(
-                  hitbox.getBounds(),
-                  {
-                    isNotEmpty: true,
-                  },
-                  undefined,
-                  layer
-                ) ?? [];
-
-              lastLayer = layer;
-            }
-
-            if (tiles.length === 1) {
-              [currentTile] = tiles;
-              // Check if there is a tile upper the current one
-              const upperTile = this.scene.map.getTileAt(
-                currentTile.x,
-                currentTile.y - 1,
-                undefined,
-                lastLayer
-              );
-              hasTileOnHand = upperTile === null;
-            }
-          }
-
-          if (hasTileOnHand) {
+          if (ledge) {
             this.isHanging = true;
             // Prevent the Player to slide down
             this.body.setAllowGravity(false);
@@ -1126,7 +1027,7 @@ export class Player extends SpriteCollidable {
             this.setGravity(0);
             this.setVelocityY(0);
             // Align the body to the current tile
-            this.setNewPosition(null, currentTile.pixelY);
+            this.setNewPosition(null, ledge.pixelY);
           } else {
             this.isHanging = false;
 
@@ -1138,11 +1039,7 @@ export class Player extends SpriteCollidable {
   }
 
   protected climbLadders(): void {
-    const isOnTopOfLadder = this.ladderHitbox.overlapTilesArea(
-      AreaPosition.TOP_HALF,
-      this.scene.stairsLayer,
-      false
-    );
+    const isOnTopOfLadder = this.sensors.isOnLadderTop();
 
     this.isOnLadder = this.scene.physics.overlap(
       this,
@@ -1393,36 +1290,10 @@ export class Player extends SpriteCollidable {
     }
   }
 
-  protected updateHitboxes(): void {
+  protected updateTorch(): void {
     this.body.updateCenter();
 
     const bounds = this.getBodyBounds();
-
-    this.leftWallHitbox.alignToParent(
-      this,
-      bounds.left - Player.WALL_DETECTION_DISTANCE / 2,
-      bounds.centerY
-    );
-
-    this.rightWallHitbox.alignToParent(
-      this,
-      bounds.right + Player.WALL_DETECTION_DISTANCE / 2,
-      bounds.centerY
-    );
-
-    this.leftHangHitbox.alignToParent(
-      this,
-      bounds.left - Player.WALL_DETECTION_DISTANCE / 2 - 1,
-      bounds.top + Player.WALL_DETECTION_DISTANCE / 2 + 1
-    );
-
-    this.rightHangHitbox.alignToParent(
-      this,
-      bounds.right + Player.WALL_DETECTION_DISTANCE / 2 + 1,
-      bounds.top + Player.WALL_DETECTION_DISTANCE / 2 + 1
-    );
-
-    this.ladderHitbox.alignToParent(this, bounds.centerX, bounds.bottom);
 
     this.torchLight.setPosition(bounds.centerX, bounds.centerY);
   }
@@ -1500,36 +1371,6 @@ export class Player extends SpriteCollidable {
   }
 
   /**
-   * Detect if the required Hitbox is overlapping at least one tile
-   *
-   * @param  {DirectionAxisX} direction The direction where to test
-   * the overlapping. If not specified, both direction are tested
-   *
-   * @return {boolean|boolean[]} True if a least one tile
-   * per direction is overlapped
-   */
-  public isTouchingWalls(direction?: DirectionAxisX): boolean | boolean[] {
-    let hitbox: Hitbox;
-
-    switch (direction) {
-      case DirectionAxisX.LEFT:
-        hitbox = this.leftWallHitbox;
-        break;
-      case DirectionAxisX.RIGHT:
-        hitbox = this.rightWallHitbox;
-        break;
-
-      default:
-        return [
-          this.isTouchingWalls(DirectionAxisX.LEFT) as boolean,
-          this.isTouchingWalls(DirectionAxisX.RIGHT) as boolean,
-        ];
-    }
-
-    return hitbox.overlapTiles();
-  }
-
-  /**
    * Ask to move the body to a new position at the end of the update
    * (see adjustPosition). A coordinate left as null is not changed.
    *
@@ -1604,10 +1445,7 @@ export class Player extends SpriteCollidable {
   }
 
   public isOnFloor(): boolean {
-    return (
-      this.body.onFloor() ||
-      this.scene.physics.collide(this.ladderHitbox, this.scene.platforms)
-    );
+    return this.body.onFloor() || this.sensors.isOnPlatform();
   }
 
   protected postCollision(
