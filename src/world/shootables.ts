@@ -27,6 +27,21 @@ export class Shootables {
     };
   }
 
+  /** Where the things are now: the minimap shows the ones which are lit */
+  public positions(): Point[] {
+    const positions: Point[] = [];
+
+    for (const shootable of this.all) {
+      const position = shootable.position();
+
+      if (position) {
+        positions.push(position);
+      }
+    }
+
+    return positions;
+  }
+
   /** The thing at a point of the world, if any */
   public find(x: number, y: number): Shootable | null {
     for (const shootable of this.all) {

@@ -105,7 +105,16 @@ export class MinimapHud {
     const blink = Math.floor(time / blinkMs) % 2 === 1;
     const edge = 1;
 
-    for (const marker of getMarkers(live.map, explored, frame, window, blink)) {
+    const markers = getMarkers(
+      live.map,
+      explored,
+      frame,
+      window,
+      blink,
+      live.enemies
+    );
+
+    for (const marker of markers) {
       const x = (marker.col + 0.5) * scale - markerSize / 2;
       const y = (marker.row + 0.5) * scale - markerSize / 2;
 

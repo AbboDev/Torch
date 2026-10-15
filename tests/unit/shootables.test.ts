@@ -34,3 +34,17 @@ describe("Shootables", () => {
     expect(shootables.find(1, 1)).toBeNull();
   });
 });
+
+describe("Shootables: the positions", () => {
+  it("tells where the things are, and leaves out the ones with none", () => {
+    const shootables = new Shootables();
+    shootables.add(enemy("a", 10, 10));
+    shootables.add({ id: "gone", contains: () => false, position: () => null });
+    shootables.add(enemy("b", 100, 20));
+
+    expect(shootables.positions()).toEqual([
+      { x: 15, y: 15 },
+      { x: 105, y: 25 },
+    ]);
+  });
+});

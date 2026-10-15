@@ -11,6 +11,7 @@ import {
   MinimapFrame,
   getRoomOf,
   isCellVisible,
+  isEnemyVisible,
 } from "@/world/minimapVisibility";
 
 /**
@@ -139,6 +140,8 @@ export const POI_COLORS: Record<PoiKind, number> = {
   other: 0xff66ff,
 };
 
+export const ENEMY_COLOR = 0xff3b3b;
+
 export const PLAYER_COLORS = [0xffffff, 0xffdd44] as const;
 
 /** The cell of the map which is at the top left of the window */
@@ -216,21 +219,25 @@ export interface Marker {
   col: number;
   row: number;
   color: number;
-  kind: "player" | PoiKind;
+  kind: "player" | "enemy" | PoiKind;
 }
 
 /**
- * The Player, always in the middle, and the points of interest in the window
- * which have been seen. The Player is the last, so it stays over the others.
+ * The Player, always in the middle, the points of interest in the window which
+ * have been seen, and the enemies which are lit (see `isEnemyVisible`: in a
+ * dark room only inside the torch light). The Player is the last, so it stays
+ * over the others.
  *
- * @param blink Which of the two colors of the Player to use
+ * @param blink   Which of the two colors of the Player to use
+ * @param enemies Where the enemies are, in pixels of the world
  */
 export function getMarkers(
   map: MinimapMap,
   explored: ExploredGrid,
   frame: MinimapFrame,
   window: MinimapWindow,
-  blink: boolean
+  blink: boolean,
+  enemies: readonly Point[] = []
 ): Marker[] {
   const { left, top } = getWindowOrigin(map, frame.player, window);
   const markers: Marker[] = [];
@@ -247,6 +254,21 @@ export function getMarkers(
       explored.has(poi.col, poi.row)
     ) {
       markers.push({ col, row, color: POI_COLORS[poi.kind], kind: poi.kind });
+    }
+  }
+
+  for (const enemy of enemies) {
+    const col = Math.floor(enemy.x / map.tileSize) - left;
+    const row = Math.floor(enemy.y / map.tileSize) - top;
+
+    if (
+      col >= 0 &&
+      col < window.cols &&
+      row >= 0 &&
+      row < window.rows &&
+      isEnemyVisible(map, explored, enemy, frame)
+    ) {
+      markers.push({ col, row, color: ENEMY_COLOR, kind: "enemy" });
     }
   }
 

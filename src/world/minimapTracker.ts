@@ -21,6 +21,8 @@ export interface MinimapLive {
   view: Rect;
   /** How far the torch lights, in pixels */
   torchRadius: number;
+  /** Where the enemies are: the minimap shows the ones which are lit */
+  enemies: Point[];
 }
 
 /**

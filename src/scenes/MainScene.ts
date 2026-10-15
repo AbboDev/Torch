@@ -389,6 +389,7 @@ export class MainScene extends MapScene {
       player: { x: 0, y: 0 },
       view: { x: 0, y: 0, width: 0, height: 0 },
       torchRadius: 0,
+      enemies: [],
     });
   }
 
@@ -413,6 +414,7 @@ export class MainScene extends MapScene {
     live.view.width = worldView.width;
     live.view.height = worldView.height;
     live.torchRadius = this.hero.getTorchRadius();
+    live.enemies = this.shootables.positions();
 
     revealAround(
       live.map,

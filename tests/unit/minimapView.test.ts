@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { ExploredGrid } from "@/world/explored";
 import { Hazard, buildMinimapMap } from "@/world/minimap";
 import {
+  ENEMY_COLOR,
   Kind,
   NONE,
   PLAYER_COLORS,
@@ -318,6 +319,68 @@ describe("getMarkers", () => {
     );
 
     expect(markers.map((marker) => marker.kind)).toEqual(["player"]);
+  });
+});
+
+describe("getMarkers: the enemies", () => {
+  const at = (col: number, row: number) => ({ x: col * 10 + 5, y: row * 10 + 5 });
+  /** The markers of the enemies and the Player: the map has a save point too */
+  const mine = <T extends { kind: string }>(markers: T[]) =>
+    markers.filter((marker) => marker.kind !== "save");
+  const kinds = (markers: Array<{ kind: string }>) =>
+    mine(markers).map((m) => m.kind);
+
+  it("shows the enemies of the room the Player is in, where it has been", () => {
+    const { map, explored } = setup();
+    explored.revealRect(0, 0, 12, 6);
+
+    // the window shows the columns 3 to 7 and the rows 2 to 4
+    const markers = mine(
+      getMarkers(map, explored, frame, window, false, [at(7, 4)])
+    );
+
+    expect(markers[0]).toEqual({
+      col: 4,
+      row: 2,
+      color: ENEMY_COLOR,
+      kind: "enemy",
+    });
+    // the Player stays the last, over the others
+    expect(kinds(markers)).toEqual(["enemy", "player"]);
+  });
+
+  it("does not show an enemy in a cell which has not been seen", () => {
+    const { map, explored } = setup();
+
+    expect(kinds(getMarkers(map, explored, frame, window, false, [at(7, 4)]))).toEqual([
+      "player",
+    ]);
+  });
+
+  it("does not show an enemy out of the window or out of the rooms", () => {
+    const { map, explored } = setup();
+    explored.revealRect(0, 0, 12, 6);
+
+    const markers = getMarkers(map, explored, frame, window, false, [
+      at(9, 1),
+      at(0, 3),
+    ]);
+
+    expect(kinds(markers)).toEqual(["player"]);
+  });
+
+  it("shows an enemy in a dark room only inside the light of the torch", () => {
+    const { map, explored } = setup([{ name: "dark", value: "000000" }]);
+    explored.revealRect(0, 0, 12, 6);
+
+    // the torch reaches 2 cells around (5, 3): (7, 3) is in the light, (7, 2) is not
+    const markers = getMarkers(map, explored, frame, window, false, [
+      at(7, 3),
+      at(7, 2),
+    ]);
+
+    expect(kinds(markers)).toEqual(["enemy", "player"]);
+    expect(mine(markers)[0]).toMatchObject({ col: 4, row: 1 });
   });
 });
 
