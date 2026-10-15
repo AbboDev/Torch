@@ -355,18 +355,37 @@ when the map changes in Tiled:
   (`save`, `door`, `item`, `boss` or `other`, which is the default). They show once their cell has
   been seen. Put them inside a room.
 
+### Levels of darkness
+
+A room can have one of five levels (`src/world/darkness.ts`), set with two custom properties of the
+object `room` in Tiled: `dark` (string), the color of the light of the room as the game has always
+read it, and `darkness` (string), the level, which the rules and the minimap go by.
+
+| `darkness` | Meaning | Seen now | Damage without / with the power-up |
+| ---------- | ------- | -------- | ---------------------------------- |
+| `none` (or no `dark`) | light on | all that the screen shows | none / none |
+| `shaded` | slightly in shadow, a light darkness | all that the screen shows | none / none |
+| `dark` (or only `dark`) | completely dark | only what the torch reaches, on the screen | none / none |
+| `corrupted_partial` | partly corrupted dark | only what the torch reaches, on the screen | light / none |
+| `corrupted_total` | totally corrupted dark | only what the torch reaches, on the screen | heavy / little |
+
+A room with `dark` and no `darkness` is completely dark, as it always was, so the maps you have do not
+change. Set `dark` with every level but `none`, because it is what darkens the room in the game (a
+light grey for `shaded`, the color of the corruption for the corrupted ones); a warning says when
+the level and the color do not go together. The **damage is the specification only**: nothing in the
+game uses it yet (`getDamage`), and the minimap does not.
+
 ### Fog of war
 
-What the Player sees now (`src/world/minimapVisibility.ts`) depends on the room:
+The light decides what is seen now (`src/world/minimapVisibility.ts`). Every cell seen is remembered,
+and drawn in one of three tones: **bright** if it is seen now, **dim** if it is not (the fog of war),
+**darker still** in a room which is dark or corrupted, to show that nothing is seen there beyond the
+torch. What has not been seen is not drawn at all. The light does not go through the walls to a room
+the screen does not show.
 
-| Room | Seen now |
-| ---- | -------- |
-| without `dark` | all that the screen shows |
-| with `dark` | only what the torch reaches, as far as it does now, and the screen shows |
-
-The light does not go through the walls to a room the screen does not show. Every cell seen is remembered, and drawn in one of three tones: **bright** if it is seen now, **dim** if
-it is not (the fog of war), **darker still** if it is in a dark room, to show that nothing is seen there
-beyond the torch. What has not been seen is not drawn at all.
+Colors by level (`src/world/minimapView.ts`): `shaded` is a little darker than the light on, in every
+tone; `dark` has the dark fog; the corrupted ones have the dark fog and a tint, violet for
+`corrupted_partial` and magenta for `corrupted_total`.
 
 The cells seen are part of the game state and are saved with the game (`GameState.getExplored`, one
 grid of bits for every map, as base64): saves from before the minimap load with nothing seen, and if the
@@ -374,23 +393,22 @@ map changes size what was seen stays where it was.
 
 ### Flags of the rooms
 
-Custom properties of the object `room` in Tiled:
+Besides the darkness, two more bool properties of the object `room`:
 
-| Property | Type | Effect on the minimap |
-| -------- | ---- | --------------------- |
-| `dark` | string (a color) | as in the game; darker fog, and the torch decides what is seen |
-| `hot` | bool | the room is reddish (high temperature) |
-| `toxic` | bool | the room is greenish (toxic air) |
+| Property | Effect on the minimap |
+| -------- | --------------------- |
+| `hot` | the room is reddish (high temperature) |
+| `toxic` | the room is greenish (toxic air) |
 
 `hot` and `toxic` can not be set together: the room is `hot` and a warning is logged. Either can be set
-together with `dark`. The colors are in `LIT_COLORS` (`src/world/minimapView.ts`), a table to change.
-The flags only color the minimap for now.
+together with any level of darkness, and the room keeps its color under the shade or the corruption.
+The colors are in `LIT_COLORS`, a table to change. The flags only color the minimap for now.
 
 ### Enemies
 
-The minimap shows the enemies which are lit (`isEnemyVisible`): in a dark room only the ones inside the
-light of the torch, in any other room all the enemies of the room the Player is in, if the cell where
-they are has been seen. There are no enemies yet: each one adds itself to `scene.shootables`
+The minimap shows the enemies which are lit (`isEnemyVisible`): in a room which is dark or corrupted
+only the ones inside the light of the torch, on the screen; in any other room (light on or a little
+shaded) all the enemies of the room the Player is in, if the cell where they are has been seen. There are no enemies yet: each one adds itself to `scene.shootables`
 (`src/world/shootables.ts`) and the minimap takes their position from there.
 
 `src/world/minimapView.ts` works out what to draw, with no Phaser: the unit tests cover it, and the
