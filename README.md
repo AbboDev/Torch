@@ -372,8 +372,8 @@ read it, and `darkness` (string), the level, which the rules and the minimap go 
 A room with `dark` and no `darkness` is completely dark, as it always was, so the maps you have do not
 change. Set `dark` with every level but `none`, because it is what darkens the room in the game (a
 light grey for `shaded`, the color of the corruption for the corrupted ones); a warning says when
-the level and the color do not go together. The **damage is the specification only**: nothing in the
-game uses it yet (`getDamage`), and the minimap does not.
+the level and the color do not go together. The damage of the corrupted levels is in the table, and
+works as described in "Damage" below; the minimap does not use it.
 
 ### Fog of war
 
@@ -413,3 +413,40 @@ shaded) all the enemies of the room the Player is in, if the cell where they are
 
 `src/world/minimapView.ts` works out what to draw, with no Phaser: the unit tests cover it, and the
 real map is checked in `tests/unit/minimapMap.test.ts`.
+
+## 💥 Damage
+
+Everything which hurts goes through the same rules (`src/combat/damage.ts`, no Phaser), so armor,
+shields and power-ups work with all of it:
+
+- a **`DamageSource`** is what hurts: a `kind` (`physical`, `fire`, `acid`, `corruption`, `heat`,
+  `toxic`), an `amount` and, if it is lower for who is protected from the kind, a `protectedAmount`
+  (nothing if it is not given);
+- a **`Defense`** is what protects: the `protections` (kinds, from a power-up or a suit: the source
+  hurts for its `protectedAmount`) and the `resistances` (a part of a kind which is stopped, from 0
+  to 1: what the armor and the shield give);
+- **`getDamage(source, defense)`** is the life the source takes: `amount`, or `protectedAmount` if
+  the defense protects from its kind, less the resistance of the kind. Never negative;
+- a **`Damageable`** is anything with life: it says what protects it now (`getDefense`) and takes
+  life away (`takeDamage`). **`applyDamage(target, source)`** puts them together.
+
+`combineDefenses(armor, shield, ...)` makes one defense of many: the protections add up and so do the
+resistances, without passing 1.
+
+| Source | Where it is | How it hurts |
+| ------ | ----------- | ------------ |
+| Liquids | `config/liquids.ts` | acid and lava every tick (the battery is drained apart) |
+| Corrupted zones | `getZoneDamageSource` (`combat/zones.ts`) | `corruption`, every `ZONE_TICK`, by `DamageOverTime` |
+| Shots | `WEAPON_DAMAGE` (`config/weapons.ts`) | `scene.shootables.hit(x, y, source)` where a shot lands |
+| Enemies | not yet | an enemy hurts the Player with `hero.hurt(source)` |
+
+The Player is a `Damageable` (`hero.hurt(source)`); its defense is what its equipped power-ups protect
+from (`config/protections.ts`: none does yet, add the power-up of the suit there) and, later, the armor
+and the shield. The numbers of the levels (`little`, `light`, `heavy`) are `DAMAGE_AMOUNTS`, and the
+weapons' `WEAPON_DAMAGE` are placeholders, in `config/`.
+
+An enemy joins in the same way: it is a `Damageable` (its life and defense), it adds itself to
+`scene.shootables` with that as its `target` (so the shots and the aim find it), and it can stand in a
+zone with its own `DamageOverTime`. What it does to the Player is a `DamageSource` of its own.
+
+Not done yet: what happens when the life is over, and a short time without damage after a hit.
