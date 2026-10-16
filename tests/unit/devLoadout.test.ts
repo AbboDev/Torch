@@ -4,7 +4,7 @@ import { Switch } from "@/miscellaneous/Switch";
 import { applyDevLoadout } from "@/miscellaneous/devLoadout";
 
 describe("applyDevLoadout", () => {
-  it("gives a new game every weapon and every power-up, turned off", () => {
+  it("gives a new game everything, with the torch and hook turned on", () => {
     const inventory = new Inventory();
 
     expect(applyDevLoadout(inventory)).toBe(true);
@@ -13,8 +13,8 @@ describe("applyDevLoadout", () => {
     expect(inventory.getCurrentWeaponId()).toBe("gun");
     expect(inventory.get(PowerUps.DASH)).toBe(Switch.DISABLE);
     expect(inventory.equip(PowerUps.DASH)).toBe(false);
-    // what the Player already had is untouched
     expect(inventory.get(PowerUps.TORCH)).toBe(Switch.ENABLE);
+    expect(inventory.get(PowerUps.HOOK)).toBe(Switch.ENABLE);
   });
 
   it("does nothing to a game which already has weapons", () => {
