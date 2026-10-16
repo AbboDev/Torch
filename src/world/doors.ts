@@ -19,7 +19,7 @@ import { getObjectClass } from "@/world/tiledObjects";
  *   by its id is better: names are not unique in a map.
  * - `targetMap` (string, default none): the name of another map, when the
  *   target is there: `target` is then the id or the name of an object of that
- *   map. Changing map is not done by the game yet.
+ *   map. The scene loads that map and puts the Player on the target.
  * - `requiresUp` (bool, default false): the Player must press Up while in the
  *   door, instead of just touching it.
  */
@@ -115,6 +115,25 @@ function doorLabel(object: MapObject): string {
 }
 
 /**
+ * The object a door names: an id, or a name when the property is a string.
+ * An id is the one in this list; a name is the first object called that.
+ */
+export function findReferencedObject<T extends { id: number; name?: string }>(
+  objects: readonly T[],
+  reference: number | string
+): T | undefined {
+  if (typeof reference === "number") {
+    return objects.find((object) => object.id === reference);
+  }
+
+  if (reference === "") {
+    return undefined;
+  }
+
+  return objects.find((object) => object.name === reference);
+}
+
+/**
  * The door an object of the class door is, where its properties (already read
  * with the schema) lead.
  *
@@ -140,12 +159,7 @@ export function buildDoor(
     // The other map is not loaded: only its name and the reference can be known
     target = { map: targetMap, target: reference };
   } else {
-    const found =
-      typeof reference === "number"
-        ? objects.find((candidate) => candidate.id === reference)
-        : reference !== ""
-          ? objects.find((candidate) => candidate.name === reference)
-          : undefined;
+    const found = findReferencedObject(objects, reference);
 
     if (found && found.id === object.id) {
       return useless(`has itself as "target"`);

@@ -1,4 +1,5 @@
 import * as Phaser from "phaser";
+import { MAPS } from "@/config/maps";
 import { PlayerAssets } from "@/entities/player/PlayerAssets";
 import { BulletAssets } from "@/entities/bullets/BulletAssets";
 
@@ -54,8 +55,11 @@ export class PreloaderScene extends Phaser.Scene {
         "assets/tilesets/chozodia_n.png",
       ])
       .image("liquid_tiles", "assets/tilesets/liquids.png")
-      .image("full_liquid_tiles", "assets/tilesets/full_liquids.png")
-      .tilemapTiledJSON("chozodia_map", "assets/maps/chozodia.json");
+      .image("full_liquid_tiles", "assets/tilesets/full_liquids.png");
+
+    for (const map of MAPS) {
+      this.load.tilemapTiledJSON(map.cacheKey, map.file);
+    }
 
     PlayerAssets.preload(this);
     BulletAssets.loadBulletAssets(this);

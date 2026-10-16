@@ -130,7 +130,7 @@ black and the Player appears at the target.
 | ------------ | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `target`     | object / string | **Required.** The object where the Player appears (a point, like `spawn_point`). Pick it as an _object_ property: names are not unique.                                                     |
 | `requiresUp` | bool            | The Player has to press Up inside the door (default: touching is enough)                                                                                                                    |
-| `targetMap`  | string          | The name of another map, when the target is there (`target` is then the id or the name of an object of that map). The game does not change map yet: such a door is ignored, with a warning. |
+| `targetMap`  | string          | The name of another map, when the target is there (`target` is then the id or the name of an object of that map). The game loads that map and the Player appears at the target. |
 
 A door without a valid target or size is ignored, with a warning in the console.
 After going through a door the Player can arrive inside another door (the one

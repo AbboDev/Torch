@@ -41,9 +41,10 @@ export abstract class MapScene extends ContinuousScene {
 
   /**
    * The map of this scene: its name for the saves and the ids of its rooms,
-   * and where Phaser has its JSON
+   * and where Phaser has its JSON. Set when the scene starts: the save, or
+   * the door which led here.
    */
-  public readonly mapConfig: MapConfig = MAIN_MAP;
+  public mapConfig: MapConfig = MAIN_MAP;
 
   /**
    * The main tilemap layer where all the tiles with only top side collision will be implemented

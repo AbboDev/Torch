@@ -1,6 +1,6 @@
 import { REQUIRED_TILESETS, REQUIRED_TILE_LAYERS } from "@/config/maps";
 import { TILE_SIZE } from "@/config/tiles";
-import { LocalDoor, MapObject, isLocalDoor } from "@/world/doors";
+import { Door, MapObject, isLocalDoor } from "@/world/doors";
 import { createMapObjectRegistry } from "@/world/mapObjectHandlers";
 import { OBJECT_SCHEMAS } from "@/world/objectSchemas";
 import { roomContains } from "@/world/rooms";
@@ -93,7 +93,7 @@ export function validateMap(
   const spawnPoints: MapObject[] = [];
   const savePoints: MapObject[] = [];
   const platforms: MapObject[] = [];
-  const doors: LocalDoor[] = [];
+  const doors: Door[] = [];
 
   const registry = createMapObjectRegistry<MapObject>();
   const objectLayers = [
@@ -139,9 +139,7 @@ export function validateMap(
         addSavePoint: (point) => savePoints.push(point),
         setSpawnPoint: (point) => spawnPoints.push(point),
         addDoor: (door) => {
-          if (isLocalDoor(door)) {
-            doors.push(door);
-          }
+          doors.push(door);
         },
         addPlatform: (platform) => platforms.push(platform),
       },
@@ -226,7 +224,8 @@ export function validateMap(
 
   // --- Doors and platforms
   for (const door of doors) {
-    if (!inARoom(door.target.x, door.target.y)) {
+    // A door to another map names an object that is not in this file
+    if (isLocalDoor(door) && !inARoom(door.target.x, door.target.y)) {
       errors.push(
         `the door ${door.id} leads to ${door.target.x}, ${door.target.y}, which is not inside a room`
       );

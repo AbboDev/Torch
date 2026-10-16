@@ -4,8 +4,15 @@ import { ControllerKey } from "@/miscellaneous/Controller";
 import { SLOPES_LAYER_NAME, renderSlopesDebug } from "@/world/slopesLayer";
 import { RoomBackground } from "@/world/RoomBackground";
 import { RoomTransition } from "@/world/RoomTransition";
-import { DoorTransition } from "@/world/DoorTransition";
-import { DoorTrigger, LocalDoor, findDoorAt, isLocalDoor } from "@/world/doors";
+import { DOOR_FADE_OUT, DoorTransition } from "@/world/DoorTransition";
+import {
+  Door,
+  DoorTrigger,
+  findDoorAt,
+  findReferencedObject,
+  isLocalDoor,
+} from "@/world/doors";
+import { MAIN_MAP, getMap } from "@/config/maps";
 import {
   MapObjectContext,
   createMapObjectRegistry,
@@ -68,9 +75,15 @@ export class MainScene extends MapScene {
   /**
    * The doors of the map (objects of type "door" in Tiled, see world/doors.ts)
    */
-  private doors: LocalDoor[] = [];
+  private doors: Door[] = [];
 
-  private doorTrigger = new DoorTrigger<LocalDoor>();
+  private doorTrigger = new DoorTrigger();
+
+  /**
+   * Where a door from another map put the Player: the id or the name of an
+   * object of this map. Nothing when the scene did not start from a door.
+   */
+  private arrival: number | string | null = null;
 
   /**
    * The fade to black when the Player goes through a door
@@ -107,10 +120,27 @@ export class MainScene extends MapScene {
     });
   }
 
+  /**
+   * Which map to load. A door passes its map and where to appear; otherwise
+   * it is the map of the save, or the first map of a new game.
+   */
+  public init(data: { map?: string; arrival?: number | string } = {}): void {
+    const key = data.map ?? this.getGameState().getSavePoint()?.map;
+    const map = getMap(key);
+
+    if (key && !map) {
+      console.warn(`There is no map "${key}"`);
+    }
+
+    this.mapConfig = map ?? MAIN_MAP;
+    this.arrival = data.arrival ?? null;
+  }
+
   public create(): void {
     super.create();
 
-    // A scene which restarts after a death keeps its fields: start clean
+    // A restart keeps the fields. `arrival` was set in init (a door into this
+    // map); everything left over from the previous map starts clean.
     this.doors = [];
     this.savePoints = [];
     this.isDead = false;
@@ -138,12 +168,9 @@ export class MainScene extends MapScene {
     // The rooms, the save points, the spawn point and the doors of the map
     // (the platforms are made later, when the layers they collide with exist)
     const savePointObjects: TiledObject[] = [];
+    const mapObjects = this.getMapObjects("objects");
     const objectContext = this.createObjectContext(savePointObjects);
-    MainScene.objects.spawn(
-      "objects",
-      this.getMapObjects("objects"),
-      objectContext
-    );
+    MainScene.objects.spawn("objects", mapObjects, objectContext);
     this.savePoints = parseSavePoints(savePointObjects);
 
     if (!this.spawnPoint) {
@@ -269,8 +296,21 @@ export class MainScene extends MapScene {
       console.warn(`Save point "${saved.id}" is not in the map`);
     }
 
-    const x: number = savedPoint?.spawn.x ?? this.spawnPoint.x ?? 0;
-    const y: number = savedPoint?.spawn.y ?? this.spawnPoint.y ?? 0;
+    const arrived =
+      this.arrival === null
+        ? undefined
+        : findReferencedObject(mapObjects, this.arrival);
+
+    if (this.arrival !== null && !arrived) {
+      console.warn(
+        `Nothing called "${this.arrival}" to arrive at in "${this.mapConfig.key}"`
+      );
+    }
+
+    // A door from another map wins over the save: that is where it leads
+    const place = arrived ?? savedPoint?.spawn ?? this.spawnPoint;
+    const x = place.x ?? 0;
+    const y = place.y ?? 0;
 
     const roomNumber: number = this.setCurrentRoom(x, y);
 
@@ -368,15 +408,7 @@ export class MainScene extends MapScene {
         this.spawnPoint = spawnPoint;
       },
       addDoor: (door) => {
-        if (isLocalDoor(door)) {
-          this.doors.push(door);
-
-          return;
-        }
-
-        console.warn(
-          `Door ${door.id} leads to another map: changing map is not supported yet, the door is ignored`
-        );
+        this.doors.push(door);
       },
       addPlatform: (platform, values) => {
         this.platforms.add(
@@ -473,9 +505,45 @@ export class MainScene extends MapScene {
       this.getController().isKeyPressed(ControllerKey.UP)
     );
 
-    if (door) {
-      this.doorTransition.start(door);
+    if (!door) {
+      return;
     }
+
+    if (isLocalDoor(door)) {
+      this.doorTransition.start(door);
+
+      return;
+    }
+
+    this.leaveToMap(door);
+  }
+
+  /**
+   * Fade out and load the map a door leads to. The new scene puts the Player
+   * on the target object.
+   */
+  private leaveToMap(door: Door): void {
+    const target = door.target;
+
+    if (target.map === null) {
+      return;
+    }
+
+    if (!getMap(target.map)) {
+      console.warn(
+        `Door ${door.id} leads to "${target.map}", which is not a map of the game`
+      );
+
+      return;
+    }
+
+    const map = target.map;
+    const arrival = target.target;
+
+    this.freeze();
+    this.fadeCamera(true, DOOR_FADE_OUT, () => {
+      this.scene.restart({ map, arrival });
+    });
   }
 
   /**
