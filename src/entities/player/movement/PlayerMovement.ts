@@ -133,6 +133,9 @@ export class PlayerMovement {
     const now = host.now;
     this.jumpAssist.update(now, host.isOnFloor(), isJumpPress);
 
+    const isMovingAwayFromLedge = this.isMovingAwayFromLedge(host);
+    let jumpedFromHang = false;
+
     // First check if Player has unlocked wall jump
     if (host.equip(PowerUps.GLOVE)) {
       // Test if the Player is near walls
@@ -141,20 +144,26 @@ export class PlayerMovement {
         host.isTouchingWall(DirectionAxisX.RIGHT),
       ];
       const wallsCount = walls.filter((wall) => wall).length;
+      const canJumpFromHang =
+        this.state === MovementState.HANGING && isMovingAwayFromLedge;
 
       // Perform wall jump only if the Player
-      // is not on the ground and is touching only one wall
-      this.canWallJump = !host.isOnFloor() && wallsCount === 1;
+      // is hanging or touching only one wall, and is not on the ground
+      this.canWallJump =
+        !host.isOnFloor() && (canJumpFromHang || wallsCount === 1);
 
       // The user have to press again the jump key to perform the action
       if (this.canWallJump && !this.isPressingJump && isJumpPress) {
         let sign = 0;
+        if (canJumpFromHang) {
+          sign = host.facing.x === DirectionAxisX.LEFT ? 1 : -1;
+        }
 
-        if (walls[0] && input.right) {
+        if (sign === 0 && walls[0] && input.right) {
           // The Player is touching a wall on left and
           // the user is moving on the opposite side of wall (right)
           sign = 1;
-        } else if (walls[1] && input.left) {
+        } else if (sign === 0 && walls[1] && input.left) {
           // The Player is touching a wall on right and
           // the user is moving on the opposite side of wall (left)
           sign = -1;
@@ -170,21 +179,30 @@ export class PlayerMovement {
           );
 
           this.jumpAssist.notifyJumped();
+          jumpedFromHang = canJumpFromHang;
+
+          if (this.state === MovementState.HANGING) {
+            host.facing.x =
+              sign > 0 ? DirectionAxisX.RIGHT : DirectionAxisX.LEFT;
+            host.facingForAim.x = host.facing.x;
+            this.stopHanging();
+          }
         }
       }
     }
 
     let isClimbing = false;
     if (this.state === MovementState.HANGING) {
-      if (!this.isPressingJump) {
-        // The down button lets go of the ledge: it wins over climbing
-        isClimbing = (input.up || isJumpPress) && !input.down;
+      // The down button lets go of the ledge: it wins over climbing
+      isClimbing =
+        !input.down &&
+        !isMovingAwayFromLedge &&
+        (isJumpPress || (input.up && !this.isPressingJump));
 
-        if (isClimbing) {
-          this.startClimb(host, TILE_SIZE, TILE_SIZE * 2);
-        }
+      if (isClimbing) {
+        isClimbing = this.startClimb(host, TILE_SIZE, TILE_SIZE * 2);
       }
-    } else if (isJumpPress) {
+    } else if (isJumpPress && !jumpedFromHang) {
       // If the Player is touching the floor (or has just left it) and the key
       // has been released (or has been pressed a moment before landing)
       if (
@@ -196,6 +214,10 @@ export class PlayerMovement {
 
         if (host.blocked.right || host.blocked.left) {
           isClimbing = host.hasLedgeToClimb(host.blocked.left);
+        }
+
+        if (isClimbing) {
+          isClimbing = this.startClimb(host, TILE_SIZE, TILE_SIZE);
         }
 
         if (!isClimbing) {
@@ -213,10 +235,7 @@ export class PlayerMovement {
               host.getMaxJumpSpeed()
             );
           }
-
           host.setVelocityY(host.getJumpSpeed());
-        } else {
-          this.startClimb(host, TILE_SIZE, TILE_SIZE);
         }
       } else if (
         // First check if Player has unlocked double jump
@@ -386,8 +405,12 @@ export class PlayerMovement {
     }
 
     if (host.velocity.y !== 0 || this.state === MovementState.HANGING) {
-      // If the Player is hanging from a tile, he can jump down
-      if (host.input.down) {
+      const dropsFromLedge =
+        this.state === MovementState.HANGING &&
+        this.isMovingAwayFromLedge(host) &&
+        !host.equip(PowerUps.GLOVE);
+
+      if (host.input.down || dropsFromLedge) {
         this.stopHanging();
 
         return;
@@ -401,7 +424,14 @@ export class PlayerMovement {
         side = DirectionAxisX.RIGHT;
       }
 
-      if (typeof side !== "undefined") {
+      const grabsLedge =
+        this.state === MovementState.HANGING ||
+        (side === DirectionAxisX.LEFT &&
+          host.input.left &&
+          !host.input.right) ||
+        (side === DirectionAxisX.RIGHT && host.input.right && !host.input.left);
+
+      if (typeof side !== "undefined" && grabsLedge) {
         // The tile the Player is touching with the hand, if it can be grabbed
         const ledge = host.findLedge(side);
 
@@ -508,12 +538,16 @@ export class PlayerMovement {
     host.setAllowGravity(hasGravity(this.state));
   }
 
-  /** Pull the Player up a ledge: the state changes at the end of the frame */
-  private startClimb(host: MovementHost, x: number, y: number): void {
+  /** Try to pull the Player up: the destination may not have enough room */
+  private startClimb(host: MovementHost, x: number, y: number): boolean {
+    if (!host.climb(x, y)) {
+      return false;
+    }
+
     this.climbFromHang = this.state === MovementState.HANGING;
     this.climbRequested = true;
 
-    host.climb(x, y);
+    return true;
   }
 
   private stopHanging(): void {
@@ -526,5 +560,17 @@ export class PlayerMovement {
     if (this.state === MovementState.CROUCHING) {
       this.state = MovementState.GROUNDED;
     }
+  }
+
+  /** The horizontal input points away from the ledge the Player faces */
+  private isMovingAwayFromLedge(host: MovementHost): boolean {
+    return (
+      (host.facing.x === DirectionAxisX.LEFT &&
+        host.input.right &&
+        !host.input.left) ||
+      (host.facing.x === DirectionAxisX.RIGHT &&
+        host.input.left &&
+        !host.input.right)
+    );
   }
 }

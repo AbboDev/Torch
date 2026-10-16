@@ -23,6 +23,7 @@ interface AnimationStep {
   frameRate?: number;
   repeat?: number;
   duration?: number;
+  yoyo?: boolean;
 }
 
 export type AssetStep = SheetStep | AnimationStep;
@@ -39,7 +40,7 @@ export function getPlayerAssetSteps(): AssetStep[] {
   const steps: AssetStep[] = [];
 
   /** A sheet and an animation of the same name which loops */
-  const looping = (name: string, frameRate: number) => {
+  const looping = (name: string, frameRate: number, yoyo = false) => {
     const sheet = `hero_${name}`;
 
     steps.push({ type: "sheet", key: sheet });
@@ -50,6 +51,7 @@ export function getPlayerAssetSteps(): AssetStep[] {
       frames: { start: 0 },
       frameRate,
       repeat: -1,
+      ...(yoyo && { yoyo: true }),
     });
   };
 
@@ -67,7 +69,9 @@ export function getPlayerAssetSteps(): AssetStep[] {
       ? ["left", "right", "center"]
       : ["left", "right"];
 
-    withSides(pose, sides).forEach((name) => looping(name, 4));
+    withSides(pose, sides).forEach((name) =>
+      looping(name, pose === "hang" ? 5 : 4, pose === "hang")
+    );
   }
 
   // Walking and the first moments of a jump: fast

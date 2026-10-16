@@ -71,7 +71,7 @@ function setup() {
     isOnFloor: vi.fn(() => true),
     overlapsLadder: vi.fn(() => true),
     hasLedgeToClimb: vi.fn(() => true),
-    climb: vi.fn(),
+    climb: vi.fn(() => true),
   } as unknown as MovementHostParts;
 
   return {
@@ -205,7 +205,7 @@ describe("createMovementHost", () => {
     const { host, shape, parts } = setup();
 
     host.moveTo(null, 96);
-    host.climb(16, 32);
+    expect(host.climb(16, 32)).toBe(true);
 
     expect(shape.moveTo).toHaveBeenCalledWith(null, 96);
     expect(parts.climb).toHaveBeenCalledWith(16, 32);

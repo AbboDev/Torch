@@ -210,6 +210,21 @@ function compare(seed: number, frames: number): string | null {
       jump: toggle(buttons.jump, 0.09),
       dash: toggle(buttons.dash, 0.05),
     };
+    // Held-jump climbing, active grabbing and dropping away from a ledge now
+    // differ intentionally; focused tests below cover them.
+    if (legacy.isHanging) {
+      buttons.jump = false;
+      buttons.left = false;
+      buttons.right = false;
+    } else if (
+      mode === "ledge" &&
+      owned.has(PowerUps.HOOK) &&
+      buttons.left === buttons.right
+    ) {
+      buttons.left = legacyHost.facing.x === DirectionAxisX.LEFT;
+      buttons.right = legacyHost.facing.x === DirectionAxisX.RIGHT;
+    }
+
     dashHeldFor = buttons.dash ? dashHeldFor + 16 : 0;
     env.dashHeldFor = dashHeldFor;
 
@@ -446,6 +461,16 @@ describe("PlayerMovement", () => {
       expect(game.host.moveToCalls).toEqual([[null, 96]]);
     });
 
+    it("does not grab a ledge without pressing toward it", () => {
+      const game = new Game([PowerUps.HOOK]);
+      game.turnRight();
+      game.frame(IN_AIR);
+      game.host.vy = 100;
+
+      expect(game.frame(AT_LEDGE)).toBe(MovementState.AIRBORNE);
+      expect(game.host.moveToCalls).toEqual([]);
+    });
+
     it("does not grab it without the hook", () => {
       const game = new Game();
 
@@ -469,6 +494,30 @@ describe("PlayerMovement", () => {
       expect(game.movement.isCrouch).toBe(false);
     });
 
+    it("lets go when pressing away from the ledge", () => {
+      const game = new Game([PowerUps.HOOK]);
+      hang(game);
+
+      expect(game.frame(AT_LEDGE, { left: true })).toBe(MovementState.AIRBORNE);
+      expect(game.host.allowGravity).toBe(true);
+    });
+
+    it("aims away and wall jumps from the ledge with the glove", () => {
+      const game = new Game([PowerUps.HOOK, PowerUps.GLOVE]);
+      hang(game);
+
+      expect(game.frame(AT_LEDGE, { left: true })).toBe(MovementState.HANGING);
+      expect(game.host.facingForAim.x).toBe(DirectionAxisX.LEFT);
+
+      expect(game.frame(AT_LEDGE, { left: true, jump: true })).toBe(
+        MovementState.AIRBORNE
+      );
+      expect(game.host.vx).toBeLessThan(0);
+      expect(game.speedY).toBeLessThan(0);
+      expect(game.host.facing.x).toBe(DirectionAxisX.LEFT);
+      expect(game.host.climbCalls).toEqual([]);
+    });
+
     it("pulls itself up with the up button, and can not be controlled meanwhile", () => {
       const game = new Game([PowerUps.HOOK]);
       hang(game);
@@ -483,6 +532,32 @@ describe("PlayerMovement", () => {
       expect(game.movement.state).toBe(MovementState.AIRBORNE);
       expect(game.frame({ onFloor: true })).toBe(MovementState.GROUNDED);
       expect(game.host.allowGravity).toBe(true);
+    });
+
+    it("keeps climbing when jump is held from the jump that reached the ledge", () => {
+      const game = new Game([PowerUps.HOOK]);
+      game.turnRight();
+      game.frame(IN_AIR, { right: true, jump: true });
+      game.host.vy = 100;
+
+      expect(game.frame(AT_LEDGE, { right: true, jump: true })).toBe(
+        MovementState.HANGING
+      );
+      expect(game.frame(AT_LEDGE, { right: true, jump: true })).toBe(
+        MovementState.CLIMBING_LEDGE
+      );
+      expect(game.host.climbCalls).toEqual([[16, 32]]);
+    });
+
+    it("stays hanging when there is not enough room above the ledge", () => {
+      const game = new Game([PowerUps.HOOK]);
+      hang(game);
+
+      expect(
+        game.frame({ ...AT_LEDGE, roomToClimb: false }, { up: true })
+      ).toBe(MovementState.HANGING);
+      expect(game.host.climbCalls).toEqual([]);
+      expect(game.host.allowGravity).toBe(false);
     });
 
     it("lets go if the ledge is not there any more", () => {
@@ -505,6 +580,22 @@ describe("PlayerMovement", () => {
       ).toBe(MovementState.CLIMBING_LEDGE);
       expect(game.host.climbCalls).toEqual([[16, 16]]);
       expect(game.movement.isHanging).toBe(false);
+    });
+
+    it("jumps instead when the ledge has no room for the Player", () => {
+      const game = new Game();
+      game.turnRight();
+
+      game.frame(
+        {
+          blockedRight: true,
+          ledgeToClimb: true,
+          roomToClimb: false,
+        },
+        { jump: true }
+      );
+      expect(game.speedY).toBeLessThan(0);
+      expect(game.host.climbCalls).toEqual([]);
     });
 
     it("jumps instead when there is no ledge", () => {

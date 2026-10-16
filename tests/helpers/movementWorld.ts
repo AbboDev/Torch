@@ -20,6 +20,7 @@ export interface Env {
   ladderTop: boolean;
   overlapsLadder: boolean;
   ledgeToClimb: boolean;
+  roomToClimb: boolean;
   isSwimming: boolean;
   isAimingDiagonal: boolean;
   facingY: DirectionAxisY;
@@ -47,6 +48,7 @@ export const NO_ENV: Env = {
   ladderTop: false,
   overlapsLadder: false,
   ledgeToClimb: false,
+  roomToClimb: true,
   isSwimming: false,
   isAimingDiagonal: false,
   facingY: DirectionAxisY.MIDDLE,
@@ -253,8 +255,14 @@ export class FakeHost implements MovementHost {
     this.moveToCalls.push([x, y]);
   }
 
-  public climb(x: number, y: number): void {
+  public climb(x: number, y: number): boolean {
+    if (!this.env.roomToClimb) {
+      return false;
+    }
+
     this.climbCalls.push([x, y]);
+
+    return true;
   }
 
   // --- the world

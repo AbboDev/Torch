@@ -29,7 +29,7 @@ import { PlayerSpeeds } from "@/entities/player/PlayerSpeeds";
 import { PlayerWeapons } from "@/entities/player/PlayerWeapons";
 import { MapScene } from "@/scenes/MapScene";
 import { PlayerStats } from "@/state/GameState";
-import { hasLedgeToClimb } from "@/world/ledgeClimb";
+import { hasLedgeToClimb, hasRoomToClimb } from "@/world/ledgeClimb";
 import { collidesWithTile } from "@/world/oneWayTiles";
 import { trackRoom } from "@/world/roomChange";
 
@@ -369,24 +369,62 @@ export class Player extends SpriteCollidable {
    *
    * @param {number} x The distance to the side
    * @param {number} y The distance up (default: as x)
+   * @return Whether there is enough room and the climb started
    */
-  protected climb(x: number, y: number = x): void {
-    this.canInteract = false;
+  protected climb(x: number, y: number = x): boolean {
+    const direction = this.aim.facing.x === DirectionAxisX.LEFT ? -1 : 1;
+    const bounds = this.getBodyBounds();
+    const blockingLayers = this.scene.worldLayer.filter(
+      (layer) => !["stairs", "platforms"].includes(layer.layer.name)
+    );
+    const hasRoom = hasRoomToClimb({
+      x: bounds.x + x * direction,
+      y: bounds.y - y,
+      width: bounds.width,
+      height: bounds.height,
+      tileSize: TILE_SIZE,
+      hasTile: (column, row) =>
+        blockingLayers.some(
+          (layer) => !!this.scene.map.getTileAt(column, row, undefined, layer)
+        ),
+    });
 
-    const sign: string = this.aim.facing.x === DirectionAxisX.LEFT ? "-" : "+";
-    this.scene.tweens.add({
+    if (!hasRoom) {
+      return false;
+    }
+
+    this.canInteract = false;
+    this.setVelocity(0, 0);
+    this.setAccelerationX(0);
+
+    const sign = direction < 0 ? "-" : "+";
+    const isLedgeClimb = y > x;
+
+    this.scene.tweens.chain({
       targets: this,
-      ease: "Linear",
-      duration: 150,
-      repeat: 0,
-      yoyo: false,
-      x: `${sign}=${x}`,
-      y: `-=${y}`,
+      tweens: [
+        {
+          y: `-=${y}`,
+          duration: isLedgeClimb ? 240 : 160,
+          ease: "Sine.easeInOut",
+        },
+        {
+          x: `${sign}=${x}`,
+          duration: isLedgeClimb ? 160 : 120,
+          ease: "Sine.easeInOut",
+        },
+      ],
       onComplete: () => {
         this.movement.finishClimb();
-        this.canInteract = true;
+
+        // A death during the climb must not give control back
+        if (this.scene.getGameState().get("life") > 0) {
+          this.canInteract = true;
+        }
       },
     });
+
+    return true;
   }
 
   /**
@@ -398,6 +436,7 @@ export class Player extends SpriteCollidable {
       isOnLadder: this.movement.isAttachOnLadder,
       isCrouch: this.movement.isCrouch,
       isHanging: this.movement.isHanging,
+      isClimbing: this.movement.state === MovementState.CLIMBING_LEDGE,
       isJumping: this.movement.isJumping,
       isStandingJumping: this.movement.isStandingJumping,
       isAimingDiagonal: this.aim.isAimingDiagonal,

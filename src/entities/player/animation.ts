@@ -8,6 +8,7 @@ export interface AnimationState {
   isOnLadder: boolean;
   isCrouch: boolean;
   isHanging: boolean;
+  isClimbing: boolean;
   isJumping: boolean;
   isStandingJumping: boolean;
   isAimingDiagonal: boolean;
@@ -20,6 +21,10 @@ export interface AnimationState {
 export function getAnimationAction(state: AnimationState): string {
   if (state.isOnLadder) {
     return "idle";
+  }
+
+  if (state.isClimbing) {
+    return state.isHanging ? "hang" : "crouch_idle";
   }
 
   if (state.isOnFloor) {

@@ -37,7 +37,7 @@ export interface MovementHostParts {
   isOnFloor(): boolean;
   overlapsLadder(): boolean;
   hasLedgeToClimb(towardsLeft: boolean): boolean;
-  climb(x: number, y: number): void;
+  climb(x: number, y: number): boolean;
 }
 
 /**

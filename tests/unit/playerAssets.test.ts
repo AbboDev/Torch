@@ -33,14 +33,23 @@ function recordingScene() {
 }
 
 describe("PlayerAssets", () => {
-  it("sets up exactly what Player.create() did, call after call", () => {
+  it("keeps the previous asset setup outside the improved hang animations", () => {
     const before = recordingScene();
     const after = recordingScene();
 
     legacyCreate(before.scene);
     PlayerAssets.create(after.scene);
 
-    expect(after.calls).toEqual(before.calls);
+    const withoutHangAnimations = (calls: unknown[][]) =>
+      calls.filter(
+        ([name, config]) =>
+          name !== "anims.create" ||
+          !(config as { key: string }).key.startsWith("hero_hang_")
+      );
+
+    expect(withoutHangAnimations(after.calls)).toEqual(
+      withoutHangAnimations(before.calls)
+    );
     // and it was a lot: 20 sprite sheets and 22 animations
     expect(
       before.calls.filter(
@@ -50,6 +59,23 @@ describe("PlayerAssets", () => {
     expect(
       before.calls.filter(([name]) => name === "anims.create")
     ).toHaveLength(22);
+  });
+
+  it("keeps hanging subtle and reverses it smoothly", () => {
+    const hangs = getPlayerAssetSteps().filter(
+      (step) => step.type === "animation" && step.key.startsWith("hero_hang_")
+    );
+
+    expect(hangs).toHaveLength(2);
+    expect(
+      hangs.every(
+        (step) =>
+          step.type === "animation" &&
+          step.frameRate === 5 &&
+          step.repeat === -1 &&
+          step.yoyo
+      )
+    ).toBe(true);
   });
 
   it("loads the atlas of the hero", () => {

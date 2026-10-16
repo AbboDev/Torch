@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { hasLedgeToClimb } from "@/world/ledgeClimb";
+import { hasLedgeToClimb, hasRoomToClimb } from "@/world/ledgeClimb";
 import { trackRoom } from "@/world/roomChange";
 
 const TILE = 16;
@@ -81,6 +81,31 @@ describe("hasLedgeToClimb", () => {
     const rows = ["......", "......", "......", "......", "....#.", "......"];
 
     expect(hasLedgeToClimb(query(rows, 56, 64, false))).toBe(true);
+  });
+});
+
+describe("hasRoomToClimb", () => {
+  const hasRoom = (rows: string[]) =>
+    hasRoomToClimb({
+      x: 64,
+      y: 48,
+      width: 16,
+      height: 32,
+      tileSize: TILE,
+      hasTile: map(rows),
+    });
+
+  it("allows the ledge tile which only touches the Player's feet", () => {
+    expect(
+      hasRoom(["......", "......", "......", "......", "......", "....#."])
+    ).toBe(true);
+  });
+
+  it.each([3, 4])("rejects a tile intersecting body row %i", (blockedRow) => {
+    const rows = Array<string>(6).fill("......");
+    rows[blockedRow] = "....#.";
+
+    expect(hasRoom(rows)).toBe(false);
   });
 });
 

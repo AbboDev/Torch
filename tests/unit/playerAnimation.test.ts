@@ -13,6 +13,7 @@ const state = (change: Partial<AnimationState> = {}): AnimationState => ({
   isOnLadder: false,
   isCrouch: false,
   isHanging: false,
+  isClimbing: false,
   isJumping: false,
   isStandingJumping: false,
   isAimingDiagonal: false,
@@ -80,6 +81,7 @@ describe("getAnimationAction", () => {
                         isOnLadder: false,
                         isCrouch,
                         isHanging,
+                        isClimbing: false,
                         isJumping,
                         isStandingJumping,
                         isAimingDiagonal,
@@ -114,6 +116,12 @@ describe("getAnimationAction", () => {
     expect(
       getAnimationAction(state({ isOnFloor: false, isOnLadder: true }))
     ).toBe("idle");
+    expect(getAnimationAction(state({ isClimbing: true }))).toBe("crouch_idle");
+    expect(
+      getAnimationAction(
+        state({ isOnFloor: false, isHanging: true, isClimbing: true })
+      )
+    ).toBe("hang");
   });
 });
 

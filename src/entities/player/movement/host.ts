@@ -70,6 +70,6 @@ export interface MovementHost {
   setAllowGravity(allow: boolean): void;
   /** Put the body somewhere at the end of the update (null: leave that axis) */
   moveTo(x: number | null, y: number | null): void;
-  /** Start pulling the Player up a ledge: it has to call `finishClimb` at the end */
-  climb(x: number, y: number): void;
+  /** Start pulling the Player up if the destination has enough room */
+  climb(x: number, y: number): boolean;
 }
