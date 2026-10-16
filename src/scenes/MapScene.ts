@@ -201,7 +201,9 @@ export abstract class MapScene extends ContinuousScene {
   }
 
   /**
-   * Find the room of a point, update the lighting for it and remember the visit
+   * Find the room of a point, update the lighting for it and remember the visit.
+   * The Player calls this every frame: the color is parsed only when the room
+   * changes (`current` is that room).
    *
    * @param x       The x coordinate in the world
    * @param y       The y coordinate in the world
@@ -225,6 +227,10 @@ export abstract class MapScene extends ContinuousScene {
     }
 
     this.hasWarnedOutsideRooms = outside;
+
+    if (currentRoomNumber === current) {
+      return currentRoomNumber;
+    }
 
     let light = DEFAULT_LIGHT;
     const currentRoom = this.rooms[currentRoomNumber];

@@ -37,7 +37,6 @@ import {
   STAIRS_LAYER_DEPTH,
   GLOBAL_ABOVE_LAYER_DEPTH,
 } from "@/config/depths";
-import { DEFAULT_LIGHT } from "@/config/lights";
 import { TILE_SIZE } from "@/config/tiles";
 
 /** How long the screen takes to go black when the Player dies */
@@ -304,7 +303,7 @@ export class MainScene extends MapScene {
     this.hero = new Player(this, x, y, roomNumber);
 
     this.updateCollisionGraphic(this.physics.world.drawDebug);
-    this.lights.enable().setAmbientColor(DEFAULT_LIGHT);
+    this.lights.enable();
 
     this.cameras.main
       .setZoom(2)
