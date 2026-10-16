@@ -1,6 +1,7 @@
 import * as Phaser from "phaser";
 import { ContinuousScene } from "@/scenes/ContinuousScene";
 import { Shootables } from "@/world/shootables";
+import { Darkness, DarknessType, getDarkness } from "@/world/darkness";
 import { ControllerKey } from "@/miscellaneous/Controller";
 import { MAIN_MAP, MapConfig } from "@/config/maps";
 import { Slopes } from "@/world/Slopes";
@@ -149,6 +150,14 @@ export abstract class MapScene extends ContinuousScene {
    */
   public shootables = new Shootables();
 
+  /**
+   * How dark the room the Player is in is: what hurts it there (see
+   * `getZoneDamageSource`). It is worked out once for every room.
+   */
+  public currentDarkness: DarknessType = Darkness.NONE;
+
+  private readonly darknessOfRooms = new WeakMap<TiledObject, DarknessType>();
+
   public create(): void {
     super.create();
 
@@ -244,6 +253,13 @@ export abstract class MapScene extends ContinuousScene {
 
     let light = DEFAULT_LIGHT;
     const currentRoom = this.rooms[currentRoomNumber];
+
+    let level = this.darknessOfRooms.get(currentRoom);
+    if (level === undefined) {
+      level = getDarkness(currentRoom);
+      this.darknessOfRooms.set(currentRoom, level);
+    }
+    this.currentDarkness = level;
 
     const darkness = getRoomProperty(currentRoom, "dark");
     if (darkness && typeof darkness === "string") {

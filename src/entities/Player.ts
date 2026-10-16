@@ -25,7 +25,9 @@ import {
   DamageSource,
   applyDamage,
 } from "@/combat/damage";
+import { DamageOverTime } from "@/combat/DamageOverTime";
 import { getPlayerDefense } from "@/combat/playerDefense";
+import { getZoneDamageSource } from "@/combat/zones";
 import { FreeAim } from "@/entities/player/FreeAim";
 import { PlayerAim } from "@/entities/player/PlayerAim";
 import { PlayerBody } from "@/entities/player/PlayerBody";
@@ -122,6 +124,11 @@ export class Player extends SpriteCollidable {
       this.stats.life -= amount;
     },
   };
+
+  /** The zone the Player is in hurts it, if it is corrupted */
+  private readonly zoneDamage = new DamageOverTime(this.damageable, () =>
+    getZoneDamageSource(this.scene.currentDarkness)
+  );
 
   /** The Player in a liquid: swimming and the damage of acid and lava */
   private liquids: PlayerLiquids;
@@ -384,6 +391,9 @@ export class Player extends SpriteCollidable {
 
       // Handle logic when the player is in a liquid
       this.liquids.update();
+
+      // Handle the damage of a corrupted zone
+      this.zoneDamage.update(delta);
 
       // Handle jump, walk, dash, hang and the ladders climb
       this.movement.updateMotion(this.movementHost);
