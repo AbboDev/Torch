@@ -33,23 +33,48 @@ function recordingScene() {
 }
 
 describe("PlayerAssets", () => {
-  it("keeps the previous asset setup outside the improved hang animations", () => {
+  it("keeps the previous asset setup outside the hang and aim-target animations", () => {
     const before = recordingScene();
     const after = recordingScene();
 
     legacyCreate(before.scene);
     PlayerAssets.create(after.scene);
 
-    const withoutNewAnimations = (calls: unknown[][]) =>
-      calls.filter(([name, config]) => {
-        if (name !== "anims.create") {
-          return true;
+    const isNewAnimation = (key: string) =>
+      key.startsWith("hero_hang_") || key.includes("aim_target");
+
+    const withoutNewAnimations = (calls: unknown[][]) => {
+      const kept: unknown[][] = [];
+
+      for (let index = 0; index < calls.length; index++) {
+        const call = calls[index];
+        const next = calls[index + 1];
+        const created =
+          next?.[0] === "anims.create"
+            ? (next[1] as { key: string }).key
+            : undefined;
+
+        if (
+          call[0] === "anims.generateFrameNumbers" &&
+          created &&
+          isNewAnimation(created)
+        ) {
+          index += 1;
+          continue;
         }
 
-        const key = (config as { key: string }).key;
+        if (
+          call[0] === "anims.create" &&
+          isNewAnimation((call[1] as { key: string }).key)
+        ) {
+          continue;
+        }
 
-        return !key.startsWith("hero_hang_") && !key.includes("aim_target");
-      });
+        kept.push(call);
+      }
+
+      return kept;
+    };
 
     expect(withoutNewAnimations(after.calls)).toEqual(
       withoutNewAnimations(before.calls)
