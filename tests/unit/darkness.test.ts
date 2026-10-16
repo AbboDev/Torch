@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   DARKNESS_VALUES,
   Darkness,
-  getDamage,
+  DARKNESS_SPEC,
   getDarkness,
   isCorrupted,
   isTorchOnly,
@@ -38,22 +38,22 @@ describe("the levels of darkness", () => {
   });
 });
 
-describe("getDamage", () => {
+describe("the damage specified for every level", () => {
   it("does not hurt in the zones which are not corrupted", () => {
     for (const level of [Darkness.NONE, Darkness.SHADED, Darkness.DARK]) {
-      expect(getDamage(level, false)).toBe("none");
-      expect(getDamage(level, true)).toBe("none");
+      expect(DARKNESS_SPEC[level].unprotected).toBe("none");
+      expect(DARKNESS_SPEC[level].protected).toBe("none");
     }
   });
 
   it("hurts a little in a partly corrupted zone, without the power-up", () => {
-    expect(getDamage(Darkness.CORRUPTED_PARTIAL, false)).toBe("light");
-    expect(getDamage(Darkness.CORRUPTED_PARTIAL, true)).toBe("none");
+    expect(DARKNESS_SPEC[Darkness.CORRUPTED_PARTIAL].unprotected).toBe("light");
+    expect(DARKNESS_SPEC[Darkness.CORRUPTED_PARTIAL].protected).toBe("none");
   });
 
   it("hurts a lot in a totally corrupted zone, and a little with the power-up", () => {
-    expect(getDamage(Darkness.CORRUPTED_TOTAL, false)).toBe("heavy");
-    expect(getDamage(Darkness.CORRUPTED_TOTAL, true)).toBe("little");
+    expect(DARKNESS_SPEC[Darkness.CORRUPTED_TOTAL].unprotected).toBe("heavy");
+    expect(DARKNESS_SPEC[Darkness.CORRUPTED_TOTAL].protected).toBe("little");
   });
 });
 

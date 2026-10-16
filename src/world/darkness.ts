@@ -38,7 +38,7 @@ export const DARKNESS_VALUES: Record<string, DarknessType> = {
   corrupted_total: Darkness.CORRUPTED_TOTAL,
 };
 
-/** How much a zone hurts, for a second of staying in it */
+/** How much a zone hurts: the amounts are in `config/damage.ts` */
 export type Damage = "none" | "little" | "light" | "heavy";
 
 export interface DarknessSpec {
@@ -54,8 +54,8 @@ export interface DarknessSpec {
 }
 
 /**
- * What every level means. The damage is the specification only: the minimap
- * does not use it, and the game does not hurt the Player for it yet.
+ * What every level means. The damage is made a `DamageSource` by
+ * `getZoneDamageSource`, which hurts like any other source (see `combat`).
  */
 export const DARKNESS_SPEC: Record<DarknessType, DarknessSpec> = {
   [Darkness.NONE]: { seen: "screen", unprotected: "none", protected: "none" },
@@ -82,13 +82,6 @@ export function isCorrupted(level: DarknessType): boolean {
   return (
     level === Darkness.CORRUPTED_PARTIAL || level === Darkness.CORRUPTED_TOTAL
   );
-}
-
-/** How much the zone hurts the Player, with the right power-up or without it */
-export function getDamage(level: DarknessType, hasPowerUp: boolean): Damage {
-  const spec = DARKNESS_SPEC[level];
-
-  return hasPowerUp ? spec.protected : spec.unprotected;
 }
 
 /**
