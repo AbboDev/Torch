@@ -1,6 +1,8 @@
 import * as Phaser from "phaser";
 import { MapScene } from "@/scenes/MapScene";
 import { ControllerKey } from "@/miscellaneous/Controller";
+import { DEV_LOADOUT } from "@/config/dev";
+import { applyDevLoadout } from "@/miscellaneous/devLoadout";
 import { TiledObject } from "@/entities/scenarios/TiledObject";
 import { Platform } from "@/entities/scenarios/Platform";
 import { Player } from "@/entities/Player";
@@ -168,15 +170,8 @@ export class MainScene extends MapScene {
 
     const roomNumber: number = this.setCurrentRoom(x, y);
 
-    // Development loadout, only for a game which has no weapons yet
-    // (a loaded save or a restarted scene keeps what the Player owns)
-    const inventory = this.getInventory();
-    if (!inventory.hasAtLeastOneRangeWeapon()) {
-      inventory
-        .addWeapon("gun")
-        .addWeapon("rifle")
-        .addWeapon("bow")
-        .switchCurrentWeapon("gun");
+    if (DEV_LOADOUT) {
+      applyDevLoadout(this.getInventory());
     }
 
     this.hero = new Player(this, x, y, roomNumber);

@@ -31,15 +31,19 @@ export interface InventoryNotifier {
   powerUpChanged(item: PowerUps, status: Switch): void;
 }
 
+/**
+ * The Player starts with the torch and the hook only: all the other
+ * power-ups are not owned until they are granted (INDETERMINATE).
+ */
 const defaultPowerUps = (): Record<PowerUps, Switch> => ({
-  [PowerUps.TORCH]: Switch.ENABLE,
-  [PowerUps.ROCKET]: Switch.DISABLE,
-  [PowerUps.BOOTS]: Switch.DISABLE,
-  [PowerUps.GLOVE]: Switch.DISABLE,
-  [PowerUps.BOOSTER]: Switch.DISABLE,
-  [PowerUps.FAN]: Switch.DISABLE,
-  [PowerUps.HOOK]: Switch.ENABLE,
-  [PowerUps.DASH]: Switch.DISABLE,
+  [PowerUps.TORCH]: Switch.INDETERMINATE,
+  [PowerUps.ROCKET]: Switch.INDETERMINATE,
+  [PowerUps.BOOTS]: Switch.INDETERMINATE,
+  [PowerUps.GLOVE]: Switch.INDETERMINATE,
+  [PowerUps.BOOSTER]: Switch.INDETERMINATE,
+  [PowerUps.FAN]: Switch.INDETERMINATE,
+  [PowerUps.HOOK]: Switch.INDETERMINATE,
+  [PowerUps.DASH]: Switch.INDETERMINATE,
 });
 
 const isSwitch = (value: unknown): value is Switch =>
@@ -75,10 +79,12 @@ export class Inventory {
     return this.powerUps[item];
   }
 
+  /** The Player owns the power-up (it may be turned off) */
   public has(item: PowerUps): boolean {
     return this.powerUps[item] !== Switch.INDETERMINATE;
   }
 
+  /** The Player owns the power-up and it is turned on: it can be used */
   public equip(item: PowerUps): boolean {
     return this.powerUps[item] === Switch.ENABLE;
   }
@@ -91,12 +97,18 @@ export class Inventory {
   }
 
   /**
-   * Hand a power-up to the Player (e.g. when picked up) and turn it on
+   * Hand a power-up to the Player (e.g. when picked up) and turn it on.
+   * One already owned keeps its current status.
    */
   public grant(item: PowerUps): Inventory {
+    if (this.has(item)) {
+      return this;
+    }
+
     return this.set(item, Switch.ENABLE);
   }
 
+  /** Turn an owned power-up on or off. One not owned stays as it is. */
   public invertStatus(item: PowerUps): Switch {
     if (this.powerUps[item] === Switch.ENABLE) {
       this.set(item, Switch.DISABLE);

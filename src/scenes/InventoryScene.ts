@@ -125,6 +125,13 @@ export class InventoryScene extends DataScene {
 
     this.cameras.main.setBackgroundColor("rgba(0, 0, 0, 0.75)");
 
+    // A power-up picked up while the inventory is closed
+    this.watchState("powerUp", (powerUp, status) => {
+      const button = this.buttons[0].find(([item]) => item.id === powerUp);
+
+      button?.[1].emit("selected", status);
+    });
+
     this.watchState("weapon", (weaponId) => {
       if (!weaponId) {
         return;

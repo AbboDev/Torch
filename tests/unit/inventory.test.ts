@@ -12,6 +12,31 @@ describe("Inventory", () => {
     expect(inventory.equip(PowerUps.DASH)).toBe(false);
   });
 
+  it("does not own the power-ups it has not found yet", () => {
+    const inventory = new Inventory();
+
+    expect(inventory.has(PowerUps.DASH)).toBe(false);
+    expect(inventory.get(PowerUps.DASH)).toBe(Switch.INDETERMINATE);
+    expect(inventory.has(PowerUps.TORCH)).toBe(true);
+  });
+
+  it("cannot turn on a power-up which is not owned", () => {
+    const inventory = new Inventory();
+
+    expect(inventory.invertStatus(PowerUps.DASH)).toBe(Switch.INDETERMINATE);
+    expect(inventory.equip(PowerUps.DASH)).toBe(false);
+  });
+
+  it("keeps the status of a power-up already owned when granted again", () => {
+    const inventory = new Inventory();
+
+    inventory.grant(PowerUps.DASH);
+    inventory.invertStatus(PowerUps.DASH);
+    inventory.grant(PowerUps.DASH);
+
+    expect(inventory.get(PowerUps.DASH)).toBe(Switch.DISABLE);
+  });
+
   it("toggles power-ups and notifies", () => {
     const changes: [PowerUps, Switch][] = [];
     const inventory = new Inventory({
