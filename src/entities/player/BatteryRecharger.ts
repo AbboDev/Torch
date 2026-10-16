@@ -48,8 +48,12 @@ export class BatteryRecharger {
       return;
     }
 
-    // If the battery is already at full capacity, skip reload
+    // Full already (a save point can fill it while a recharge is running):
+    // stop, or the timer keeps adding units past the maximum
     if (this.stats.battery >= this.stats.maxBattery) {
+      this.stats.battery = this.stats.maxBattery;
+      this.stopTimers();
+
       return;
     }
 
@@ -65,10 +69,7 @@ export class BatteryRecharger {
     const isUsed: boolean = this.stats.battery < this.lastBattery;
 
     if (isUsed) {
-      for (const timer of [this.waitTimer, this.rechargeTimer]) {
-        timer?.destroy();
-        timer?.remove();
-      }
+      this.stopTimers();
     }
 
     if ((canWaitStart && canRechargeStart) || isUsed) {
@@ -78,12 +79,13 @@ export class BatteryRecharger {
           delay: RECHARGE_STEP,
           loop: true,
           callback: () => {
-            ++this.stats.battery;
+            // The clock can fire this before update sees the battery was filled
+            if (this.stats.battery < this.stats.maxBattery) {
+              ++this.stats.battery;
+            }
 
-            // Stop recharging if reached the max level
-            if (this.stats.battery === this.stats.maxBattery) {
-              this.rechargeTimer?.destroy();
-              this.rechargeTimer?.remove();
+            if (this.stats.battery >= this.stats.maxBattery) {
+              this.stopTimers();
             }
           },
         });
@@ -94,5 +96,15 @@ export class BatteryRecharger {
   /** Call it at the end of every frame: the battery used is seen in the next */
   public remember(): void {
     this.lastBattery = this.stats.battery;
+  }
+
+  /** The wait and the recharge are over: drop both, so a later use can start again */
+  private stopTimers(): void {
+    this.waitTimer?.destroy();
+    this.waitTimer?.remove();
+    this.rechargeTimer?.destroy();
+    this.rechargeTimer?.remove();
+    this.waitTimer = undefined;
+    this.rechargeTimer = undefined;
   }
 }

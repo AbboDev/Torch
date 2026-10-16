@@ -137,6 +137,29 @@ describe("BatteryRecharger", () => {
     expect(stats.battery).toBe(99);
   });
 
+  it("does not keep charging after the battery was filled up", () => {
+    const { stats, clock, run } = setup(90);
+
+    run(RECHARGE_WAIT / 1000 + 0.5);
+    expect(stats.battery).toBeGreaterThan(90);
+    expect(stats.battery).toBeLessThan(99);
+
+    // A save point fills it while the recharge timer is still running.
+    // The clock fires before the next update, as Phaser does.
+    stats.battery = stats.maxBattery;
+    clock.advance(RECHARGE_STEP * 5);
+
+    expect(stats.battery).toBe(99);
+  });
+
+  it("pulls a battery that already passed the maximum back to it", () => {
+    const { stats, recharger } = setup(120);
+
+    recharger.update();
+
+    expect(stats.battery).toBe(99);
+  });
+
   it("does not start a new wait at every frame", () => {
     const { clock, run } = setup();
 

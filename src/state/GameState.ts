@@ -149,7 +149,12 @@ export class GameState {
   }
 
   public set(key: StatKey, value: number): void {
-    const next = NON_NEGATIVE.has(key) && value < 0 ? 0 : value;
+    let next = NON_NEGATIVE.has(key) && value < 0 ? 0 : value;
+
+    // A recharge tick can land after a save filled the battery
+    if (key === "battery") {
+      next = Math.min(next, this.stats.maxBattery);
+    }
 
     if (this.stats[key] === next) {
       return;
@@ -262,6 +267,9 @@ export class GameState {
         stats[key] = NON_NEGATIVE.has(key) ? Math.max(0, stored) : stored;
       }
     }
+
+    // A save written while the battery was past its maximum
+    stats.battery = Math.min(stats.battery, stats.maxBattery);
 
     this.stats = stats;
     this.inventory.restore(snapshot?.inventory);

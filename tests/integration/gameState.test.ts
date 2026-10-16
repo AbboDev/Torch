@@ -14,7 +14,7 @@ describe("game state", () => {
     expect(GameState.from(registry)).toBe(GameState.from(registry));
   });
 
-  it("clamps life and battery at zero and only emits on change", () => {
+  it("clamps life and battery at zero, the battery at its maximum, and only emits on change", () => {
     const state = new GameState();
     const listener = vi.fn();
     state.events.on("stat", listener);
@@ -22,11 +22,14 @@ describe("game state", () => {
     state.set("life", -20);
     state.set("life", 0);
     state.set("ammo", 12);
+    state.set("battery", 150);
 
     expect(state.get("life")).toBe(0);
-    expect(listener).toHaveBeenCalledTimes(2);
+    expect(state.get("battery")).toBe(state.get("maxBattery"));
+    expect(listener).toHaveBeenCalledTimes(3);
     expect(listener).toHaveBeenCalledWith("life", 0);
     expect(listener).toHaveBeenCalledWith("ammo", 12);
+    expect(listener).toHaveBeenCalledWith("battery", 99);
   });
 
   it("emits weapon and power-up changes from the inventory", () => {
@@ -77,6 +80,16 @@ describe("game state", () => {
     state.restore({ world: { visitedRooms: [], savePoint: null } } as never);
 
     expect(state.hasFlag("something")).toBe(false);
+  });
+
+  it("brings a saved battery that passed its maximum back down", () => {
+    const state = new GameState();
+
+    state.restore({
+      stats: { ...state.snapshot().stats, battery: 140 },
+    });
+
+    expect(state.get("battery")).toBe(state.get("maxBattery"));
   });
 
   it("counts the time played, saves it and ignores invalid values", () => {
