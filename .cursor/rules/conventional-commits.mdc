@@ -1,0 +1,24 @@
+---
+description: Require Conventional Commits for every Git commit
+alwaysApply: true
+---
+
+# Conventional Commits
+
+Every commit message must follow the Conventional Commits format:
+
+```text
+type(scope): short description
+```
+
+- The scope is optional: `type: short description` is valid.
+- Use a standard type accepted by the project's Commitlint configuration, such as `feat`, `fix`, `refactor`, `test`, `docs`, `build`, `ci`, `perf`, `style`, `chore`, or `revert`.
+- Write the entire commit message in English.
+- Keep the description concise and limited to the single change in the commit.
+- Before committing, ensure the message passes the repository's Commitlint hook.
+
+```text
+✅ feat(map): validate room boundaries
+✅ fix: center the game canvas
+❌ Center the game canvas
+```
