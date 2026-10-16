@@ -27,7 +27,11 @@ export function buildSlopeGrid(layer: Phaser.Tilemaps.TilemapLayer): SlopeGrid {
       const slope = parseSlopeProperties(tile.properties, tile.height);
 
       if (slope) {
-        grid.set(tile.x, tile.y, slope);
+        grid.set(
+          tile.x,
+          tile.y,
+          tile.flipX ? { left: slope.right, right: slope.left } : slope
+        );
       }
     },
     undefined,

@@ -61,6 +61,129 @@ describe("the map chozodia", () => {
       objects.filter((object) => getObjectClass(object) === "door").length
     );
   });
+
+  it("has the requested slopes, including the submerged ones in room_bottom", () => {
+    const slopes = map.layers.find(
+      (layer: { name: string }) => layer.name === "slopes"
+    ).data as number[];
+    const liquids = map.layers.find(
+      (layer: { name: string }) => layer.name === "liquids"
+    ).data as number[];
+    const horizontalFlip = 0x80000000;
+    const gidMask = 0x1fffffff;
+    const positions = slopes.flatMap((gid, index) =>
+      gid
+        ? [
+            [
+              index % map.width,
+              Math.floor(index / map.width),
+              gid & gidMask,
+              !!(gid & horizontalFlip),
+            ] as [number, number, number, boolean],
+          ]
+        : []
+    );
+
+    const diagonalGids = [29, 45, 234];
+    const diagonals = positions.filter(([, , gid]) =>
+      diagonalGids.includes(gid)
+    );
+    expect(diagonals).toEqual([
+      [45, 12, 29, false],
+      [54, 12, 45, false],
+      [95, 15, 234, false],
+      [85, 16, 234, false],
+      [71, 17, 234, false],
+      [70, 18, 234, false],
+      [40, 26, 234, true],
+      [50, 27, 234, true],
+      [64, 28, 234, true],
+      [65, 29, 234, true],
+    ]);
+
+    const slopeGids = new Set(positions.map(([, , gid]) => gid));
+    const slopeTiles = map.tilesets[0].tiles.filter((tile: { id: number }) =>
+      slopeGids.has(tile.id + 1)
+    );
+    expect(slopeTiles).toHaveLength(slopeGids.size);
+    for (const tile of slopeTiles) {
+      const properties = Object.fromEntries(
+        tile.properties.map((property: { name: string; value: unknown }) => [
+          property.name,
+          property.value,
+        ])
+      );
+
+      expect(properties).toMatchObject({
+        slopeLeft: expect.any(Number),
+        slopeRight: expect.any(Number),
+      });
+    }
+
+    const flats = positions.filter(([, , gid]) => !diagonalGids.includes(gid));
+    expect(flats.map(([x, y]) => [x, y])).toEqual([
+      [44, 12],
+      [55, 12],
+      [46, 13],
+      [53, 13],
+      [96, 15],
+      [86, 16],
+      [94, 16],
+      [72, 17],
+      [84, 17],
+      [69, 19],
+      [39, 26],
+      [41, 27],
+      [49, 27],
+      [51, 28],
+      [63, 28],
+      [66, 30],
+    ]);
+
+    const solidLayers = map.layers
+      .filter((layer: { name: string }) =>
+        ["collision", "platforms"].includes(layer.name)
+      )
+      .map((layer: { data: number[] }) => layer.data);
+
+    for (const [x, y] of diagonals) {
+      expect(
+        solidLayers.every((layer: number[]) => layer[y * map.width + x] === 0)
+      ).toBe(true);
+    }
+
+    for (const [x, y] of flats) {
+      expect(
+        solidLayers.some((layer: number[]) => layer[y * map.width + x] !== 0)
+      ).toBe(true);
+    }
+
+    const roomBottom = rooms.find((room) => room.name === "room_bottom")!;
+    const submerged = positions.filter(([x, y]) => {
+      const pixelX = x * map.tilewidth;
+      const pixelY = y * map.tileheight;
+      const insideRoom =
+        pixelX >= roomBottom.x! &&
+        pixelX < roomBottom.x! + roomBottom.width! &&
+        pixelY >= roomBottom.y! &&
+        pixelY < roomBottom.y! + roomBottom.height!;
+
+      return insideRoom && liquids[y * map.width + x] !== 0;
+    });
+
+    expect(submerged.map(([x, y]) => [x, y])).toEqual([
+      [39, 26],
+      [40, 26],
+      [41, 27],
+      [49, 27],
+      [50, 27],
+      [51, 28],
+      [63, 28],
+      [64, 28],
+      [65, 29],
+      [66, 30],
+    ]);
+  });
 });
 
 describe("the objects of the map chozodia, made as the game makes them", () => {

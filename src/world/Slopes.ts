@@ -1,20 +1,10 @@
 import {
   SlopeGrid,
+  findGround,
   getReachDown,
   isInsideSlope,
   resolveSlope,
 } from "@/world/slopeGeometry";
-
-/**
- * Where, under the body, the points which stand on the slopes are, measured
- * from its center. One point in the middle: the feet follow the ground under
- * the center of the body, which is how it looks right.
- *
- * With more points (for instance -8 and 8, the two sides of a body of 16) the
- * body stands on the highest ground of the points, so a corner never goes
- * into a ramp, but on a ramp the other side floats above it.
- */
-export const FOOT_OFFSETS: readonly number[] = [0];
 
 /** The part of an Arcade body which the slopes read and change */
 export interface SlopeBody {
@@ -42,15 +32,18 @@ export interface SlopeBody {
 export class Slopes {
   private readonly bodies = new Set<SlopeBody>();
 
+  /** Bodies whose last ground was a slope */
+  private readonly groundedBodies = new Set<SlopeBody>();
+
   private readonly cleanups: (() => void)[] = [];
 
   private readonly spread: number;
 
   public constructor(
     private readonly grid: SlopeGrid | null,
-    private readonly footOffsets: readonly number[] = FOOT_OFFSETS
+    private readonly footOffsets: readonly number[] | null = null
   ) {
-    this.spread = Math.max(0, ...footOffsets.map(Math.abs));
+    this.spread = Math.max(0, ...(footOffsets ?? []).map(Math.abs));
   }
 
   /** There are slopes in the map */
@@ -70,11 +63,24 @@ export class Slopes {
 
   public untrack(body: SlopeBody): void {
     this.bodies.delete(body);
+    this.groundedBodies.delete(body);
   }
 
   /** Is the point inside a slope, under its ground? (a bullet which hit it) */
   public isInside(x: number, y: number): boolean {
     return !!this.grid && isInsideSlope(this.grid, x, y);
+  }
+
+  /** The slope ground near the feet, or null. Used to recognise a lip */
+  public groundAt(x: number, feetY: number): number | null {
+    const { grid } = this;
+    if (!grid) {
+      return null;
+    }
+
+    return (
+      findGround(grid, x, feetY, grid.tileHeight, grid.tileHeight)?.y ?? null
+    );
   }
 
   /**
@@ -93,24 +99,54 @@ export class Slopes {
     for (const body of this.bodies) {
       // Without gravity (hanging, on a ladder) the body is not on the ground
       if (!body.enable || !body.allowGravity) {
+        this.groundedBodies.delete(body);
         continue;
       }
 
       const centerX = body.x + body.width / 2;
+      const half = body.width / 2;
+      // Both sides, kept just inside the body: the exact edge belongs to the
+      // next tile. The higher side wins, so the body stays on a flat tile
+      // while the other side is already over a lower slope.
+      const inset = Math.min(0.5, half);
+      const wasSlopeGrounded = this.groundedBodies.has(body);
 
-      const ground = resolveSlope(grid, {
-        xs: this.footOffsets.map((offset) => centerX + offset),
-        feetY: body.y + body.height,
+      const feetY = body.y + body.height;
+      const query = {
+        feetY,
         velocityY: body.velocity.y,
-        wasGrounded: body.wasTouching.down,
+        wasGrounded:
+          body.wasTouching.down ||
+          body.touching.down ||
+          body.blocked.down ||
+          wasSlopeGrounded,
         reachDown: getReachDown(body.velocity.x, delta, steepness),
-        spread: this.spread,
+        spread: Math.max(this.spread, half),
+      };
+      const side = resolveSlope(grid, {
+        ...query,
+        xs: this.footOffsets
+          ? this.footOffsets.map((offset) => centerX + offset)
+          : [centerX - half + inset, centerX + half - inset],
       });
+      const center = resolveSlope(grid, { ...query, xs: [centerX] });
+      // The higher side in front means the body is climbing. Follow the
+      // center, or it jumps onto the crest and wedges into the tile above.
+      // The higher side behind is a descent: stay on it.
+      const climbing =
+        side !== null &&
+        center !== null &&
+        body.velocity.x !== 0 &&
+        side.y < center.y - 0.5 &&
+        Math.sign(side.column - center.column) === Math.sign(body.velocity.x);
+      const ground = climbing ? center : side;
 
       if (!ground) {
+        this.groundedBodies.delete(body);
         continue;
       }
 
+      this.groundedBodies.add(body);
       body.y = ground.y - body.height;
       body.velocity.y = 0;
       body.blocked.down = true;
@@ -129,5 +165,6 @@ export class Slopes {
   public destroy(): void {
     this.cleanups.splice(0).forEach((cleanup) => cleanup());
     this.bodies.clear();
+    this.groundedBodies.clear();
   }
 }

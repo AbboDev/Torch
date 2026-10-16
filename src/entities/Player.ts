@@ -20,11 +20,7 @@ import { PlayerMovement } from "@/entities/player/movement/PlayerMovement";
 import { MovementState } from "@/entities/player/movement/state";
 import { AimLock } from "@/entities/player/aimLock";
 import { AimHit, AimTargeting, SOLID } from "@/entities/player/aimTarget";
-import {
-  Damageable,
-  DamageSource,
-  applyDamage,
-} from "@/combat/damage";
+import { Damageable, DamageSource, applyDamage } from "@/combat/damage";
 import { DamageOverTime } from "@/combat/DamageOverTime";
 import { getPlayerDefense } from "@/combat/playerDefense";
 import { getZoneDamageSource } from "@/combat/zones";
@@ -43,6 +39,7 @@ import { MapScene } from "@/scenes/MapScene";
 import { PlayerStats } from "@/state/GameState";
 import { hasLedgeToClimb, hasRoomToClimb } from "@/world/ledgeClimb";
 import { collidesWithTile } from "@/world/oneWayTiles";
+import { canPassSlopeLip } from "@/world/slopeGeometry";
 import { trackRoom } from "@/world/roomChange";
 
 /**
@@ -483,7 +480,8 @@ export class Player extends SpriteCollidable {
         kind: "breakable",
         id: `${tileX},${tileY}`,
         // a block is where it was until a shot breaks it
-        position: () => (breakablesLayer.hasTileAt(tileX, tileY) ? center : null),
+        position: () =>
+          breakablesLayer.hasTileAt(tileX, tileY) ? center : null,
       };
     }
 
@@ -769,6 +767,10 @@ export class Player extends SpriteCollidable {
   ): boolean {
     const tile: Phaser.Tilemaps.Tile = object as Phaser.Tilemaps.Tile;
 
+    if (this.passesSlopeLip(tile)) {
+      return false;
+    }
+
     return collidesWithTile({
       layer: tile.layer.name,
       index: tile.index,
@@ -779,5 +781,33 @@ export class Player extends SpriteCollidable {
       hasTileAbove: () =>
         !!this.scene.map.getTileAt(tile.x, tile.y - 1, false, "stairs"),
     });
+  }
+
+  /** The tile is the lip under a slope, in front of the body */
+  private passesSlopeLip(tile: Phaser.Tilemaps.Tile): boolean {
+    if (tile.layer.name !== "collision") {
+      return false;
+    }
+
+    const { body } = this;
+    const direction = Math.sign(body.velocity.x);
+    if (direction === 0) {
+      return false;
+    }
+
+    const center = body.x + body.width / 2;
+    const tileCenter = tile.pixelX + tile.width / 2;
+    if (Math.sign(tileCenter - center) !== direction) {
+      return false;
+    }
+
+    const frontX = direction > 0 ? body.right - 0.5 : body.left + 0.5;
+
+    return canPassSlopeLip(
+      tile.pixelY,
+      body.bottom,
+      this.scene.slopes.groundAt(frontX, body.bottom),
+      tile.height
+    );
   }
 }

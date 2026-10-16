@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   SlopeGrid,
+  canPassSlopeLip,
   findGround,
   getReachDown,
   groundY,
@@ -281,5 +282,18 @@ describe("a body walking on the ramp (simulated like the game does it)", () => {
 
     expect(states.every((state) => state.grounded)).toBe(true);
     expect(states.at(-1)!.feetY).toBe(FLOOR);
+  });
+});
+
+describe("canPassSlopeLip", () => {
+  it("lets the body enter the tile whose top is the slope it is climbing", () => {
+    expect(canPassSlopeLip(288, 296, 288, 16)).toBe(true);
+  });
+
+  it("keeps a floor, a tall wall and a missing slope solid", () => {
+    expect(canPassSlopeLip(192, 193, 208, 16)).toBe(false);
+    expect(canPassSlopeLip(160, 192, 192, 16)).toBe(false);
+    expect(canPassSlopeLip(288, 296, null, 16)).toBe(false);
+    expect(canPassSlopeLip(288, 320, 288, 16)).toBe(false);
   });
 });

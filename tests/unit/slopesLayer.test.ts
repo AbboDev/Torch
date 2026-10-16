@@ -27,14 +27,21 @@ interface FakeTile {
   height: number;
   index: number;
   properties: Record<string, unknown>;
+  flipX: boolean;
 }
 
-const tile = (x: number, y: number, properties: Record<string, unknown>) => ({
+const tile = (
+  x: number,
+  y: number,
+  properties: Record<string, unknown>,
+  flipX = false
+) => ({
   x,
   y,
   height: 16,
   index: 1,
   properties,
+  flipX,
 });
 
 /** The part of a Phaser tile layer which buildSlopeGrid uses */
@@ -61,6 +68,14 @@ describe("buildSlopeGrid", () => {
     expect(grid.getSlope(3, 9)).toEqual({ left: 0, right: 16 });
     expect(grid.getSlope(4, 8)).toEqual({ left: 8, right: 12 });
     expect(grid.tileWidth).toBe(16);
+  });
+
+  it("reverses a slope when its tile is flipped horizontally", () => {
+    const grid = buildSlopeGrid(
+      fakeLayer([tile(3, 9, { slopeLeft: 0, slopeRight: 16 }, true)])
+    );
+
+    expect(grid.getSlope(3, 9)).toEqual({ left: 16, right: 0 });
   });
 
   it("leaves out the tiles which are only art, or have wrong properties", () => {
@@ -130,7 +145,8 @@ describe("createSlopes", () => {
 
     worldListeners.get("worldstep")!(1 / 60);
 
-    expect(body.y + body.height).toBe(152);
+    // The high side of the ramp tile, not its middle
+    expect(body.y + body.height).toBeCloseTo(144.5, 6);
   });
 
   it("works for a map without slopes", () => {

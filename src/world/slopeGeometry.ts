@@ -192,6 +192,31 @@ export function findGround(
   return best;
 }
 
+/**
+ * The solid tile is the one-tile lip under a slope the body is climbing:
+ * its top is the slope, and the feet are still below it. A floor under the
+ * feet, and a wall taller than one tile, are not.
+ */
+export function canPassSlopeLip(
+  tileTop: number,
+  feetY: number,
+  slopeGroundY: number | null,
+  tileHeight: number
+): boolean {
+  if (slopeGroundY === null) {
+    return false;
+  }
+
+  const into = feetY - tileTop;
+
+  return (
+    into > 0 &&
+    into <= tileHeight &&
+    slopeGroundY <= tileTop + 1 &&
+    slopeGroundY < feetY
+  );
+}
+
 export interface SlopeQuery {
   /** The x of the points under the body which stand on the ground */
   xs: readonly number[];

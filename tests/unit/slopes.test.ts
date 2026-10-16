@@ -43,6 +43,28 @@ function ramp() {
 const groundAt = (x: number) =>
   x < 160 ? 160 : x < 224 ? 160 - (x - 160) : 96;
 
+/** The higher side, which is the ground the body stands on */
+const supportedGround = (bodyLeft: number, width = 16) =>
+  Math.min(groundAt(bodyLeft + 0.5), groundAt(bodyLeft + width - 0.5));
+
+/** What Slopes.step stands on: the center while climbing onto the next tile */
+const standingGround = (bodyLeft: number, velocityX: number, width = 16) => {
+  const centerX = bodyLeft + width / 2;
+  const center = groundAt(centerX);
+  const leftX = bodyLeft + 0.5;
+  const rightX = bodyLeft + width - 0.5;
+  const left = groundAt(leftX);
+  const right = groundAt(rightX);
+  const sideX = left < right ? leftX : rightX;
+  const climbing =
+    velocityX !== 0 &&
+    Math.min(left, right) < center - 0.5 &&
+    Math.sign(Math.floor(sideX / 16) - Math.floor(centerX / 16)) ===
+      Math.sign(velocityX);
+
+  return climbing ? center : Math.min(left, right);
+};
+
 function slopeBody(over: Partial<SlopeBody> = {}) {
   const updateCenter = vi.fn();
   const body: SlopeBody = {
@@ -66,18 +88,60 @@ function slopeBody(over: Partial<SlopeBody> = {}) {
 describe("Slopes.step", () => {
   it("puts a body inside a slope on its ground and tells it is on the floor", () => {
     const slopes = new Slopes(ramp());
-    // the middle of the first tile of the ramp (x = 168): the ground is at 152
+    // The high side of the first ramp tile holds the body
     const { body, updateCenter } = slopeBody({ x: 160, y: 120 + 1 });
     body.velocity.y = 40;
     slopes.track(body);
 
     slopes.step(1 / 60);
 
-    expect(body.y + body.height).toBe(152);
+    expect(body.y + body.height).toBeCloseTo(supportedGround(body.x), 6);
     expect(body.velocity.y).toBe(0);
     expect(body.blocked).toEqual({ down: true, none: false });
     expect(body.touching).toEqual({ down: true, none: false });
     expect(updateCenter).toHaveBeenCalled();
+  });
+
+  it("anchors from the current solid-floor contact when descending", () => {
+    const slopes = new Slopes(ramp());
+    const { body } = slopeBody({
+      x: 96,
+      y: 160 - 32 - 1,
+      wasTouching: { down: false },
+      blocked: { down: true, none: false },
+    });
+    slopes.track(body);
+
+    slopes.step(1 / 60);
+
+    expect(body.y + body.height).toBe(160);
+    expect(body.blocked.down).toBe(true);
+  });
+
+  it("does not drop to the lower side while one side still stands on the high ground", () => {
+    const slopes = new Slopes(ramp());
+    // The center is already on the ramp; the right side is still on the top
+    const { body } = slopeBody({ x: 210, y: 96 - 32 });
+    slopes.track(body);
+
+    slopes.step(1 / 60);
+
+    expect(body.y + body.height).toBeCloseTo(96, 6);
+    expect(body.blocked.down).toBe(true);
+  });
+
+  it("climbs with the center instead of jumping onto the higher side", () => {
+    const slopes = new Slopes(ramp());
+    const { body } = slopeBody({
+      x: 210,
+      y: groundAt(218) - 32,
+      velocity: { x: 40, y: 0 },
+    });
+    slopes.track(body);
+
+    slopes.step(1 / 60);
+
+    expect(body.y + body.height).toBeCloseTo(groundAt(218), 6);
   });
 
   it("does nothing to a body which is not tracked, or after untrack", () => {
@@ -208,7 +272,10 @@ describe("a body walking on slopes with the real Arcade velocity rules", () => {
       steps++;
 
       expect(body.blocked.down).toBe(true);
-      expect(body.y + body.height).toBeCloseTo(groundAt(body.x + 8), 6);
+      expect(body.y + body.height).toBeCloseTo(
+        standingGround(body.x, body.velocity.x),
+        6
+      );
     }
 
     expect(body.y + body.height).toBe(96);
@@ -226,10 +293,32 @@ describe("a body walking on slopes with the real Arcade velocity rules", () => {
       steps++;
 
       expect(body.blocked.down).toBe(true);
-      expect(body.y + body.height).toBeCloseTo(groundAt(body.x + 8), 6);
+      expect(body.y + body.height).toBeCloseTo(supportedGround(body.x), 6);
     }
 
     expect(body.y + body.height).toBe(160);
+  });
+
+  it("starts downhill after stopping even if Arcade loses the slope contact", () => {
+    const slopes = new Slopes(ramp());
+    const body = physicsBody(200, groundAt(208));
+    slopes.track(body);
+    slopes.step(1 / 60);
+
+    body.touching = { down: false, none: true };
+    body.blocked = { down: false, none: true };
+    body.acceleration.set(-512, 0);
+
+    let steps = 0;
+    while (body.x + 8 > 180 && steps < 120) {
+      physicsStep(slopes, body);
+      steps++;
+
+      expect(body.blocked.down).toBe(true);
+      expect(body.y + body.height).toBeCloseTo(supportedGround(body.x), 6);
+    }
+
+    expect(body.x + 8).toBeLessThanOrEqual(180);
   });
 
   it("stops quickly on the ramp when the button is released, and stays there", () => {
@@ -251,7 +340,7 @@ describe("a body walking on slopes with the real Arcade velocity rules", () => {
       expect(body.x).toBe(stoppedAt);
       expect(body.blocked.down).toBe(true);
       expect(body.velocity.y).toBe(0);
-      expect(body.y + body.height).toBeCloseTo(groundAt(body.x + 8), 6);
+      expect(body.y + body.height).toBeCloseTo(supportedGround(body.x), 6);
     }
   });
 
@@ -266,7 +355,7 @@ describe("a body walking on slopes with the real Arcade velocity rules", () => {
 
     // in the air at once: not pulled back to the ground
     expect(body.blocked.down).toBe(false);
-    expect(body.y + body.height).toBeLessThan(groundAt(body.x + 8));
+    expect(body.y + body.height).toBeLessThan(supportedGround(body.x));
 
     let steps = 0;
     while (!body.blocked.down && steps < 200) {
@@ -275,6 +364,6 @@ describe("a body walking on slopes with the real Arcade velocity rules", () => {
     }
 
     expect(body.blocked.down).toBe(true);
-    expect(body.y + body.height).toBeCloseTo(groundAt(body.x + 8), 6);
+    expect(body.y + body.height).toBeCloseTo(supportedGround(body.x), 6);
   });
 });
