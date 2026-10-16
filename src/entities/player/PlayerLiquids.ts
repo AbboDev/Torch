@@ -1,3 +1,4 @@
+import { Damageable, applyDamage } from "@/combat/damage";
 import { LIQUID_EFFECTS, LIQUID_TICK, LiquidEffect } from "@/config/liquids";
 
 /** What is around the Player: is it in a liquid, and which one */
@@ -34,7 +35,9 @@ export interface Tintable {
 
 /**
  * The Player in a liquid: it swims, and acid and lava hurt it every
- * little while while its sprite flashes.
+ * little while while its sprite flashes. The life it loses is damage like any
+ * other (see `combat/damage`), so what protects the Player from it counts; the
+ * battery is drained as it is.
  */
 export class PlayerLiquids {
   /** The Player is in a liquid */
@@ -46,7 +49,8 @@ export class PlayerLiquids {
   public constructor(
     private readonly detect: () => LiquidDetection,
     private readonly addTimer: (config: DamageTimerConfig) => DamageTimer,
-    private readonly stats: { battery: number; life: number },
+    private readonly stats: { battery: number },
+    private readonly target: Damageable,
     private readonly sprite: Tintable
   ) {}
 
@@ -90,7 +94,7 @@ export class PlayerLiquids {
       this.stats.battery -= effect.battery;
     }
 
-    this.stats.life -= effect.life;
+    applyDamage(this.target, effect.damage);
 
     if (this.sprite.isTinted) {
       this.sprite.clearTint();

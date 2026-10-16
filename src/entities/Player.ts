@@ -20,6 +20,12 @@ import { PlayerMovement } from "@/entities/player/movement/PlayerMovement";
 import { MovementState } from "@/entities/player/movement/state";
 import { AimLock } from "@/entities/player/aimLock";
 import { AimHit, AimTargeting, SOLID } from "@/entities/player/aimTarget";
+import {
+  Damageable,
+  DamageSource,
+  applyDamage,
+} from "@/combat/damage";
+import { getPlayerDefense } from "@/combat/playerDefense";
 import { FreeAim } from "@/entities/player/FreeAim";
 import { PlayerAim } from "@/entities/player/PlayerAim";
 import { PlayerBody } from "@/entities/player/PlayerBody";
@@ -104,6 +110,18 @@ export class Player extends SpriteCollidable {
 
   /** Fills the battery up again when it is not used */
   private recharger: BatteryRecharger;
+
+  /**
+   * The Player as something with life: what hurts it (a liquid, a zone, a shot,
+   * an enemy) goes through here, by the defense the Player has now
+   */
+  private readonly damageable: Damageable = {
+    getDefense: () =>
+      getPlayerDefense((item) => this.scene.getInventory().equip(item)),
+    takeDamage: (amount) => {
+      this.stats.life -= amount;
+    },
+  };
 
   /** The Player in a liquid: swimming and the damage of acid and lava */
   private liquids: PlayerLiquids;
@@ -239,6 +257,7 @@ export class Player extends SpriteCollidable {
       () => this.detectLiquid(),
       (config) => this.scene.time.addEvent(config),
       this.stats,
+      this.damageable,
       this
     );
 
@@ -561,6 +580,15 @@ export class Player extends SpriteCollidable {
         console.error(error, animation);
       }
     }
+  }
+
+  /**
+   * Hurt the Player with a source: a shot, an enemy, anything
+   *
+   * @return The life it took, 0 if the Player is not hurt
+   */
+  public hurt(source: DamageSource): number {
+    return applyDamage(this.damageable, source);
   }
 
   /** How far the torch lights, in pixels of the world */

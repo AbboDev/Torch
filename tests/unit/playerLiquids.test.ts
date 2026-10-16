@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { Defense, NO_DEFENSE } from "@/combat/damage";
 import { LIQUID_EFFECTS, LIQUID_TICK } from "@/config/liquids";
 import {
   DamageTimer,
@@ -7,10 +8,16 @@ import {
   PlayerLiquids,
 } from "@/entities/player/PlayerLiquids";
 
-function setup() {
+function setup(defense: Defense = NO_DEFENSE) {
   let detection: LiquidDetection = { swimming: false, liquid: null };
 
   const stats = { battery: 50, life: 99 };
+  const target = {
+    getDefense: () => defense,
+    takeDamage: (amount: number) => {
+      stats.life -= amount;
+    },
+  };
   const sprite = {
     isTinted: false,
     clearTint: vi.fn(() => {
@@ -35,7 +42,13 @@ function setup() {
     return timer;
   });
 
-  const liquids = new PlayerLiquids(() => detection, addTimer, stats, sprite);
+  const liquids = new PlayerLiquids(
+    () => detection,
+    addTimer,
+    stats,
+    target,
+    sprite
+  );
 
   return {
     liquids,
@@ -166,5 +179,47 @@ describe("PlayerLiquids", () => {
 
   it("has the damage of the two liquids which hurt", () => {
     expect(Object.keys(LIQUID_EFFECTS)).toEqual(["acid", "lava"]);
+  });
+
+  it("takes the damage of the liquids as damage of a kind: lava is fire, acid is acid", () => {
+    expect(LIQUID_EFFECTS.lava.damage.kind).toBe("fire");
+    expect(LIQUID_EFFECTS.acid.damage.kind).toBe("acid");
+  });
+
+  it("is not hurt by lava in the life, with a protection from fire", () => {
+    const suit: Defense = { protections: new Set(["fire"]), resistances: {} };
+    const { liquids, stats, set, tick } = setup(suit);
+
+    set({ swimming: true, liquid: "lava" });
+    liquids.update();
+    tick();
+
+    expect(stats.life).toBe(99);
+  });
+
+  it("is hurt less by acid with a resistance, and the battery is drained as before", () => {
+    const armor: Defense = {
+      protections: new Set(),
+      resistances: { acid: 0.5 },
+    };
+    const { liquids, stats, set, tick } = setup(armor);
+
+    set({ swimming: true, liquid: "acid" });
+    liquids.update();
+    tick();
+
+    expect(stats.life).toBeCloseTo(99 - 1.5);
+    expect(stats.battery).toBe(48);
+  });
+
+  it("is not protected from the acid by a protection from fire", () => {
+    const suit: Defense = { protections: new Set(["fire"]), resistances: {} };
+    const { liquids, stats, set, tick } = setup(suit);
+
+    set({ swimming: true, liquid: "acid" });
+    liquids.update();
+    tick();
+
+    expect(stats.life).toBe(96);
   });
 });
