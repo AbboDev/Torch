@@ -25,6 +25,7 @@ import {
   findSavePoint,
   findSavePointAt,
   parseSavePoints,
+  parseTileSavePoints,
 } from "@/world/savePoints";
 import { toBounds } from "@/world/scroll";
 import { breakableFlag } from "@/world/worldFlags";
@@ -52,6 +53,57 @@ import { TILE_SIZE } from "@/config/tiles";
 const DEATH_FADE_DURATION = 1200;
 
 const SAVE_PROMPT = "Press UP to save";
+
+/** The texture of the "!" shown above the Player at a save point */
+const SAVE_MARK = "save_mark";
+
+/**
+ * A pixel "!" with a dark outline. Drawn once and reused: the scene can restart.
+ */
+function ensureSaveMark(scene: Phaser.Scene): string {
+  if (scene.textures.exists(SAVE_MARK)) {
+    return SAVE_MARK;
+  }
+
+  // The bar, a gap, and the dot
+  const rows = [1, 1, 1, 1, 0, 1];
+  const width = 3;
+  const height = rows.length + 2;
+  const texture = scene.textures.createCanvas(SAVE_MARK, width, height)!;
+  const image = texture.context.createImageData(width, height);
+  const put = (x: number, y: number, r: number, g: number, b: number) => {
+    const index = (y * width + x) * 4;
+
+    image.data[index] = r;
+    image.data[index + 1] = g;
+    image.data[index + 2] = b;
+    image.data[index + 3] = 255;
+  };
+
+  rows.forEach((on, y) => {
+    if (!on) {
+      return;
+    }
+
+    for (let oy = -1; oy <= 1; oy++) {
+      for (let ox = -1; ox <= 1; ox++) {
+        put(1 + ox, 1 + y + oy, 26, 16, 32);
+      }
+    }
+  });
+
+  rows.forEach((on, y) => {
+    if (on) {
+      put(1, 1 + y, 255, 241, 168);
+    }
+  });
+
+  texture.context.putImageData(image, 0, 0);
+  texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
+  texture.refresh();
+
+  return SAVE_MARK;
+}
 
 const DEBUG_FACE_COLOR = new Phaser.Display.Color(40, 39, 37, 255);
 const DEBUG_COLLISION_COLORS = {
@@ -96,13 +148,15 @@ export class MainScene extends MapScene {
   private static readonly objects = createMapObjectRegistry<TiledObject>();
 
   /**
-   * The save points found in the map: objects of type "save_point" in the
-   * "objects" layer of Tiled (see world/savePoints.ts). Their name is the id
-   * stored in the save.
+   * The save points of the map: objects of type "save_point", and every pair
+   * of barrel tiles (see world/savePoints.ts). Their id is stored in the save.
    */
   private savePoints: SavePoint[] = [];
 
   private savePointTrigger = new SavePointTrigger();
+
+  /** The "!" above the Player while it stands in a save point */
+  private saveMark!: Phaser.GameObjects.Image;
 
   /**
    * The hint shown by the HUD while the Player is in a save point
@@ -173,7 +227,12 @@ export class MainScene extends MapScene {
     const mapObjects = this.getMapObjects("objects");
     const objectContext = this.createObjectContext(savePointObjects);
     MainScene.objects.spawn("objects", mapObjects, objectContext);
-    this.savePoints = parseSavePoints(savePointObjects);
+    this.savePoints = [
+      ...parseSavePoints(savePointObjects),
+      ...parseTileSavePoints(
+        this.cache.tilemap.get(this.mapConfig.cacheKey)?.data
+      ),
+    ];
 
     if (!this.spawnPoint) {
       throw "No Spawn Point detected";
@@ -343,6 +402,12 @@ export class MainScene extends MapScene {
     });
 
     this.hero = new Player(this, x, y, roomNumber);
+    this.saveMark = this.add
+      .image(0, 0, ensureSaveMark(this))
+      .setOrigin(0.5, 1)
+      .setScale(2)
+      .setDepth(ABOVE_LAYER_DEPTH + 1)
+      .setVisible(false);
 
     this.updateCollisionGraphic(this.physics.world.drawDebug);
     this.lights.enable();
@@ -418,11 +483,7 @@ export class MainScene extends MapScene {
 
     revealAround(
       live.map,
-      this.getGameState().getExplored(
-        live.mapId,
-        live.map.cols,
-        live.map.rows
-      ),
+      this.getGameState().getExplored(live.mapId, live.map.cols, live.map.rows),
       live
     );
   }
@@ -623,8 +684,8 @@ export class MainScene extends MapScene {
   }
 
   /**
-   * Show the hint while the Player is in a save point, and save when it
-   * presses Up there
+   * Show the "!" above the Player while it is in a save point, and save
+   * when it presses Up there
    */
   private updateSavePoints(): void {
     if (this.savePoints.length === 0) {
@@ -639,6 +700,12 @@ export class MainScene extends MapScene {
           body.y + body.height / 2
         )
       : null;
+
+    this.saveMark.setVisible(inside !== null);
+
+    if (inside) {
+      this.saveMark.setPosition(this.hero.x, this.hero.y - 2);
+    }
 
     this.setPrompt(inside ? SAVE_PROMPT : null);
 

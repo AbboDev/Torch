@@ -45,7 +45,7 @@ const NON_NEGATIVE: ReadonlySet<StatKey> = new Set(["life", "battery"]);
 export interface SavePointRef {
   /** The name of the map (see config/maps.ts) */
   map: string;
-  /** The name of the object in Tiled */
+  /** The id of the save point in that map */
   id: string;
 }
 

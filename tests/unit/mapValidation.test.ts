@@ -267,6 +267,48 @@ describe("validateMap", () => {
       expect(validateMap(map).errors[0]).toContain("needs a name");
     });
 
+    it("counts the two barrel tiles as a save point", () => {
+      const map = goodMap();
+
+      map.tilesets[0].firstgid = 1;
+      map.layers[map.layers.length - 2] = {
+        name: "objects",
+        type: "objectgroup",
+        objects: (objects(map) as Obj[]).filter(
+          (object) => object.type !== "save_point"
+        ),
+      };
+
+      const background = map.layers.find(
+        (layer) => layer.name === "background"
+      ) as Obj;
+
+      background.width = 4;
+      background.data = [0, 0, 0, 0, 55, 71, 0, 0];
+
+      expect(validateMap(map)).toEqual({ errors: [], warnings: [] });
+    });
+
+    it("wants a barrel save point inside a room", () => {
+      const map = goodMap();
+
+      map.tilesets[0].firstgid = 1;
+
+      const background = map.layers.find(
+        (layer) => layer.name === "background"
+      ) as Obj;
+      const width = 42;
+
+      background.width = width;
+      background.data = new Array(width * 2).fill(0);
+      (background.data as number[])[width + 40] = 55;
+      (background.data as number[])[width + 41] = 71;
+
+      expect(validateMap(map).errors).toEqual([
+        'the save point "save_40_1" is not inside a room',
+      ]);
+    });
+
     it("tells when an area has no save point", () => {
       const map = goodMap();
       map.layers[map.layers.length - 2] = {

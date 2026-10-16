@@ -5,6 +5,7 @@ import {
   findSavePoint,
   findSavePointAt,
   parseSavePoints,
+  parseTileSavePoints,
 } from "@/world/savePoints";
 
 const save = (id: number, name: string | undefined, extra = {}): MapObject => ({
@@ -89,6 +90,57 @@ describe("finding save points", () => {
     expect(findSavePointAt(points, 31, 31)?.id).toBe("a");
     expect(findSavePointAt(points, 32, 10)).toBeNull();
     expect(findSavePointAt(points, 110, 10)?.id).toBe("b");
+  });
+});
+
+const barrels = (data: number[], width: number, firstgid = 1) => ({
+  tilesets: [{ name: "chozodia", firstgid }],
+  layers: [{ type: "tilelayer", width, data }],
+});
+
+describe("parseTileSavePoints", () => {
+  it("makes a save point where the two barrel tiles are side by side", () => {
+    const [point] = parseTileSavePoints(barrels([0, 0, 0, 0, 55, 71, 0, 0], 4));
+
+    expect(point).toEqual({
+      id: "save_0_1",
+      x: 0,
+      y: 0,
+      width: 32,
+      height: 32,
+      spawn: { x: 16, y: -16 },
+    });
+  });
+
+  it("accepts the barrels in either order, and a gid with a flip flag", () => {
+    const flipped = 71 | 0x80000000;
+    const points = parseTileSavePoints(barrels([flipped, 55], 2));
+
+    expect(points).toHaveLength(1);
+    expect(points[0].id).toBe("save_0_0");
+  });
+
+  it("does not join a pair split by the end of the row", () => {
+    expect(parseTileSavePoints(barrels([0, 55, 71, 0], 2))).toEqual([]);
+  });
+
+  it("uses the firstgid of the chozodia tileset, and nothing if it is missing", () => {
+    expect(parseTileSavePoints(barrels([64, 80], 2, 10))).toHaveLength(1);
+    expect(parseTileSavePoints({ layers: [] })).toEqual([]);
+    expect(
+      parseTileSavePoints({
+        tilesets: [{ name: "chozodia" }],
+        layers: [{ type: "tilelayer", width: 2, data: [55, 71] }],
+      })
+    ).toEqual([]);
+  });
+
+  it("keeps one save point when the same pair is painted on two layers", () => {
+    const map = barrels([55, 71], 2);
+
+    map.layers.push({ type: "tilelayer", width: 2, data: [55, 71] });
+
+    expect(parseTileSavePoints(map)).toHaveLength(1);
   });
 });
 

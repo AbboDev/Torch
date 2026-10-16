@@ -4,6 +4,7 @@ import { BACKGROUNDS } from "@/config/backgrounds";
 import { MapObject, parseDoors } from "@/world/doors";
 import { createMapObjectRegistry } from "@/world/mapObjectHandlers";
 import { getRoomProperty } from "@/world/rooms";
+import { parseTileSavePoints } from "@/world/savePoints";
 import { getObjectClass } from "@/world/tiledObjects";
 
 // A check of the data of the real map: a mistake in Tiled shows up here
@@ -36,6 +37,13 @@ describe("the map chozodia", () => {
         );
       }
     }
+  });
+
+  it("has a save point on every pair of barrel tiles", () => {
+    expect(parseTileSavePoints(map).map((point) => point.id)).toEqual([
+      "save_31_18",
+      "save_34_25",
+    ]);
   });
 
   it("has exactly one spawn point", () => {

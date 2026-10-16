@@ -4,6 +4,7 @@ import { Door, MapObject, isLocalDoor } from "@/world/doors";
 import { createMapObjectRegistry } from "@/world/mapObjectHandlers";
 import { OBJECT_SCHEMAS } from "@/world/objectSchemas";
 import { roomContains } from "@/world/rooms";
+import { parseTileSavePoints } from "@/world/savePoints";
 import { readRawObjects } from "@/world/tiledObjects";
 
 /**
@@ -218,7 +219,19 @@ export function validateMap(
     }
   }
 
-  if (savePoints.length === 0) {
+  // The two barrel tiles side by side are a save point too
+  const tilePoints = parseTileSavePoints(raw);
+
+  for (const point of tilePoints) {
+    const x = point.x + point.width / 2;
+    const y = point.y + point.height - requirements.tileSize / 2;
+
+    if (!inARoom(x, y)) {
+      errors.push(`the save point "${point.id}" is not inside a room`);
+    }
+  }
+
+  if (savePoints.length === 0 && tilePoints.length === 0) {
     warnings.push("there is no save point");
   }
 
