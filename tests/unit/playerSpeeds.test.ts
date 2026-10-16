@@ -28,7 +28,7 @@ describe("PlayerSpeeds", () => {
     expect(speeds.getMaxRunSpeed()).toBe(192);
     expect(speeds.getDashSpeed()).toBe(512);
     expect(speeds.getStandingRunSpeed()).toBe(64);
-    expect(speeds.getLadderClimbSpeed()).toBe(48);
+    expect(speeds.getLadderClimbSpeed()).toBe(44);
   });
 
   it("changes with what the Player owns, asking at every call", () => {

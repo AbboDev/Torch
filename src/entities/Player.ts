@@ -267,8 +267,6 @@ export class Player extends SpriteCollidable {
     return this.shape.getBounds();
   }
 
-  
-
   /**
    * Called before Update
    *
@@ -334,6 +332,10 @@ export class Player extends SpriteCollidable {
       // Handle the crouch action and settle the state of the movement
       this.movement.updateCrouch(this.movementHost);
 
+      if (this.movement.isAttachOnLadder) {
+        this.centerOnLadder();
+      }
+
       // The user can shoot only if the Player has at least one range weapon
       if (this.scene.getInventory().hasAtLeastOneRangeWeapon()) {
         // Handle all the ranged combat actions
@@ -393,6 +395,7 @@ export class Player extends SpriteCollidable {
   protected animate(): void {
     const action = getAnimationAction({
       isOnFloor: this.isOnFloor(),
+      isOnLadder: this.movement.isAttachOnLadder,
       isCrouch: this.movement.isCrouch,
       isHanging: this.movement.isHanging,
       isJumping: this.movement.isJumping,
@@ -403,7 +406,10 @@ export class Player extends SpriteCollidable {
       facingY: this.aim.facing.y,
     });
 
-    const animation = getAnimationKey(action, this.aim.facing.x);
+    const animation = getAnimationKey(
+      action,
+      this.movement.isAttachOnLadder ? DirectionAxisX.CENTER : this.aim.facing.x
+    );
     const doNewAnimation: boolean = animation !== this.anims.getName();
 
     if (doNewAnimation) {
@@ -455,6 +461,40 @@ export class Player extends SpriteCollidable {
       canWallJump: this.movement.canWallJump,
       canDoubleJump: this.movement.canDoubleJump,
     };
+  }
+
+  /**
+   * Keep the body centered on the closest ladder tile it is holding
+   */
+  private centerOnLadder(): void {
+    const bounds = this.getBodyBounds();
+    const layer = this.scene.stairsLayer;
+    const tiles = layer.getTilesWithinWorldXY(
+      bounds.x,
+      bounds.y,
+      bounds.width,
+      bounds.height + 1,
+      { isNotEmpty: true },
+      this.scene.cameras.main
+    );
+
+    let closestX: number | null = null;
+    let closestDistance = Infinity;
+
+    for (const tile of tiles) {
+      const point = layer.tileToWorldXY(tile.x, tile.y);
+      const centerX = point.x + (tile.width * layer.scaleX) / 2;
+      const distance = Math.abs(centerX - bounds.centerX);
+
+      if (distance < closestDistance) {
+        closestX = centerX;
+        closestDistance = distance;
+      }
+    }
+
+    if (closestX !== null) {
+      this.shape.moveTo(closestX - bounds.width / 2, null);
+    }
   }
 
   /**

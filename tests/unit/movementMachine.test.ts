@@ -86,9 +86,9 @@ function firstDifference(a: Observed, b: Observed): string | null {
  * Run the old movement and the state machine on the same world, frame after
  * frame, with the same random buttons, and say where they first differ.
  *
- * The world is made of stretches (on the ground, in the air, at a ledge, on a
- * ladder, in water), so what is around the Player is always possible: no
- * ledge and ladder at once, and so on.
+ * The world is made of stretches (on the ground, in the air, at a ledge, in
+ * water), so what is around the Player is always possible. Ladder behavior
+ * intentionally differs from the old movement and has focused tests below.
  */
 function compare(seed: number, frames: number): string | null {
   const next = random(seed);
@@ -111,7 +111,7 @@ function compare(seed: number, frames: number): string | null {
   let blockedSide: "left" | "right" | null = null;
 
   const chooseMode = (): Mode => {
-    const all: Mode[] = ["ground", "air", "ledge", "ladder", "water"];
+    const all: Mode[] = ["ground", "air", "ledge", "water"];
     const allowed = all.filter((candidate) => {
       if (legacy.isHanging) {
         return candidate === "ledge" || candidate === "air";
@@ -538,6 +538,23 @@ describe("PlayerMovement", () => {
       expect(game.frame(ON_LADDER)).toBe(MovementState.ON_LADDER);
       expect(game.speedY).toBe(0);
     });
+
+    it.each(["jump", "left", "right"] as const)(
+      "lets go when pressing %s",
+      (button) => {
+        const game = new Game();
+        game.turnRight();
+        game.frame(ON_LADDER, { up: true });
+
+        expect(game.frame(ON_LADDER, { up: true, [button]: true })).toBe(
+          MovementState.AIRBORNE
+        );
+        expect(game.frame(ON_LADDER, { up: true, [button]: true })).toBe(
+          MovementState.AIRBORNE
+        );
+        expect(game.host.allowGravity).toBe(true);
+      }
+    );
 
     it("lets go when it reaches the floor, and gravity is back", () => {
       const game = new Game();

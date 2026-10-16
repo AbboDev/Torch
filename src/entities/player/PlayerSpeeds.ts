@@ -45,7 +45,7 @@ export class PlayerSpeeds {
   }
 
   public getLadderClimbSpeed(): number {
-    return TILE_SIZE * 3;
+    return TILE_SIZE * 2.75;
   }
 
   public getDashSpeed(): number {

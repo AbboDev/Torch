@@ -63,7 +63,7 @@ export const SPEEDS = {
   standingRun: 64,
   maxRun: 192,
   dash: 512,
-  ladder: 80,
+  ladder: 44,
   base: 256,
 };
 

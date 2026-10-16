@@ -5,6 +5,7 @@ import { DirectionAxisX, DirectionAxisY } from "@/miscellaneous/Direction";
  */
 export interface AnimationState {
   isOnFloor: boolean;
+  isOnLadder: boolean;
   isCrouch: boolean;
   isHanging: boolean;
   isJumping: boolean;
@@ -17,6 +18,10 @@ export interface AnimationState {
 
 /** The action to play: "idle", "walk", "jump", "aim_up_diagonal", ... */
 export function getAnimationAction(state: AnimationState): string {
+  if (state.isOnLadder) {
+    return "idle";
+  }
+
   if (state.isOnFloor) {
     if (state.isCrouch) {
       return "crouch_idle";

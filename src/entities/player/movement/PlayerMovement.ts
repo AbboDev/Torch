@@ -425,10 +425,14 @@ export class PlayerMovement {
 
     const isDownPressed = host.input.down;
     const isUpPressed = host.input.up;
+    const isDetachPressed =
+      host.input.jump || host.input.left || host.input.right;
 
     let isAttached = this.state === MovementState.ON_LADDER;
 
-    if (this.isOnLadder || isOnTopOfLadder) {
+    if (isDetachPressed) {
+      isAttached = false;
+    } else if (this.isOnLadder || isOnTopOfLadder) {
       if (host.isOnFloor() || !this.isOnLadder) {
         isAttached = false;
       }
@@ -445,6 +449,8 @@ export class PlayerMovement {
 
     if (isAttached) {
       this.state = MovementState.ON_LADDER;
+      host.setAccelerationX(0);
+      host.setVelocityX(0);
 
       if (!isUpPressed && !isDownPressed) {
         host.setVelocityY(0);

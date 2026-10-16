@@ -10,6 +10,7 @@ vi.mock("phaser", () => ({ Math: { Vector2: class Vector2 {} } }));
 
 const state = (change: Partial<AnimationState> = {}): AnimationState => ({
   isOnFloor: true,
+  isOnLadder: false,
   isCrouch: false,
   isHanging: false,
   isJumping: false,
@@ -76,6 +77,7 @@ describe("getAnimationAction", () => {
                     for (const facingY of directions) {
                       const s = {
                         isOnFloor,
+                        isOnLadder: false,
                         isCrouch,
                         isHanging,
                         isJumping,
@@ -109,6 +111,9 @@ describe("getAnimationAction", () => {
     expect(
       getAnimationAction(state({ isOnFloor: false, isHanging: true }))
     ).toBe("hang");
+    expect(
+      getAnimationAction(state({ isOnFloor: false, isOnLadder: true }))
+    ).toBe("idle");
   });
 });
 
