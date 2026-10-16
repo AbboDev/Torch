@@ -460,7 +460,8 @@ export class Player extends SpriteCollidable {
     const bounds = this.getBodyBounds();
     const roomNumber = this.scene.setCurrentRoom(
       bounds.centerX,
-      bounds.centerY
+      bounds.centerY,
+      this.currentRoom
     );
 
     // Update player room variables

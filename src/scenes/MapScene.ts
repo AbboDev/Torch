@@ -1,6 +1,7 @@
 import * as Phaser from "phaser";
 import { ContinuousScene } from "@/scenes/ContinuousScene";
 import { ControllerKey } from "@/miscellaneous/Controller";
+import { findRoomIndex, getRoomId, resolveRoom } from "@/world/rooms";
 import { TiledObject } from "@/entities/scenarios/TiledObject";
 import { Platform } from "@/entities/scenarios/Platform";
 
@@ -119,6 +120,11 @@ export abstract class MapScene extends ContinuousScene {
    */
   public isChangingRoom = false;
 
+  /**
+   * Avoid to warn at every frame while the Player is outside every room
+   */
+  private hasWarnedOutsideRooms = false;
+
   public create(): void {
     super.create();
 
@@ -165,12 +171,31 @@ export abstract class MapScene extends ContinuousScene {
     this.collisionDebugGraphics.setActive(active).setVisible(active);
   }
 
-  public setCurrentRoom(x: number, y: number): number {
-    const currentRoomNumber: boolean | number = this.getCurrentRoom(x, y);
-
-    if (typeof currentRoomNumber !== "number") {
-      throw "Missing room: player outbound";
+  /**
+   * Find the room of a point, update the lighting for it and remember the visit
+   *
+   * @param x       The x coordinate in the world
+   * @param y       The y coordinate in the world
+   * @param current The room the Player is in now (rooms may overlap)
+   *
+   * @return The index of the room. A point outside every room belongs to the
+   * closest one, so a gap between rooms can't crash the game
+   */
+  public setCurrentRoom(x: number, y: number, current?: number | null): number {
+    if (this.rooms.length === 0) {
+      throw new Error("The map has no rooms");
     }
+
+    const { index, outside } = resolveRoom(this.rooms, x, y, current);
+    const currentRoomNumber = index as number;
+
+    if (outside && !this.hasWarnedOutsideRooms) {
+      console.warn(
+        `Position ${x}, ${y} is outside every room: using ${getRoomId(this.rooms[currentRoomNumber])}`
+      );
+    }
+
+    this.hasWarnedOutsideRooms = outside;
 
     let light = DEFAULT_LIGHT;
     const currentRoom = this.rooms[currentRoomNumber];
@@ -187,7 +212,9 @@ export abstract class MapScene extends ContinuousScene {
 
     // Remember the visit in the game state (saved with the game), instead of
     // writing it into the Tiled data: that also works for rooms without properties
-    this.getGameState().visitRoom(MapScene.getRoomId(currentRoom));
+    if (!outside) {
+      this.getGameState().visitRoom(MapScene.getRoomId(currentRoom));
+    }
 
     const ambientColor = this.lights.ambientColor;
     const currentLight = Phaser.Display.Color.GetColor(
@@ -204,27 +231,17 @@ export abstract class MapScene extends ContinuousScene {
   }
 
   /**
-   * A stable id for a room, usable in saves: its name in Tiled
-   * (falling back to the Tiled object id).
+   * A stable id for a room, usable in saves (see world/rooms.ts)
    */
   public static getRoomId(room: TiledObject): string {
-    return room.name || `room_${room.id}`;
+    return getRoomId(room);
   }
 
-  public getCurrentRoom(x: number, y: number): boolean | number {
-    for (const [index, room] of this.rooms.entries()) {
-      const roomLeft = room.x || 0;
-      const roomRight = roomLeft + (room.width || 0);
-      const roomTop = room.y || 0;
-      const roomBottom = roomTop + (room.height || 0);
-
-      // Player is within the boundaries of this room
-      if (x > roomLeft && x < roomRight && y > roomTop && y < roomBottom) {
-        return index;
-      }
-    }
-
-    return false;
+  /**
+   * The index of the room containing a point, or null if there is none
+   */
+  public getCurrentRoom(x: number, y: number): number | null {
+    return findRoomIndex(this.rooms, x, y);
   }
 
   public get worldLayer(): Phaser.Tilemaps.TilemapLayer[] {
