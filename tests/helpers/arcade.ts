@@ -1,5 +1,7 @@
 // The real Arcade Physics integration, so tests of the movement use the same
 // rules as the game instead of a copy of them.
+// Phaser ships this source file without a declaration.
+// @ts-expect-error TS7016
 import World from "../../node_modules/phaser/src/physics/arcade/World.js";
 
 class Vector {

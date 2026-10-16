@@ -8,7 +8,6 @@
     "noEmit": true,
     "skipLibCheck": true,
     "allowJs": true,
-    "noImplicitAny": false,
     "typeRoots": [
       "./node_modules/phaser/types",
       "./node_modules/@types",
