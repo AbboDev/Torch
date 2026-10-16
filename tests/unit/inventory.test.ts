@@ -3,21 +3,20 @@ import { Inventory, PowerUps } from "@/miscellaneous/Inventory";
 import { Switch } from "@/miscellaneous/Switch";
 
 describe("Inventory", () => {
-  it("starts with the torch, the hook and the battery only", () => {
+  it("starts with the battery only", () => {
     const inventory = new Inventory();
 
-    expect(inventory.equip(PowerUps.TORCH)).toBe(true);
-    expect(inventory.equip(PowerUps.HOOK)).toBe(true);
+    expect(inventory.has(PowerUps.TORCH)).toBe(false);
+    expect(inventory.has(PowerUps.HOOK)).toBe(false);
     expect(inventory.hasBattery()).toBe(true);
-    expect(inventory.equip(PowerUps.DASH)).toBe(false);
+    expect(inventory.has(PowerUps.DASH)).toBe(false);
   });
 
   it("does not own the power-ups it has not found yet", () => {
     const inventory = new Inventory();
 
-    expect(inventory.has(PowerUps.DASH)).toBe(false);
     expect(inventory.get(PowerUps.DASH)).toBe(Switch.INDETERMINATE);
-    expect(inventory.has(PowerUps.TORCH)).toBe(true);
+    expect(inventory.get(PowerUps.TORCH)).toBe(Switch.INDETERMINATE);
   });
 
   it("cannot turn on a power-up which is not owned", () => {
@@ -110,8 +109,8 @@ describe("Inventory", () => {
     });
 
     expect(inventory.equip(PowerUps.DASH)).toBe(true);
-    // invalid value falls back to the default
-    expect(inventory.equip(PowerUps.TORCH)).toBe(true);
+    // invalid value falls back to the default: not owned
+    expect(inventory.get(PowerUps.TORCH)).toBe(Switch.INDETERMINATE);
     expect(inventory.getWeaponIds()).toEqual(["bow", "gun"]);
     expect(inventory.getCurrentWeaponId()).toBe("bow");
   });

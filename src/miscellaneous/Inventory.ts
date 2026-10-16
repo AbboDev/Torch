@@ -31,10 +31,7 @@ export interface InventoryNotifier {
   powerUpChanged(item: PowerUps, status: Switch): void;
 }
 
-/**
- * The Player starts with the torch and the hook only: all the other
- * power-ups are not owned until they are granted (INDETERMINATE).
- */
+/** No power-up is owned until it is granted (INDETERMINATE). */
 const defaultPowerUps = (): Record<PowerUps, Switch> => ({
   [PowerUps.TORCH]: Switch.INDETERMINATE,
   [PowerUps.ROCKET]: Switch.INDETERMINATE,
