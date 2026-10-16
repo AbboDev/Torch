@@ -61,7 +61,7 @@ export const PLATFORM_DEFAULT_SPEED = TILE_SIZE * 3;
 export const ROOM_SCHEMA: ObjectSchema = {
   class: "room",
   layer: "objects",
-  color: "#ff4f9fe0",
+  color: "#4f9fe0",
   description:
     "A room: the camera is limited to it. Rooms which touch share a border.",
   properties: {
@@ -83,7 +83,7 @@ export const ROOM_SCHEMA: ObjectSchema = {
 export const DOOR_SCHEMA: ObjectSchema = {
   class: "door",
   layer: "objects",
-  color: "#ffe0a040",
+  color: "#e0a040",
   description: "Takes the Player somewhere else in the map, or in another one.",
   properties: {
     target: {
@@ -108,7 +108,7 @@ export const DOOR_SCHEMA: ObjectSchema = {
 export const SAVE_POINT_SCHEMA: ObjectSchema = {
   class: "save_point",
   layer: "objects",
-  color: "#ff50c878",
+  color: "#50c878",
   description: "Where the game is saved and restarts. Its name is its id.",
   requiresName: true,
   properties: {},
@@ -117,7 +117,7 @@ export const SAVE_POINT_SCHEMA: ObjectSchema = {
 export const SPAWN_POINT_SCHEMA: ObjectSchema = {
   class: "spawn_point",
   layer: "objects",
-  color: "#ffe04f4f",
+  color: "#e04f4f",
   description: "Where the Player starts a new game.",
   properties: {},
 };
@@ -125,7 +125,7 @@ export const SPAWN_POINT_SCHEMA: ObjectSchema = {
 export const MARKER_SCHEMA: ObjectSchema = {
   class: "marker",
   layer: "objects",
-  color: "#ffb0b0b0",
+  color: "#b0b0b0",
   description:
     "A place in the map which other objects refer to, like where a door leads.",
   properties: {},
@@ -134,7 +134,7 @@ export const MARKER_SCHEMA: ObjectSchema = {
 export const PLATFORM_SCHEMA: ObjectSchema = {
   class: "platform",
   layer: "scenario_elements",
-  color: "#ff9b59b6",
+  color: "#9b59b6",
   description: "A moving platform, in the layer scenario_elements.",
   properties: {
     speed: {

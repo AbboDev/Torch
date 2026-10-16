@@ -194,6 +194,19 @@ too. With `npm run dev` the same check runs when the game starts and writes to t
 
 A place which a door leads to is an object of class `marker`.
 
+### The Tiled project
+
+Open `assets/torch.tiled-project` in Tiled: it knows the maps and tilesets, and the object
+types (`assets/objecttypes.json`): choosing the class `door` for an object gives it the
+properties `target`, `targetMap` and `requiresUp` with their defaults, `platform` gives
+`speed`, `direction` and `distance`, and so on. They are made from the schemas in
+`src/world/objectSchemas.ts`, so they can not differ from what the game reads: after changing
+a schema run `npm run tiled:project` (a test fails if the files are not up to date).
+
+The files are written for the object types of Tiled 1.8, the version `chozodia.json` was saved
+with. Newer versions call the class of an object `class` in the JSON instead of `type`: the game
+reads both.
+
 ### Save points
 
 An object of type `save_point`: its `name`, with the name of the map, is what the

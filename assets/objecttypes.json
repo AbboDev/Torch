@@ -1,0 +1,75 @@
+[
+    {
+        "color": "#4f9fe0",
+        "name": "room",
+        "properties": [
+            {
+                "name": "background",
+                "type": "string",
+                "value": ""
+            },
+            {
+                "name": "dark",
+                "type": "string",
+                "value": ""
+            }
+        ]
+    },
+    {
+        "color": "#e0a040",
+        "name": "door",
+        "properties": [
+            {
+                "name": "target",
+                "type": "object",
+                "value": 0
+            },
+            {
+                "name": "targetMap",
+                "type": "string",
+                "value": ""
+            },
+            {
+                "name": "requiresUp",
+                "type": "bool",
+                "value": false
+            }
+        ]
+    },
+    {
+        "color": "#50c878",
+        "name": "save_point",
+        "properties": []
+    },
+    {
+        "color": "#e04f4f",
+        "name": "spawn_point",
+        "properties": []
+    },
+    {
+        "color": "#b0b0b0",
+        "name": "marker",
+        "properties": []
+    },
+    {
+        "color": "#9b59b6",
+        "name": "platform",
+        "properties": [
+            {
+                "name": "speed",
+                "type": "float",
+                "value": 48
+            },
+            {
+                "name": "direction",
+                "type": "string",
+                "value": "horizontal"
+            },
+            {
+                "name": "distance",
+                "type": "int",
+                "value": 0
+            }
+        ]
+    }
+]
