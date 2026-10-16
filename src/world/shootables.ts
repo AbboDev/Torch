@@ -1,3 +1,4 @@
+import { Damageable, DamageSource, applyDamage } from "@/combat/damage";
 import type { Point } from "@/entities/player/aimAngles";
 
 /** A thing which can be shot and is not a tile: an enemy */
@@ -8,6 +9,11 @@ export interface Shootable {
   contains(x: number, y: number): boolean;
   /** Where it is now: the aim locks on it and follows it */
   position(): Point | null;
+  /**
+   * What takes the damage of what hits it: its life and its defense. A thing
+   * with no target can be aimed at, but not hurt.
+   */
+  target?: Damageable;
 }
 
 /**
@@ -40,6 +46,18 @@ export class Shootables {
     }
 
     return positions;
+  }
+
+  /**
+   * Hurt the thing at a point of the world, if there is one with life: this is
+   * what a shot which lands does, with the damage of its weapon.
+   *
+   * @return The life it took, 0 if nothing is hurt
+   */
+  public hit(x: number, y: number, source: DamageSource): number {
+    const target = this.find(x, y)?.target;
+
+    return target ? applyDamage(target, source) : 0;
   }
 
   /** The thing at a point of the world, if any */
