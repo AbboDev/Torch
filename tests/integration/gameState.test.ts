@@ -162,7 +162,12 @@ describe("the save point of a save", () => {
     const state = new GameState();
 
     state.restore({
-      world: { visitedRooms: [], savePoint: "save_lab" as never, flags: [] },
+      world: {
+        visitedRooms: [],
+        savePoint: "save_lab" as never,
+        flags: [],
+        explored: {},
+      },
     });
 
     expect(state.getSavePoint()).toBeNull();
