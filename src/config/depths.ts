@@ -7,4 +7,5 @@ export const ABOVE_LAYER_DEPTH = 1000;
 export const GLOBAL_ABOVE_LAYER_DEPTH = 2000;
 export const WORLD_LAYER_DEPTH = 999;
 export const STAIRS_LAYER_DEPTH = 9;
-export const SLOPES_LAYER_DEPTH = 9;
+/** Same plane as the other world blocks, so a slope covers the Player */
+export const SLOPES_LAYER_DEPTH = WORLD_LAYER_DEPTH;
