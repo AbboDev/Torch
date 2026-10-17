@@ -1,4 +1,6 @@
 import * as Phaser from "phaser";
+import type { DamageSource } from "@/combat/damage";
+import { WEAPON_DAMAGE } from "@/config/weapons";
 import { Facing, getSign } from "@/miscellaneous/Direction";
 import { octantSign } from "@/entities/player/aimAngles";
 import { MapScene } from "@/scenes/MapScene";
@@ -21,6 +23,12 @@ export class Bullet extends Phaser.Physics.Arcade.Sprite {
    * @type {Phaser.Physics.Arcade.Body}
    */
   declare public body: Phaser.Physics.Arcade.Body;
+
+  /**
+   * What the bullet hurts with when it lands on something with life: it is
+   * the damage of its weapon, and every kind of bullet sets its own
+   */
+  public damage: DamageSource = WEAPON_DAMAGE.gun;
 
   /**
    * The baseSpeed of the bullet

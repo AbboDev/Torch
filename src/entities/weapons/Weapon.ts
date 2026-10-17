@@ -1,4 +1,5 @@
 import * as Phaser from "phaser";
+import { Damageable, applyDamage } from "@/combat/damage";
 import { Bullet, BulletConfig } from "@/entities/bullets/Bullet";
 import { SLOPES_LAYER_NAME } from "@/world/slopesLayer";
 import { MapScene } from "@/scenes/MapScene";
@@ -50,6 +51,21 @@ export class Weapon extends GroupCollidable {
           this
         ) as Phaser.Types.Physics.Arcade.ArcadePhysicsCallback
       );
+    }
+
+    scene.physics.add.overlap(this, scene.enemies, (bullet, enemy) =>
+      this.hitEnemy(bullet as Bullet, enemy as unknown as Damageable)
+    );
+  }
+
+  /**
+   * A shot which lands on an enemy: it hurts with the damage of its weapon, by
+   * the defense of the enemy, and it is gone
+   */
+  protected hitEnemy(bullet: Bullet, enemy: Damageable): void {
+    if (bullet.active) {
+      applyDamage(enemy, bullet.damage);
+      bullet.impact();
     }
   }
 
