@@ -450,3 +450,57 @@ An enemy joins in the same way: it is a `Damageable` (its life and defense), it 
 zone with its own `DamageOverTime`. What it does to the Player is a `DamageSource` of its own.
 
 Not done yet: what happens when the life is over, and a short time without damage after a hit.
+
+## 👾 Enemies
+
+An enemy is made of three things, so a new one is cheap to add:
+
+- **What it is** (`src/config/enemies.ts`): one `EnemyDefinition` for every kind, with the size of its
+  body, its life, its speed, its defense, what it does to the Player which touches it and how often.
+  The numbers are placeholders, for the game design to set.
+- **How it thinks** (`src/enemies/`): a brain, which gets what the enemy senses and tells what it wants
+  to do, with no Phaser: the rules are in unit tests. `PatrolBrain` is the one of the walker.
+- **The class** (`src/enemies/Enemy.ts`): the base. An `Enemy` stands on the map as the Player does (the
+  same tiles stop it, platforms and stairs included), has life and a defense (`Health`, a `Damageable`),
+  is a shootable of the scene (so the aim, the lock and the minimap find it) and hurts the Player which
+  touches it, once every `contactCooldown`. A kind only writes `think`.
+
+### The walker
+
+`Walker` (`src/enemies/Walker.ts`) walks along the floor until it touches a wall or finds a hole, then
+goes back, for ever. What it senses is in `src/enemies/senses.ts`: a wall touching its body at any height,
+and the ground under its next step. It walks up and down the slopes. If it is boxed in between two walls
+or holes it stays where it is; in the air it goes on as it was.
+
+### Putting an enemy in the map
+
+In Tiled, an object of type `enemy` in the layer `scenario_elements`, with the custom properties:
+
+| Property | Type | |
+| -------- | ---- | - |
+| `kind` | string | a key of `ENEMY_DEFINITIONS`; `walker` if it is not given |
+| `direction` | string | `left` or `right`: where it goes first; `left` if it is not given |
+
+The enemy stands with its feet at the bottom of the object and its middle at the middle of it, so a
+rectangle drawn on the floor puts it on the floor.
+
+### Adding a kind of enemy
+
+1. Add its `EnemyDefinition` to `ENEMY_DEFINITIONS`.
+2. Write its class: it extends `Enemy` and writes `think` (a new brain, in `src/enemies/`, if it needs one).
+3. Add the class to `ENEMY_FACTORIES` in `src/enemies/registry.ts`: the type asks for every kind, so a
+   kind with no class does not compile.
+
+Until a kind has art, its sprite is a box of its color (`enemyTextures.ts`); load a texture with the key
+of the definition and it is used instead.
+
+### Damage
+
+The shots hurt the enemies with the damage of their weapon (`WEAPON_DAMAGE`), by the defense of the
+enemy, and an enemy which has no life left goes away. What the enemy does to the Player is
+`hero.hurt(contact)`: see "Damage" above.
+
+Not done yet: a death animation or drops, a short time without damage after being hit (the Player is
+hurt every `contactCooldown` while it touches an enemy), remembering the enemies killed when the scene
+starts again, enemies which only act in the room of the Player, enemies which shoot, and lighting the
+enemies (they are seen in the dark rooms as the Player is).
