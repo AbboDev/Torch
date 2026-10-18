@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { ENEMY_DEFINITIONS, ENEMY_KINDS, isEnemyKind } from "@/config/enemies";
+import { DOWN, LEFT, RIGHT, UP } from "@/enemies/crawl";
 import { parseEnemySpawns } from "@/enemies/spawns";
 
 const enemy = (
@@ -60,6 +61,8 @@ describe("parseEnemySpawns", () => {
       x: 100,
       y: 200,
       heading: -1,
+      surface: DOWN,
+      direction: LEFT,
     });
   });
 
@@ -103,6 +106,60 @@ describe("parseEnemySpawns", () => {
     ]);
 
     expect(spawn.heading).toBe(-1);
+    expect(warn).toHaveBeenCalledTimes(1);
+    warn.mockRestore();
+  });
+
+  it("reads the surface an enemy clings to and the way it goes along it", () => {
+    const [onWall, onCeiling] = parseEnemySpawns([
+      enemy(1, [
+        { name: "surface", value: "right" },
+        { name: "direction", value: "down" },
+      ]),
+      enemy(2, [
+        { name: "surface", value: "up" },
+        { name: "direction", value: "right" },
+      ]),
+    ]);
+
+    expect(onWall.surface).toEqual(RIGHT);
+    expect(onWall.direction).toEqual(DOWN);
+    expect(onCeiling.surface).toEqual(UP);
+    expect(onCeiling.direction).toEqual(RIGHT);
+    expect(onCeiling.heading).toBe(1);
+  });
+
+  it("goes up a wall if no direction is given for a wall", () => {
+    const [spawn] = parseEnemySpawns([enemy(1, [{ name: "surface", value: "left" }])]);
+
+    expect(spawn.direction).toEqual(UP);
+  });
+
+  it("goes the default way, with a warning, if the direction is not along the surface", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const [floor, wall] = parseEnemySpawns([
+      enemy(1, [{ name: "direction", value: "up" }]),
+      enemy(2, [
+        { name: "surface", value: "left" },
+        { name: "direction", value: "right" },
+      ]),
+    ]);
+
+    expect(floor.direction).toEqual(LEFT);
+    expect(wall.direction).toEqual(UP);
+    expect(warn).toHaveBeenCalledTimes(2);
+    warn.mockRestore();
+  });
+
+  it("is on the floor, with a warning, for a surface which does not exist", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const [spawn] = parseEnemySpawns([
+      enemy(1, [{ name: "surface", value: "sideways" }]),
+    ]);
+
+    expect(spawn.surface).toEqual(DOWN);
     expect(warn).toHaveBeenCalledTimes(1);
     warn.mockRestore();
   });
