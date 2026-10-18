@@ -39,6 +39,17 @@ export const ENEMY_DEFINITIONS = {
     contact: { kind: "physical", amount: 5 },
     contactCooldown: 800,
   },
+  /** Crawls on the floor, up the walls and along the ceilings, round the corners */
+  crawler: {
+    texture: "enemy_crawler",
+    color: 0x8e44ad,
+    width: TILE_SIZE,
+    height: TILE_SIZE,
+    life: 8,
+    speed: TILE_SIZE * 2,
+    contact: { kind: "physical", amount: 5 },
+    contactCooldown: 800,
+  },
 } as const satisfies Record<string, EnemyDefinition>;
 
 export type EnemyKind = keyof typeof ENEMY_DEFINITIONS;

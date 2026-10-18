@@ -1,3 +1,4 @@
+import type { CellGrid } from "@/enemies/crawl";
 import type { TerrainProbe } from "@/enemies/senses";
 import type { MapScene } from "@/scenes/MapScene";
 
@@ -29,5 +30,24 @@ export function createTerrainProbe(scene: MapScene): TerrainProbe {
         !!stair && !scene.map.getTileAt(stair.x, stair.y - 1, false, "stairs")
       );
     },
+  };
+}
+
+/**
+ * What the map has in every cell (a tile), for the enemies which crawl along
+ * the walls: the solid tiles, the blocks which can be broken and the slopes
+ * are things to cling to, and so is the edge of the map. The platforms and the
+ * stairs are not: they are for walking.
+ */
+export function createCellGrid(scene: MapScene): CellGrid {
+  return {
+    isSolid: (col, row) =>
+      col < 0 ||
+      row < 0 ||
+      col >= scene.map.width ||
+      row >= scene.map.height ||
+      scene.collisionsLayer.hasTileAt(col, row) ||
+      scene.breakablesLayer.hasTileAt(col, row) ||
+      !!scene.slopesLayer?.hasTileAt(col, row),
   };
 }

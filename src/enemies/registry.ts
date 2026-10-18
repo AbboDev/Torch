@@ -1,5 +1,6 @@
 import type { EnemyKind } from "@/config/enemies";
 import type { Enemy } from "@/enemies/Enemy";
+import { Crawler } from "@/enemies/Crawler";
 import type { EnemySpawn } from "@/enemies/spawns";
 import { Walker } from "@/enemies/Walker";
 import type { MapScene } from "@/scenes/MapScene";
@@ -13,6 +14,7 @@ export type EnemyFactory = (scene: MapScene, spawn: EnemySpawn) => Enemy;
  */
 export const ENEMY_FACTORIES: Record<EnemyKind, EnemyFactory> = {
   walker: (scene, spawn) => new Walker(scene, spawn),
+  crawler: (scene, spawn) => new Crawler(scene, spawn),
 };
 
 export function createEnemy(scene: MapScene, spawn: EnemySpawn): Enemy {
