@@ -472,17 +472,36 @@ goes back, for ever. What it senses is in `src/enemies/senses.ts`: a wall touchi
 and the ground under its next step. It walks up and down the slopes. If it is boxed in between two walls
 or holes it stays where it is; in the air it goes on as it was.
 
+### The crawler
+
+`Crawler` (`src/enemies/Crawler.ts`) crawls along any surface: the floor, up a wall, along the ceiling, and
+round the corners, like the Zoomers of Metroid. It does not walk by physics: it goes from tile to tile
+(`src/enemies/crawl.ts`, no Phaser, tested on drawn worlds and on the real map), so gravity does not pull it
+and the tiles do not stop it. It moves cell by cell, with two rules:
+
+- a wall in the way (an inner corner): it turns and goes up the wall;
+- where its surface ends (an outer corner): it goes past the edge and down beside it, round the corner.
+
+It turns the sprite so the surface is under it (the art stands on a floor and looks to the right). What it
+clings to is the solid tiles, the blocks which can be broken, the slopes (as walls: it does not follow their
+slant) and the edge of the map; platforms and stairs are not. If what it clings to goes away (a block which
+is broken) it falls, faster than it crawls, and clings to what it lands on. If it is boxed in it stays.
+
 ### Putting an enemy in the map
 
 In Tiled, an object of type `enemy` in the layer `scenario_elements`, with the custom properties:
 
 | Property | Type | |
 | -------- | ---- | - |
-| `kind` | string | a key of `ENEMY_DEFINITIONS`; `walker` if it is not given |
-| `direction` | string | `left` or `right`: where it goes first; `left` if it is not given |
+| `kind` | string | a key of `ENEMY_DEFINITIONS` (`walker` or `crawler`); `walker` if it is not given |
+| `direction` | string | `left`, `right`, `up` or `down`: where it goes first; `left` if it is not given (`up` on a wall) |
+| `surface` | string | `down`, `left`, `right` or `up`: the side where the floor, wall or ceiling it clings to is; `down` if it is not given. Only for the crawler, and it must be at right angles with `direction` |
 
 The enemy stands with its feet at the bottom of the object and its middle at the middle of it, so a
-rectangle drawn on the floor puts it on the floor.
+rectangle drawn on the floor puts it on the floor. A crawler goes in the cell of the object (draw one tile).
+If what it should cling to is not there it clings to what is around, and if there is nothing it falls to a
+floor. The art of an enemy which has none is a box with a light stripe on its top and a light square on its
+front, so that it can be seen which way it stands and goes.
 
 ### Adding a kind of enemy
 
