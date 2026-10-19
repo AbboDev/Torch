@@ -472,6 +472,22 @@ goes back, for ever. What it senses is in `src/enemies/senses.ts`: a wall touchi
 and the ground under its next step. It walks up and down the slopes. If it is boxed in between two walls
 or holes it stays where it is; in the air it goes on as it was.
 
+### The jumper
+
+`Jumper` (`src/enemies/Jumper.ts`) jumps at regular intervals, forward, and where it hits a wall it turns
+round and comes back. It does not look at the ground, so unlike the walker it **can fall** off a ledge or
+into a hole, and it goes on where it lands. How it decides is `HopBrain` (`src/enemies/hop.ts`, no Phaser):
+
+- on the ground it waits; it jumps once every `jump.interval` ms, counted from the last jump (the first one
+  after the interval from when it starts); if it is in the air at the time it jumps as soon as it lands;
+- while it is in the air it goes forward at `speed`; on the ground it stays still;
+- a wall touching it on the way ahead makes it turn round, also in the air; if there are walls at both
+  sides it jumps in the same place.
+
+The height of the jump is `jump.height` of its definition, and the speed to reach it is worked out from the
+gravity of the game (`getJumpSpeed`), so it stays right if the gravity changes. It lands on the slopes and
+goes up and down them as the Player does.
+
 ### The crawler
 
 `Crawler` (`src/enemies/Crawler.ts`) crawls along any surface: the floor, up a wall, along the ceiling, and
@@ -493,7 +509,7 @@ In Tiled, an object of type `enemy` in the layer `scenario_elements`, with the c
 
 | Property | Type | |
 | -------- | ---- | - |
-| `kind` | string | a key of `ENEMY_DEFINITIONS` (`walker` or `crawler`); `walker` if it is not given |
+| `kind` | string | a key of `ENEMY_DEFINITIONS` (`walker`, `jumper` or `crawler`); `walker` if it is not given |
 | `direction` | string | `left`, `right`, `up` or `down`: where it goes first; `left` if it is not given (`up` on a wall) |
 | `surface` | string | `down`, `left`, `right` or `up`: the side where the floor, wall or ceiling it clings to is; `down` if it is not given. Only for the crawler, and it must be at right angles with `direction` |
 
