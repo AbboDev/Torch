@@ -19,6 +19,13 @@ export interface EnemyDefinition {
   life: number;
   /** How fast it moves, in pixels for a second */
   speed: number;
+  /** For the enemies which jump: how often, and how high */
+  jump?: {
+    /** Milliseconds between two jumps */
+    interval: number;
+    /** The height of a jump, in pixels */
+    height: number;
+  };
   /** What protects it from the damage it takes */
   defense?: Defense;
   /** What it does to the Player which touches it */
@@ -37,6 +44,19 @@ export const ENEMY_DEFINITIONS = {
     life: 6,
     speed: TILE_SIZE * 2,
     contact: { kind: "physical", amount: 5 },
+    contactCooldown: 800,
+  },
+  /** Jumps at regular intervals, forward; it turns back at a wall and it can fall */
+  jumper: {
+    texture: "enemy_jumper",
+    color: 0x27ae60,
+    width: TILE_SIZE,
+    height: TILE_SIZE,
+    life: 5,
+    // sideways, in the air
+    speed: TILE_SIZE * 4,
+    jump: { interval: 1200, height: TILE_SIZE * 2 },
+    contact: { kind: "physical", amount: 4 },
     contactCooldown: 800,
   },
   /** Crawls on the floor, up the walls and along the ceilings, round the corners */

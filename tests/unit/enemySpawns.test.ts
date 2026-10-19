@@ -28,6 +28,20 @@ describe("ENEMY_DEFINITIONS", () => {
     }
   });
 
+  it("gives the enemies which jump an interval and a height", () => {
+    const jumpers = ENEMY_KINDS.filter((kind) => "jump" in ENEMY_DEFINITIONS[kind]);
+
+    expect(jumpers).toContain("jumper");
+    for (const kind of jumpers) {
+      const { jump } = ENEMY_DEFINITIONS[kind] as {
+        jump: { interval: number; height: number };
+      };
+
+      expect(jump.interval).toBeGreaterThan(0);
+      expect(jump.height).toBeGreaterThan(0);
+    }
+  });
+
   it("has a texture of its own for every kind", () => {
     const textures = ENEMY_KINDS.map((kind) => ENEMY_DEFINITIONS[kind].texture);
 
