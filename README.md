@@ -1,6 +1,6 @@
 # Torch
 
-A 2D Metroidvania game built with **Phaser 4**, **TypeScript**, **Vite**, and **Tiled**, wrapped for desktop distribution with **Tauri** (WIP). Inspired by classics like _Super Metroid_, the game features 8-directional aiming, shared ammo mechanics, dynamic 2D lighting, 360° grapple beam mechanics, breakable tiles and a lot of features.
+A 2D Metroidvania game built with **Phaser 4**, **TypeScript**, **Vite**, and **Tiled**, wrapped for desktop distribution with **Tauri**. Inspired by classics like _Super Metroid_, the game features 8-directional aiming, shared ammo mechanics, dynamic 2D lighting, 360° grapple beam mechanics, breakable tiles and a lot of features.
 
 ---
 
@@ -30,6 +30,21 @@ A 2D Metroidvania game built with **Phaser 4**, **TypeScript**, **Vite**, and **
 | `npm run typecheck` | Run TypeScript type check without emitting files.              |
 | `npm run build`     | Create a minified production build in `build/`.                |
 | `npm run build:dev` | Create a source-mapped, unminified build in `build/`.          |
+
+### Desktop (Tauri)
+
+The game is wrapped in a dedicated window with [Tauri](https://tauri.app/). Before running any Tauri command, the version from `package.json` is synced into `src-tauri/Cargo.toml` and `src-tauri/tauri.conf.json` by `npm run tauri:version`.
+
+| Command                 | Description                                                                 |
+| :---------------------- | :-------------------------------------------------------------------------- |
+| `npm run tauri:version` | Sync `package.json` version into the Tauri sidecar files.                   |
+| `npm run tauri:dev`     | Start the Vite dev server, then launch the Tauri app in a dedicated window. |
+| `npm run tauri:build`   | Build the Vite frontend, then build the Tauri binary.                      |
+| `npm run tauri:release` | Same as `tauri:build`, but compiles the Rust sidecar in release mode.      |
+
+> **Requirements:** a working [Rust](https://rust-lang.org/) toolchain (`cargo`, `rustc`) and the platform-specific Tauri build dependencies (see the [Tauri docs](https://tauri.app/v2/guides/system-requires/)).
+
+> **Note:** `npm run tauri:dev` and `npm run tauri:build` automatically run `npm run tauri:version`, so you never have to sync the version by hand.
 
 ---
 

@@ -18,7 +18,11 @@
     "test:integration": "vitest run tests/integration",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "tauri:version": "node scripts/syncTauriVersion.mjs",
+    "tauri:dev": "npm run tauri:version && tauri dev",
+    "tauri:build": "npm run tauri:version && tauri build",
+    "tauri:release": "npm run tauri:version && tauri build --release"
   },
   "lint-staged": {
     "*.{js,mjs,cjs,ts,tsx}": "eslint --fix",
@@ -41,6 +45,7 @@
     "@commitlint/cli": "^21.2.3",
     "@commitlint/config-conventional": "^21.2.3",
     "@eslint/js": "^10.0.1",
+    "@tauri-apps/cli": "^2.12.3",
     "eslint": "^10.11.0",
     "eslint-config-prettier": "^10.1.8",
     "globals": "^17.13.0",
