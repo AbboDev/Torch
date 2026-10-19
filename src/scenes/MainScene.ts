@@ -31,6 +31,9 @@ import { toBounds } from "@/world/scroll";
 import { breakableFlag } from "@/world/worldFlags";
 import { useSavePoint } from "@/state/checkpoint";
 import { getRoomProperty } from "@/world/rooms";
+import { createEnemy } from "@/enemies/registry";
+import { parseEnemySpawns } from "@/enemies/spawns";
+import { Enemy } from "@/enemies/Enemy";
 import { buildMinimapMap } from "@/world/minimap";
 import { revealAround } from "@/world/minimapTracker";
 import { DEV_LOADOUT } from "@/config/dev";
@@ -332,11 +335,10 @@ export class MainScene extends MapScene {
       }
     }
 
-    MainScene.objects.spawn(
-      "scenario_elements",
-      this.getMapObjects("scenario_elements"),
-      objectContext
-    );
+    const sceneryObjects: TiledObject[] =
+      this.getMapObjects("scenario_elements");
+
+    MainScene.objects.spawn("scenario_elements", sceneryObjects, objectContext);
 
     this.physics.world.setBounds(
       0,
@@ -344,6 +346,11 @@ export class MainScene extends MapScene {
       this.map.widthInPixels,
       this.map.heightInPixels
     );
+
+    // The enemies stand on the map: they come after its layers and its slopes
+    for (const spawn of parseEnemySpawns(sceneryObjects)) {
+      this.enemies.add(createEnemy(this, spawn));
+    }
 
     // Restart from the last used save point, if any, otherwise from the start
     // (a save point of another map is not for this one)

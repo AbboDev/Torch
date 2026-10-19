@@ -1,6 +1,7 @@
 import * as Phaser from "phaser";
 import { MAPS } from "@/config/maps";
 import { SOUNDS } from "@/config/sounds";
+import { createEnemyTextures } from "@/enemies/enemyTextures";
 import { PlayerAssets } from "@/entities/player/PlayerAssets";
 import { BulletAssets } from "@/entities/bullets/BulletAssets";
 
@@ -90,6 +91,8 @@ export class PreloaderScene extends Phaser.Scene {
 
   public create(): void {
     PlayerAssets.create(this);
+    createEnemyTextures(this);
+
     BulletAssets.registerBulletAnimations(this);
 
     this.scene

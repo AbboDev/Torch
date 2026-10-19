@@ -70,6 +70,12 @@ export abstract class MapScene extends ContinuousScene {
   public platforms!: Phaser.GameObjects.Group;
 
   /**
+   * The enemies of the map: they are updated with the scene, and the Player
+   * and the shots overlap them (see `enemies/registry` to make one)
+   */
+  public enemies!: Phaser.GameObjects.Group;
+
+  /**
    * The tilemap layer where all the liquids will be implemented
    *
    * @type {Phaser.Tilemaps.TilemapLayer}
@@ -177,6 +183,13 @@ export abstract class MapScene extends ContinuousScene {
       maxSize: -1,
       runChildUpdate: true,
       classType: Platform,
+    });
+
+    // A new one every time the scene starts: the enemies of the last one are gone
+    this.enemies = this.add.group({
+      active: true,
+      maxSize: -1,
+      runChildUpdate: true,
     });
   }
 
