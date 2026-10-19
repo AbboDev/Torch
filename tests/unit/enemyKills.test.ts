@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { applyDamage } from "@/combat/damage";
+import { applyDamage, NO_DEFENSE } from "@/combat/damage";
 import { Health } from "@/combat/Health";
-import { ENEMY_DEFINITIONS, ENEMY_KINDS } from "@/config/enemies";
+import { ENEMY_DEFINITIONS, ENEMY_KINDS, EnemyDefinition } from "@/config/enemies";
 import { WEAPON_DAMAGE } from "@/config/weapons";
 import { WEAPON_IDS } from "@/miscellaneous/Inventory";
 
@@ -10,8 +10,8 @@ function shotsToKill(
   kind: (typeof ENEMY_KINDS)[number],
   weapon: (typeof WEAPON_IDS)[number]
 ): number | null {
-  const definition = ENEMY_DEFINITIONS[kind];
-  const health = new Health(definition.life, definition.defense);
+  const definition = ENEMY_DEFINITIONS[kind] as EnemyDefinition;
+  const health = new Health(definition.life, definition.defense ?? NO_DEFENSE);
 
   for (let shots = 1; shots <= 1000; shots++) {
     applyDamage(health, WEAPON_DAMAGE[weapon]);
