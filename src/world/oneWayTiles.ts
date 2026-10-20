@@ -22,29 +22,29 @@ export interface TileCollisionQuery {
   layer: string;
   index: number;
   /** The x of the left of the tile */
-  tileLeft: number;
+  tileLeft?: number;
   /** The x of the right of the tile */
-  tileRight: number;
+  tileRight?: number;
   /** The y of the top of the tile */
   tileTop: number;
   /** The y of the bottom of the tile */
-  tileBottom: number;
+  tileBottom?: number;
   /** Asked only when needed */
   feetBottom(): number;
   /** The y of the top of the body, asked only when it has to be */
-  headTop(): number;
+  headTop?(): number;
   /**
    * Which side of the tile the body presses against: "left" if its center is
    * to the left of the tile's center (it comes from the left), "right"
    * otherwise. Asked only by the horizontal one-way tiles.
    */
-  approachingFrom(): "left" | "right";
+  approachingFrom?(): "left" | "right";
   /**
    * The Tiled property `oneWayDirection` of the tile (tileset or tile
    * property), or null if there is none. Asked only for the layers which are
    * not one-way by themselves.
    */
-  oneWayDirection(): OneWayDirection | null;
+  oneWayDirection?(): OneWayDirection | null;
   isDownPressed(): boolean;
   hasTileAbove(): boolean;
 }
@@ -60,7 +60,7 @@ function collidesHorizontally(
   direction: "left" | "right",
   query: TileCollisionQuery
 ): boolean {
-  const comingFrom = query.approachingFrom();
+  const comingFrom = query.approachingFrom ? query.approachingFrom() : null;
 
   return direction === "left" ? comingFrom === "left" : comingFrom === "right";
 }
@@ -82,7 +82,7 @@ export function collidesWithTile(query: TileCollisionQuery): boolean {
       return false;
 
     default: {
-      const direction = query.oneWayDirection();
+      const direction = query.oneWayDirection ? query.oneWayDirection() : null;
 
       switch (direction) {
         case "left":
@@ -92,8 +92,12 @@ export function collidesWithTile(query: TileCollisionQuery): boolean {
         case "up":
           return query.feetBottom() - 1 < query.tileTop;
 
-        case "down":
-          return query.headTop() + 1 > query.tileBottom;
+        case "down": {
+          const headTop = query.headTop ? query.headTop() : 0;
+          const tileBottom = query.tileBottom ?? query.tileTop;
+
+          return headTop + 1 <= tileBottom;
+        }
 
         default:
           return true;

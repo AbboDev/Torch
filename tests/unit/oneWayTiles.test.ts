@@ -97,7 +97,10 @@ describe("collidesWithTile", () => {
       // Coming from the left: the Player presses the right face
       expect(
         collidesWithTile(
-          query({ oneWayDirection: () => "left", approachingFrom: () => "left" })
+          query({
+            oneWayDirection: () => "left",
+            approachingFrom: () => "left",
+          })
         )
       ).toBe(true);
     });
@@ -181,26 +184,28 @@ describe("collidesWithTile", () => {
     });
 
     it("is solid like any other tile when there is no one-way property", () => {
-      expect(
-        collidesWithTile(query({ oneWayDirection: () => null }))
-      ).toBe(true);
+      expect(collidesWithTile(query({ oneWayDirection: () => null }))).toBe(
+        true
+      );
+    });
+
+    it("is solid like any other tile when oneWayDirection is not provided", () => {
+      expect(collidesWithTile(query({ oneWayDirection: undefined }))).toBe(
+        true
+      );
     });
 
     it("is not there without a tile, whatever the direction", () => {
       expect(
-        collidesWithTile(
-          query({ index: -1, oneWayDirection: () => "left" })
-        )
+        collidesWithTile(query({ index: -1, oneWayDirection: () => "left" }))
       ).toBe(false);
       expect(
-        collidesWithTile(
-          query({ index: -1, oneWayDirection: () => "right" })
-        )
+        collidesWithTile(query({ index: -1, oneWayDirection: () => "right" }))
       ).toBe(false);
     });
 
     it("does not ask the direction when the layer is platforms or stairs", () => {
-      const oneWayDirection = vi.fn(() => "left");
+      const oneWayDirection = vi.fn<() => "left">(() => "left");
 
       collidesWithTile(query({ layer: "platforms", oneWayDirection }));
       expect(oneWayDirection).not.toHaveBeenCalled();
@@ -210,11 +215,9 @@ describe("collidesWithTile", () => {
     });
 
     it("does not ask the horizontal position when the direction is up/down", () => {
-      const approachingFrom = vi.fn(() => "left");
+      const approachingFrom = vi.fn<() => "left">(() => "left");
 
-      collidesWithTile(
-        query({ oneWayDirection: () => "up", approachingFrom })
-      );
+      collidesWithTile(query({ oneWayDirection: () => "up", approachingFrom }));
       expect(approachingFrom).not.toHaveBeenCalled();
 
       collidesWithTile(

@@ -6,6 +6,10 @@ import type { EnemyDefinition } from "@/config/enemies";
 import type { EnemySpawn } from "@/enemies/spawns";
 import { SpriteCollidable } from "@/entities/collidables/SpriteCollidable";
 import type { MapScene } from "@/scenes/MapScene";
+import {
+  getApproachingSide,
+  readOneWayDirection,
+} from "@/world/horizontalOneWayBody";
 import { collidesWithTile } from "@/world/oneWayTiles";
 
 /** What an enemy needs of what it touches: it can be hurt */
@@ -113,8 +117,15 @@ export abstract class Enemy extends SpriteCollidable implements Damageable {
     return collidesWithTile({
       layer: tile.layer.name,
       index: tile.index,
+      tileLeft: tile.pixelX,
+      tileRight: tile.pixelX + tile.width,
       tileTop: tile.pixelY,
+      tileBottom: tile.pixelY + tile.height,
       feetBottom: () => this.body.bottom,
+      headTop: () => this.body.top,
+      approachingFrom: () =>
+        getApproachingSide(this.body.center.x, tile.pixelX + tile.width / 2),
+      oneWayDirection: () => readOneWayDirection(tile.properties),
       isDownPressed: () => false,
       hasTileAbove: () =>
         !!this.scene.map.getTileAt(tile.x, tile.y - 1, false, "stairs"),

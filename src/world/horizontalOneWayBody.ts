@@ -60,12 +60,12 @@ export function getApproachingSide(
  *   other side stays solid, so it can never be pushed back the way it came.
  *
  * @param body      The Phaser body of the Player
- * @param facingX   Facing of the Player: -1 looks left, +1 looks right, 0 neither
+ * @param facingX   Facing of the Player along the X axis
  * @param isOnFloor Whether the Player stands on something
  */
 export function updateHorizontalOneWayFlags(
   body: OneWayBodyLike,
-  facingX: number,
+  facingX: DirectionAxisX | null,
   isOnFloor: boolean
 ): void {
   // Reset only the sides: blocked.up/down are used by the slopes and the
@@ -74,7 +74,9 @@ export function updateHorizontalOneWayFlags(
 
   const mayPassThrough = body.velocity.y < 0 && !isOnFloor;
 
-  body.checkCollision.left = !(mayPassThrough && facingX === DirectionAxisX.LEFT);
+  body.checkCollision.left = !(
+    mayPassThrough && facingX === DirectionAxisX.LEFT
+  );
   body.checkCollision.right = !(
     mayPassThrough && facingX === DirectionAxisX.RIGHT
   );

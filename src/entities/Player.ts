@@ -38,6 +38,10 @@ import { PlayerWeapons } from "@/entities/player/PlayerWeapons";
 import { MapScene } from "@/scenes/MapScene";
 import { PlayerStats } from "@/state/GameState";
 import { hasLedgeToClimb, hasRoomToClimb } from "@/world/ledgeClimb";
+import {
+  getApproachingSide,
+  readOneWayDirection,
+} from "@/world/horizontalOneWayBody";
 import { collidesWithTile } from "@/world/oneWayTiles";
 import { canPassSlopeLip } from "@/world/slopeGeometry";
 import { trackRoom } from "@/world/roomChange";
@@ -774,8 +778,18 @@ export class Player extends SpriteCollidable {
     return collidesWithTile({
       layer: tile.layer.name,
       index: tile.index,
+      tileLeft: tile.pixelX,
+      tileRight: tile.pixelX + tile.width,
       tileTop: tile.pixelY,
+      tileBottom: tile.pixelY + tile.height,
       feetBottom: () => this.getBodyBounds().bottom,
+      headTop: () => this.getBodyBounds().top,
+      approachingFrom: () =>
+        getApproachingSide(
+          this.getBodyBounds().centerX,
+          tile.pixelX + tile.width / 2
+        ),
+      oneWayDirection: () => readOneWayDirection(tile.properties),
       isDownPressed: () =>
         this.scene.getController().isKeyPressed(ControllerKey.DOWN),
       hasTileAbove: () =>
