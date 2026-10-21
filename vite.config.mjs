@@ -22,6 +22,11 @@ export default defineConfig(({ mode }) => ({
     minify: mode === "production",
   },
   server: {
+    // Tauri sets TAURI_ENV_DEBUG when running `tauri dev`; in that case it
+    // opens its own native window, so we don't want Vite to also open a
+    // browser tab. When running plain `vite`, the env var is absent and a
+    // browser is opened as usual.
+    open: process.env.TAURI_ENV_DEBUG !== "true",
     // Use a high port to avoid conflicts with other local applications.
     port: 64000,
   },
