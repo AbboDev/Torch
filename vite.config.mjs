@@ -22,7 +22,8 @@ export default defineConfig(({ mode }) => ({
     minify: mode === "production",
   },
   server: {
-    open: true,
+    // Use a high port to avoid conflicts with other local applications.
+    port: 64000,
   },
   test: {
     include: ["tests/**/*.test.ts"],
