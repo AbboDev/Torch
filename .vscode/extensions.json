@@ -1,0 +1,17 @@
+{
+  "recommendations": [
+    "rust-lang.rust-analyzer",
+    "tauri-apps.tauri-vscode",
+    "tamasfe.even-better-toml",
+    "Lokalise.i18n-ally",
+    "vitest.explorer",
+    "cypress-io.cypress-vscode",
+    "vscjava.vscode-mermaid-preview",
+    "yzhang.markdown-all-in-one",
+    "vivxi.vscode-conventional-commits",
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "github.copilot",
+    "github.copilot-chat"
+  ]
+}
