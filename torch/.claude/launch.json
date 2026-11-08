@@ -1,0 +1,16 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "game",
+      "runtimeExecutable": "C:\\nvm4w\\nodejs\\node.exe",
+      "runtimeArgs": [
+        "phaser/cli/bin/phaser-ae.mjs",
+        "serve",
+        "--port",
+        "4173"
+      ],
+      "port": 4173
+    }
+  ]
+}

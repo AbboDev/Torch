@@ -1,0 +1,61 @@
+{
+  "name": "torch",
+  "screen": {
+    "width": 1280,
+    "height": 720,
+    "fit": "letterbox",
+    "background": "#000000",
+    "pixelArt": true
+  },
+  "seed": 52021,
+  "backgroundPolicy": "pause",
+  "packs": [
+    { "id": "core-2d" },
+    { "id": "ui-skins" },
+    { "id": "ui-skin-candy", "options": { "color": "blue" } },
+    { "id": "save", "options": { "namespace": "torch" } },
+    { "id": "controls-2d" },
+    { "id": "typography" },
+    {
+      "id": "controls-touch",
+      "options": {
+        "stick": {
+          "codes": {
+            "left": "Touch:left",
+            "right": "Touch:right",
+            "up": "Touch:up",
+            "down": "Touch:down"
+          },
+          "x": 130,
+          "y": 130
+        },
+        "buttons": [
+          {
+            "code": "Touch:jump",
+            "label": "A",
+            "anchor": "bottom-right",
+            "x": 90,
+            "y": 90
+          },
+          {
+            "code": "Touch:fire",
+            "label": "B",
+            "anchor": "bottom-right",
+            "x": 215,
+            "y": 90
+          },
+          {
+            "code": "Touch:missile",
+            "label": "M",
+            "anchor": "bottom-right",
+            "x": 215,
+            "y": 215,
+            "r": 38
+          }
+        ]
+      }
+    },
+    { "id": "bars" },
+    { "id": "transition" }
+  ]
+}
